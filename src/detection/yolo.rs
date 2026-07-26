@@ -1,14 +1,14 @@
 //! YOLOv8 / YOLOv11 ONNX object detector.
 //!
 //! Loads an ONNX model via `ort`, pre-processes frames (letterbox, normalize,
-//! HWC→CHW), runs inference, and post-processes (grid decode, sigmoid,
+//! HWC->CHW), runs inference, and post-processes (grid decode, sigmoid,
 //! confidence filter, NMS, scale to original dimensions).
 //!
 //! ## Graceful degradation
 //!
-//! If no model file exists at the configured path, the detector constructs
-//! successfully and returns empty results.  This allows pipeline development
-//! and data collection before a custom model is trained.
+//! If no model file exists at the configured path, the detector returns empty
+//! results so the pipeline can run for data collection or integration testing
+//! before a custom model is trained.
 
 use std::path::Path;
 
@@ -20,15 +20,21 @@ use crate::config::ModelConfig;
 
 /// A single object detection produced by the YOLO model.
 ///
-/// Coordinates are **absolute pixel values** in the original (un-resized)
-/// image.  Box convention: `(x1, y1)` = top-left, `(x2, y2)` = bottom-right.
+/// All coordinates are **absolute pixel values** in the original
+/// (un-resized) image.
 #[derive(Debug, Clone)]
 pub struct Detection {
+    /// Left edge of the bounding box in pixels (inclusive).
     pub x1: f32,
+    /// Top edge of the bounding box in pixels (inclusive).
     pub y1: f32,
+    /// Right edge of the bounding box in pixels (inclusive).
     pub x2: f32,
+    /// Bottom edge of the bounding box in pixels (inclusive).
     pub y2: f32,
+    /// Detection confidence score in [0.0, 1.0].
     pub confidence: f32,
+    /// Zero-based class index into the model's class list.
     pub class_id: u32,
 }
 
@@ -39,11 +45,17 @@ pub struct Detection {
 /// Configuration parameters for the YOLO detector.
 #[derive(Debug, Clone)]
 pub struct YoloConfig {
+    /// Path to the INT8-quantized ONNX model file.
     pub model_path: String,
+    /// Minimum confidence in [0, 1]. Detections below this are discarded.
     pub conf_threshold: f32,
+    /// NMS IoU threshold in [0, 1]. Overlapping boxes above this are suppressed.
     pub iou_threshold: f32,
+    /// Width the model expects after letterbox resize (e.g. 640).
     pub input_width: u32,
+    /// Height the model expects after letterbox resize (e.g. 640).
     pub input_height: u32,
+    /// Ordered class names; index -> class_id.
     pub class_names: Vec<String>,
 }
 
@@ -68,19 +80,23 @@ impl From<&ModelConfig> for YoloConfig {
 struct LetterBox {
     /// Float32 CHW tensor normalized to [0, 1], shape [3, H, W].
     tensor: Vec<f32>,
-    /// Scale factor from original → model input.
+    /// Scale factor applied to fit the original image into the model input.
     scale: f32,
-    /// Horizontal padding applied (pixels in model-input space).
+    /// Horizontal padding added (in model-input pixel space).
     pad_x: f32,
-    /// Vertical padding applied (pixels in model-input space).
+    /// Vertical padding added (in model-input pixel space).
     pad_y: f32,
 }
 
-/// Letterbox resize: scale to fit within `dst_w × dst_h` while maintaining
-/// aspect ratio, then pad to exactly `dst_w × dst_h` with gray (114).
+/// Resize `frame` to fit within `dst_w x dst_h` while preserving aspect ratio,
+/// then pad with gray (114/255) to exactly `dst_w x dst_h`.
 ///
-/// Returns the CHW float32 tensor and metadata needed to map detections back
-/// to the original image.
+/// Returns a CHW float32 tensor (normalized to [0, 1]) plus the scale and
+/// padding needed to map detections back to the original image.
+///
+/// * `frame` — Raw RGB8 pixel buffer, row-major, length `src_h * src_w * 3`.
+/// * `src_w`, `src_h` — Dimensions of the source frame.
+/// * `dst_w`, `dst_h` — Dimensions the model expects (e.g. 640 x 640).
 fn letterbox(
     frame: &[u8],
     src_w: u32,
@@ -94,7 +110,6 @@ fn letterbox(
     let pad_x = (dst_w - new_w) as f32 / 2.0;
     let pad_y = (dst_h - new_h) as f32 / 2.0;
 
-    // Build the RGB image from raw buffer for cropping/resizing.
     let src_img =
         image::RgbImage::from_raw(src_w, src_h, frame.to_vec()).expect("valid frame buffer");
     let resized = image::imageops::resize(
@@ -104,21 +119,21 @@ fn letterbox(
         image::imageops::FilterType::CatmullRom,
     );
 
-    // CHW float32 output, initialized to gray (114 / 255 ≈ 0.447).
+    // Initialise CHW float32 tensor with gray fill (114/255 ~= 0.447).
     let mut tensor = vec![114.0f32 / 255.0; (dst_w * dst_h * 3) as usize];
-
-    // Copy resized pixels into the center of the padded canvas.
-    // tensor layout: CHW — channel 0 = R, 1 = G, 2 = B, each row-major.
     let total = (dst_w * dst_h) as usize;
+
+    // Copy resized pixels into the centre of the padded canvas.
+    // CHW layout: channel 0 = R, 1 = G, 2 = B, each row-major.
     for y in 0..new_h {
         for x in 0..new_w {
             let pixel = resized.get_pixel(x, y);
             let canvas_x = (x as f32 + pad_x) as u32;
             let canvas_y = (y as f32 + pad_y) as u32;
             let idx = (canvas_y * dst_w + canvas_x) as usize;
-            tensor[idx] = pixel[0] as f32 / 255.0;            // R
-            tensor[total + idx] = pixel[1] as f32 / 255.0;    // G
-            tensor[2 * total + idx] = pixel[2] as f32 / 255.0; // B
+            tensor[idx] = pixel[0] as f32 / 255.0;
+            tensor[total + idx] = pixel[1] as f32 / 255.0;
+            tensor[2 * total + idx] = pixel[2] as f32 / 255.0;
         }
     }
 
@@ -126,41 +141,70 @@ fn letterbox(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Post-processing helpers
+//  Bounding box helper
 // ─────────────────────────────────────────────────────────────────────────────
 
-fn sigmoid(x: f32) -> f32 {
-    1.0 / (1.0 + (-x).exp())
+/// An axis-aligned bounding box with associated confidence and class.
+#[derive(Debug, Clone, Copy)]
+struct BBox {
+    x1: f32,
+    y1: f32,
+    x2: f32,
+    y2: f32,
+    confidence: f32,
+    class_id: u32,
 }
 
-/// Compute IoU between two xyxy boxes.
-fn box_iou(a: (f32, f32, f32, f32), b: (f32, f32, f32, f32)) -> f32 {
-    let ix1 = a.0.max(b.0);
-    let iy1 = a.1.max(b.1);
-    let ix2 = a.2.min(b.2);
-    let iy2 = a.3.min(b.3);
+/// Intersection-over-Union of two bounding boxes.
+fn box_iou(a: &BBox, b: &BBox) -> f32 {
+    let ix1 = a.x1.max(b.x1);
+    let iy1 = a.y1.max(b.y1);
+    let ix2 = a.x2.min(b.x2);
+    let iy2 = a.y2.min(b.y2);
     let inter = (ix2 - ix1).max(0.0) * (iy2 - iy1).max(0.0);
-    let area_a = (a.2 - a.0) * (a.3 - a.1);
-    let area_b = (b.2 - b.0) * (b.3 - b.1);
+    let area_a = (a.x2 - a.x1) * (a.y2 - a.y1);
+    let area_b = (b.x2 - b.x1) * (b.y2 - b.y1);
     let union = area_a + area_b - inter;
     if union <= 0.0 { 0.0 } else { inter / union }
 }
 
-/// Non-maximum suppression: greedily select highest-confidence boxes above
-/// the IoU threshold.
-fn non_max_suppression(
-    mut boxes: Vec<(f32, f32, f32, f32, f32, u32)>,
-    iou_threshold: f32,
-) -> Vec<(f32, f32, f32, f32, f32, u32)> {
-    // Sort descending by confidence.
-    boxes.sort_by(|a, b| b.4.partial_cmp(&a.4).unwrap_or(std::cmp::Ordering::Equal));
+// ─────────────────────────────────────────────────────────────────────────────
+//  Non-maximum suppression
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Greedy non-maximum suppression.
+///
+/// 1. Sorts candidates by descending confidence.
+/// 2. Picks the highest-confidence box, suppresses all others with
+///    IoU > `iou_threshold`.
+/// 3. Repeats until no candidates remain.
+///
+/// * `candidates` — Unfiltered detections.
+/// * `iou_threshold` — Box pairs with IoU above this value have the
+///   lower-confidence member removed.
+fn non_max_suppression(mut candidates: Vec<BBox>, iou_threshold: f32) -> Vec<BBox> {
+    candidates.sort_by(|a, b| {
+        b.confidence
+            .partial_cmp(&a.confidence)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     let mut keep = Vec::new();
-    while !boxes.is_empty() {
-        let best = boxes.remove(0);
-        keep.push(best);
-        boxes.retain(|b| box_iou((best.0, best.1, best.2, best.3), (b.0, b.1, b.2, b.3)) <= iou_threshold);
+    let mut active = vec![true; candidates.len()];
+
+    for i in 0..candidates.len() {
+        if !active[i] {
+            continue;
+        }
+        keep.push(candidates[i]);
+
+        for j in (i + 1)..candidates.len() {
+            if active[j] && box_iou(&candidates[i], &candidates[j]) > iou_threshold {
+                active[j] = false;
+            }
+        }
     }
+
     keep
 }
 
@@ -168,19 +212,21 @@ fn non_max_suppression(
 //  Grid / stride helpers for YOLOv8 decoding
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Pre-computed anchor information for YOLOv8 decoding.
+/// Pre-computed anchor information for YOLOv8 output decoding.
+///
+/// YOLOv8 produces predictions at three strides (8, 16, 32). For a 640x640
+/// input this yields 80x80 + 40x40 + 20x20 = 8400 anchors.
 struct AnchorGrid {
-    /// For each of the N predictions: (grid_x, grid_y, stride).
+    /// Per-anchor data: `(grid_x, grid_y, stride)`.
     anchors: Vec<(f32, f32, f32)>,
-    /// Total number of predictions.
+    /// Total number of anchors across all stride levels.
     num_predictions: usize,
 }
 
 impl AnchorGrid {
-    /// Build the anchor grid for a given model input size.
+    /// Build the anchor grid for a square model input.
     ///
-    /// YOLOv8 produces predictions at 3 strides (8, 16, 32). The total
-    /// number of predictions for a 640×640 input is 8400.
+    /// * `input_size` — Width and height the model expects (e.g. 640).
     fn new(input_size: u32) -> Self {
         let strides: [u32; 3] = [8, 16, 32];
         let mut anchors = Vec::new();
@@ -199,10 +245,20 @@ impl AnchorGrid {
         Self { anchors, num_predictions }
     }
 
-    /// Decode raw YOLOv8 output into candidate detections.
+    /// Decode raw YOLOv8 output tensor into candidate bounding boxes.
     ///
-    /// `output` is the raw float32 tensor from the ONNX model, shape
-    /// `[1, 4 + num_classes, num_predictions]` in CHW layout.
+    /// The model's output is laid out as
+    /// `[1, 4 + num_classes, num_predictions]` in CHW format (channel-major).
+    /// For each anchor, channels 0–3 carry the bounding box (cx, cy, w, h),
+    /// and channels 4..4+num_classes carry class logits.
+    ///
+    /// * `output` — Raw float32 data from the ONNX model output.
+    /// * `num_classes` — Number of classes the model was trained on.
+    /// * `conf_threshold` — Minimum confidence to keep a candidate.
+    /// * `orig_w`, `orig_h` — Original frame dimensions (for coordinate
+    ///   scaling).
+    /// * `scale` — Scale factor from `letterbox()`.
+    /// * `pad_x`, `pad_y` — Padding applied by `letterbox()`.
     fn decode(
         &self,
         output: &[f32],
@@ -213,24 +269,24 @@ impl AnchorGrid {
         scale: f32,
         pad_x: f32,
         pad_y: f32,
-    ) -> Vec<(f32, f32, f32, f32, f32, u32)> {
+    ) -> Vec<BBox> {
         let stride_size = self.num_predictions;
         let mut candidates = Vec::new();
 
         for (i, &(grid_x, grid_y, stride)) in self.anchors.iter().enumerate() {
-            // Read bbox: cx, cy, w, h at channel offsets 0..3.
+            // Raw bbox predictions at channel offsets 0..3.
             let cx_raw = output[i];
             let cy_raw = output[1 * stride_size + i];
             let w_raw = output[2 * stride_size + i];
             let h_raw = output[3 * stride_size + i];
 
-            // YOLOv8 decoding:
+            // Standard YOLOv8 grid-space decoding.
             let cx = (sigmoid(cx_raw) * 2.0 - 0.5 + grid_x) * stride;
             let cy = (sigmoid(cy_raw) * 2.0 - 0.5 + grid_y) * stride;
             let w = (sigmoid(w_raw) * 2.0).powi(2) * stride;
             let h = (sigmoid(h_raw) * 2.0).powi(2) * stride;
 
-            // Find best class.
+            // Find the class with the highest sigmoid score.
             let mut best_conf = 0.0f32;
             let mut best_class = 0u32;
             for c in 0..num_classes {
@@ -245,27 +301,43 @@ impl AnchorGrid {
                 continue;
             }
 
-            // Convert cxcywh → xyxy in model-input coordinates.
+            // cxcywh -> xyxy in model-input coordinates.
             let x1 = cx - w / 2.0;
             let y1 = cy - h / 2.0;
             let x2 = cx + w / 2.0;
             let y2 = cy + h / 2.0;
 
-            // Remove padding and scale back to original image.
-            let x1_orig = ((x1 - pad_x) / scale).max(0.0).min(orig_w as f32);
-            let y1_orig = ((y1 - pad_y) / scale).max(0.0).min(orig_h as f32);
-            let x2_orig = ((x2 - pad_x) / scale).max(0.0).min(orig_w as f32);
-            let y2_orig = ((y2 - pad_y) / scale).max(0.0).min(orig_h as f32);
+            // Remove padding and scale back to original image space.
+            let x1_orig = ((x1 - pad_x) / scale).clamp(0.0, orig_w as f32);
+            let y1_orig = ((y1 - pad_y) / scale).clamp(0.0, orig_h as f32);
+            let x2_orig = ((x2 - pad_x) / scale).clamp(0.0, orig_w as f32);
+            let y2_orig = ((y2 - pad_y) / scale).clamp(0.0, orig_h as f32);
 
             if (x2_orig - x1_orig) < 1.0 || (y2_orig - y1_orig) < 1.0 {
                 continue;
             }
 
-            candidates.push((x1_orig, y1_orig, x2_orig, y2_orig, best_conf, best_class));
+            candidates.push(BBox {
+                x1: x1_orig,
+                y1: y1_orig,
+                x2: x2_orig,
+                y2: y2_orig,
+                confidence: best_conf,
+                class_id: best_class,
+            });
         }
 
         candidates
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Sigmoid
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Logistic sigmoid: `1 / (1 + exp(-x))`.
+fn sigmoid(x: f32) -> f32 {
+    1.0 / (1.0 + (-x).exp())
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -285,8 +357,10 @@ pub struct YoloDetector {
 impl YoloDetector {
     /// Construct a new detector.
     ///
-    /// Loads the ONNX model if it exists. A missing model is not an error —
-    /// the detector simply returns empty detections.
+    /// Loads the ONNX model if `config.model_path` exists on disk.  A missing
+    /// model is **not** an error — the detector returns empty detections.
+    ///
+    /// * `config` — Detector settings (path, thresholds, input size, classes).
     pub fn new(config: YoloConfig) -> Result<Self, String> {
         let model_path = Path::new(&config.model_path);
 
@@ -296,11 +370,16 @@ impl YoloDetector {
                 .map_err(|e| format!("ort init: {e}"))?
                 .commit_from_file(model_path)
                 .map_err(|e| format!("Failed to load model '{}': {e}", config.model_path))?;
-            log::info!("Model loaded: {}x{} input", config.input_width, config.input_height);
+            log::info!(
+                "Model loaded: {}x{} input",
+                config.input_width,
+                config.input_height
+            );
             Some(session)
         } else {
             log::warn!(
-                "ONNX model not found at '{}'. Detector returns empty results. \
+                "ONNX model not found at '{}'. \
+                 Detector returns empty results. \
                  Train a model (see CLOUD_TRAINING.md) and place it at this path.",
                 config.model_path
             );
@@ -315,7 +394,11 @@ impl YoloDetector {
     /// Run inference on a single video frame.
     ///
     /// Returns zero or more detections.  Returns an empty vec when no model
-    /// is available.
+    /// file is available.
+    ///
+    /// * `frame` — Flattened RGB8 pixel data, row-major, length `H * W * 3`.
+    /// * `width` — Frame width in pixels.
+    /// * `height` — Frame height in pixels.
     pub fn detect(
         &mut self,
         frame: &[u8],
@@ -327,7 +410,7 @@ impl YoloDetector {
             None => return Ok(Vec::new()),
         };
 
-        // ── 1. Pre-process ──────────────────────────────────────────
+        // ── 1. Pre-process: letterbox + normalise + HWC -> CHW ──────
         let LetterBox { tensor, scale, pad_x, pad_y } = letterbox(
             frame,
             width,
@@ -336,14 +419,9 @@ impl YoloDetector {
             self.config.input_height,
         );
 
-        // ── 2. Inference ────────────────────────────────────────────
+        // ── 2. ONNX Runtime inference ───────────────────────────────
         let array = ndarray::Array4::from_shape_vec(
-            (
-                1,
-                3,
-                self.config.input_height as usize,
-                self.config.input_width as usize,
-            ),
+            (1, 3, self.config.input_height as usize, self.config.input_width as usize),
             tensor,
         )
         .map_err(|e| format!("tensor shape: {e}"))?;
@@ -355,7 +433,7 @@ impl YoloDetector {
             .run(ort::inputs![input_tensor])
             .map_err(|e| format!("inference failed: {e}"))?;
 
-        // ── 3. Parse output ─────────────────────────────────────────
+        // ── 3. Parse output tensor ──────────────────────────────────
         let tensor_ref: ort::value::TensorRef<'_, f32> = outputs[0]
             .downcast_ref()
             .map_err(|e| format!("output downcast: {e}"))?;
@@ -370,12 +448,13 @@ impl YoloDetector {
         let expected_channels = 4 + num_classes;
         if output_data.len() < expected_channels * num_predictions {
             return Err(format!(
-                "Unexpected output size: got {} elements, expected at least {}",
+                "Unexpected output: {} elements, expected at least {}",
                 output_data.len(),
                 expected_channels * num_predictions
             ));
         }
 
+        // ── 4. Decode raw output -> candidates ──────────────────────
         let candidates = self.anchor_grid.decode(
             output_data,
             num_classes,
@@ -387,18 +466,18 @@ impl YoloDetector {
             pad_y,
         );
 
-        // ── 4. NMS ──────────────────────────────────────────────────
+        // ── 5. Non-maximum suppression ───────────────────────────────
         let kept = non_max_suppression(candidates, self.config.iou_threshold);
 
         let detections: Vec<Detection> = kept
             .into_iter()
-            .map(|(x1, y1, x2, y2, confidence, class_id)| Detection {
-                x1,
-                y1,
-                x2,
-                y2,
-                confidence,
-                class_id,
+            .map(|b| Detection {
+                x1: b.x1,
+                y1: b.y1,
+                x2: b.x2,
+                y2: b.y2,
+                confidence: b.confidence,
+                class_id: b.class_id,
             })
             .collect();
 
@@ -406,10 +485,12 @@ impl YoloDetector {
         Ok(detections)
     }
 
+    /// Shared reference to the detector's configuration.
     pub fn config(&self) -> &YoloConfig {
         &self.config
     }
 
+    /// Whether an ONNX model file was successfully loaded.
     pub fn is_model_available(&self) -> bool {
         self.session.is_some()
     }
@@ -423,6 +504,7 @@ impl YoloDetector {
 mod tests {
     use super::*;
 
+    /// Detector should construct without error when the model file is absent.
     #[test]
     fn test_detector_constructs_without_model() {
         let cfg = YoloConfig {
@@ -437,6 +519,7 @@ mod tests {
         assert!(!detector.is_model_available());
     }
 
+    /// Without a model, `detect()` should return an empty vec, not an error.
     #[test]
     fn test_detect_returns_empty_when_no_model() {
         let cfg = YoloConfig {
@@ -452,21 +535,23 @@ mod tests {
         assert!(results.is_empty());
     }
 
+    /// For a 640x640 model input, YOLOv8 produces exactly 8400 anchors.
     #[test]
     fn test_anchor_grid_size() {
         let grid = AnchorGrid::new(640);
         assert_eq!(grid.num_predictions, 8400);
     }
 
+    /// Two overlapping boxes should be reduced to one high-confidence box.
     #[test]
     fn test_nms_keeps_best() {
-        let boxes = vec![
-            (10.0, 10.0, 100.0, 100.0, 0.9, 0u32),
-            (15.0, 15.0, 95.0, 95.0, 0.8, 0u32),
-            (200.0, 200.0, 300.0, 300.0, 0.7, 0u32),
+        let candidates = vec![
+            BBox { x1: 10.0, y1: 10.0, x2: 100.0, y2: 100.0, confidence: 0.9, class_id: 0 },
+            BBox { x1: 15.0, y1: 15.0, x2: 95.0, y2: 95.0, confidence: 0.8, class_id: 0 },
+            BBox { x1: 200.0, y1: 200.0, x2: 300.0, y2: 300.0, confidence: 0.7, class_id: 0 },
         ];
-        let kept = non_max_suppression(boxes, 0.5);
+        let kept = non_max_suppression(candidates, 0.5);
         assert_eq!(kept.len(), 2);
-        assert!((kept[0].4 - 0.9).abs() < 1e-6);
+        assert!((kept[0].confidence - 0.9).abs() < 1e-6);
     }
 }
