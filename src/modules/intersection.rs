@@ -76,6 +76,12 @@ pub struct IntersectionAnalyzer {
     ///
     /// US standard stop sign diameter ≈ 30 inches ≈ 0.75 m.
     stop_sign_width_m: f32,
+
+    /// Frame width in pixels (from camera config).
+    frame_width: u32,
+
+    /// Frame height in pixels (from camera config).
+    frame_height: u32,
 }
 
 impl IntersectionAnalyzer {
@@ -87,10 +93,12 @@ impl IntersectionAnalyzer {
     ///
     /// # Returns
     /// An `IntersectionAnalyzer` ready to process frames.
-    pub fn new(config: &crate::config::Config) -> Self {
+    pub fn new(config: &crate::config::Config, frame_width: u32, frame_height: u32) -> Self {
         Self {
             config: config.intersection.clone(),
-            stop_sign_width_m: 0.75, // standard US stop sign ≈ 30 inches
+            stop_sign_width_m: 0.75,
+            frame_width,
+            frame_height,
         }
     }
 
@@ -128,9 +136,10 @@ impl IntersectionAnalyzer {
         let mut alerts = Vec::new();
 
         // ── 1. Stop sign detection ────────────────────────────────────
+        const MIN_STOP_SIGN_CONFIDENCE: f32 = 0.5;
         let stop_signs: Vec<&Detection> = detections
             .iter()
-            .filter(|d| d.class_id == 0 && d.confidence >= self.config.stop_sign_warning_distance / 100.0)
+            .filter(|d| d.class_id == 0 && d.confidence >= MIN_STOP_SIGN_CONFIDENCE)
             .collect();
 
         for sign in &stop_signs {
@@ -168,7 +177,7 @@ impl IntersectionAnalyzer {
             .collect();
 
         if !vehicles.is_empty() {
-            let total_area: f32 = (self.config.frame_width() * self.config.frame_height()) as f32;
+            let total_area: f32 = (self.frame_width * self.frame_height) as f32;
             let occupied_area: f32 = vehicles
                 .iter()
                 .map(|d| (d.x2 - d.x1) * (d.y2 - d.y1))
@@ -188,24 +197,6 @@ impl IntersectionAnalyzer {
         }
 
         alerts
-    }
-}
-
-// ── Helper: frame dimensions from IntersectionConfig ──────────────────────
-// These are placeholders; the real frame size should come from CameraConfig.
-// In production, pass `(frame_width, frame_height)` into `analyze()`.
-
-impl IntersectionConfig {
-    /// Placeholder frame width (pixels).  In production this should be
-    /// sourced from [`CameraConfig`](crate::config::CameraConfig).
-    fn frame_width(&self) -> u32 {
-        1280
-    }
-
-    /// Placeholder frame height (pixels).  In production this should be
-    /// sourced from [`CameraConfig`](crate::config::CameraConfig).
-    fn frame_height(&self) -> u32 {
-        720
     }
 }
 
@@ -234,7 +225,7 @@ mod tests {
     #[test]
     fn test_no_alerts_with_empty_detections() {
         let cfg = Config::default();
-        let mut analyzer = IntersectionAnalyzer::new(&cfg);
+        let mut analyzer = IntersectionAnalyzer::new(&cfg, 1280, 720);
         let alerts = analyzer.analyze(&[], 0.0, 0.033);
         assert!(alerts.is_empty());
     }
@@ -243,7 +234,7 @@ mod tests {
     #[test]
     fn test_no_stop_sign_violation_when_slow() {
         let cfg = Config::default();
-        let mut analyzer = IntersectionAnalyzer::new(&cfg);
+        let mut analyzer = IntersectionAnalyzer::new(&cfg, 1280, 720);
         let dets = vec![make_det(0, 100.0, 200.0, 120.0, 240.0, 0.9)];
         let alerts = analyzer.analyze(&dets, 0.0, 0.033);
         assert!(alerts.is_empty());
@@ -254,7 +245,7 @@ mod tests {
     #[test]
     fn test_intersection_occupancy_detection() {
         let cfg = Config::default();
-        let mut analyzer = IntersectionAnalyzer::new(&cfg);
+        let mut analyzer = IntersectionAnalyzer::new(&cfg, 1280, 720);
         let dets = vec![
             make_det(3, 0.0, 0.0, 640.0, 360.0, 0.9),
             make_det(3, 640.0, 0.0, 1280.0, 360.0, 0.9),

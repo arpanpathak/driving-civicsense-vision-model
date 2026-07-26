@@ -42,3 +42,4 @@ pub mod detection;
 pub mod modules;
 pub mod tracking;
 pub mod utils;
+pub mod video;

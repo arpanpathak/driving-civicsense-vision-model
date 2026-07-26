@@ -15,6 +15,7 @@
 //!   `max_age` consecutive misses.
 
 use crate::detection::yolo::Detection;
+use crate::utils::geometry::compute_iou;
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Kalman Filter Constants
@@ -262,43 +263,6 @@ impl Track {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  IoU (private helper)
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// Computes the Intersection-over-Union (IoU) of two axis-aligned boxes.
-///
-/// # Parameters
-/// - `a` — First box as `(x1, y1, x2, y2)`.
-/// - `b` — Second box as `(x1, y1, x2, y2)`.
-///
-/// # Returns
-/// A value in `[0.0, 1.0]` where `1.0` means identical boxes and `0.0`
-/// means no overlap.
-fn iou(a: (f32, f32, f32, f32), b: (f32, f32, f32, f32)) -> f32 {
-    let (ax1, ay1, ax2, ay2) = a;
-    let (bx1, by1, bx2, by2) = b;
-
-    let ix1 = ax1.max(bx1);
-    let iy1 = ay1.max(by1);
-    let ix2 = ax2.min(bx2);
-    let iy2 = ay2.min(by2);
-
-    let iw = (ix2 - ix1).max(0.0);
-    let ih = (iy2 - iy1).max(0.0);
-    let inter = iw * ih;
-
-    let a_area = (ax2 - ax1) * (ay2 - ay1);
-    let b_area = (bx2 - bx1) * (by2 - by1);
-    let union = a_area + b_area - inter;
-
-    if union <= 0.0 {
-        0.0
-    } else {
-        inter / union
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 //  MultiObjectTracker (public)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -366,71 +330,86 @@ impl MultiObjectTracker {
     /// A clone of all active `Track` objects (both confirmed and tentative)
     /// after the predict-match-update-birth-death cycle.
     pub fn update(&mut self, detections: &[Detection]) -> Vec<Track> {
-        // ── 1. Predict all existing tracks ────────────────────────────
+        self.predict_all();
+        let unmatched_det = self.match_and_update(detections);
+        self.birth_new_tracks(detections, &unmatched_det);
+        self.confirm_tracks();
+        self.remove_stale_tracks();
+        self.tracks.clone()
+    }
+
+    /// Advance Kalman state for every active track.
+    fn predict_all(&mut self) {
         for track in &mut self.tracks {
             track.predict();
         }
+    }
 
-        // ── 2. IoU-based greedy matching ──────────────────────────────
-        let mut unmatched_det: Vec<usize> = (0..detections.len()).collect();
-
-        if !self.tracks.is_empty() && !detections.is_empty() {
-            // Build a list of candidate matches (IoU > 0.3).
-            let mut matches: Vec<(usize, usize, f32)> = Vec::new();
-
-            for (ti, track) in self.tracks.iter().enumerate() {
-                for (di, det) in detections.iter().enumerate() {
-                    let iou_val = iou(track.bbox, (det.x1, det.y1, det.x2, det.y2));
-                    if iou_val > 0.3 {
-                        matches.push((ti, di, iou_val));
-                    }
-                }
-            }
-
-            // Greedy: sort by descending IoU, assign each detection to at
-            // most one track.
-            matches.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
-
-            let mut used_trk = vec![false; self.tracks.len()];
-            let mut used_det = vec![false; detections.len()];
-
-            for &(ti, di, _iou) in &matches {
-                if !used_trk[ti] && !used_det[di] {
-                    self.tracks[ti].update(&detections[di]);
-                    used_trk[ti] = true;
-                    used_det[di] = true;
-                }
-            }
-
-            // Collect detections that were not matched to any track.
-            unmatched_det = detections
-                .iter()
-                .enumerate()
-                .filter(|(i, _)| !used_det[*i])
-                .map(|(i, _)| i)
-                .collect();
+    /// Greedy IoU matching between predicted tracks and detections.
+    ///
+    /// Matched tracks are updated in place. Returns indices of detections
+    /// that did not match any track.
+    fn match_and_update(&mut self, detections: &[Detection]) -> Vec<usize> {
+        if self.tracks.is_empty() || detections.is_empty() {
+            return (0..detections.len()).collect();
         }
 
-        // ── 3. Birth new tracks for unmatched detections ──────────────
-        for &di in &unmatched_det {
+        // Build candidate matches (IoU > 0.3 gate).
+        let mut matches: Vec<(usize, usize, f32)> = Vec::new();
+        for (ti, track) in self.tracks.iter().enumerate() {
+            for (di, det) in detections.iter().enumerate() {
+                let iou_val = compute_iou(track.bbox, (det.x1, det.y1, det.x2, det.y2));
+                if iou_val > 0.3 {
+                    matches.push((ti, di, iou_val));
+                }
+            }
+        }
+
+        // Greedy assignment: sort by descending IoU.
+        matches.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
+
+        let mut used_trk = vec![false; self.tracks.len()];
+        let mut used_det = vec![false; detections.len()];
+
+        for &(ti, di, _iou) in &matches {
+            if !used_trk[ti] && !used_det[di] {
+                self.tracks[ti].update(&detections[di]);
+                used_trk[ti] = true;
+                used_det[di] = true;
+            }
+        }
+
+        // Collect unmatched detection indices.
+        detections
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| !used_det[*i])
+            .map(|(i, _)| i)
+            .collect()
+    }
+
+    /// Spawn new tentative tracks for unmatched detections.
+    fn birth_new_tracks(&mut self, detections: &[Detection], unmatched: &[usize]) {
+        for &di in unmatched {
             let track = Track::new(self.next_id, &detections[di]);
             self.tracks.push(track);
             self.next_id += 1;
         }
+    }
 
-        // ── 4. Promote tracks that have enough hits to confirmed ──────
+    /// Promote tracks with enough hits to confirmed status.
+    fn confirm_tracks(&mut self) {
         for track in &mut self.tracks {
             if track.hits() >= self.n_init {
                 track.is_confirmed = true;
             }
         }
+    }
 
-        // ── 5. Remove stale tracks ────────────────────────────────────
+    /// Remove tracks that have been unmatched for too long.
+    fn remove_stale_tracks(&mut self) {
         self.tracks
             .retain(|t| t.time_since_update() <= self.max_age);
-
-        // ── 6. Return cloned track list ───────────────────────────────
-        self.tracks.clone()
     }
 
     /// Returns a reference to all active tracks.
@@ -517,14 +496,14 @@ mod tests {
     #[test]
     fn test_iou_same_box() {
         let bbox = (10.0, 10.0, 50.0, 50.0);
-        let result = iou(bbox, bbox);
+        let result = compute_iou(bbox, bbox);
         assert!((result - 1.0).abs() < 1e-6);
     }
 
     /// Non-overlapping boxes should produce an IoU of exactly 0.0.
     #[test]
     fn test_iou_no_overlap() {
-        let result = iou((0.0, 0.0, 10.0, 10.0), (20.0, 20.0, 30.0, 30.0));
+        let result = compute_iou((0.0, 0.0, 10.0, 10.0), (20.0, 20.0, 30.0, 30.0));
         assert!((result - 0.0).abs() < 1e-6);
     }
 }
