@@ -33,6 +33,9 @@ It's not a self-driving system. It's a **co-pilot that cares about traffic civil
 | Bear or deer on the road | *"Large animal ahead. Slow down."* |
 | Fallen tree or debris | *"Obstruction in the road ahead. Stop or take evasive action."* |
 | Emergency vehicle approaching | *"Emergency vehicle behind you. Pull right."* |
+| Lane change with no signal | *"Turn signal? Or do you expect everyone to read your mind?"* |
+| Cutting across multiple lanes | *"That's three lanes without a signal. Pick a lane and commit."* |
+| Late signal during merge | *"Signal first, then merge. That's the deal."* |
 
 ### What it does for everyone else
 
@@ -74,18 +77,18 @@ All variants process **100% on-device**. No cloud upload. No subscription.
        |
   [Deep SORT Tracker] ---> [Kalman Filter] ---> [Tracks]
        |
-  +--------------------+  +---------------------------+
-  | Intersection       |  | Lane Speed                |
-  | Module             |  | Module                    |
-  |  * Stop sign       |  |  * Lane assignment        |
-  |  * Occupancy       |  |  * Relative velocity      |
-  |  * Deceleration    |  |  * Hysteresis timer       |
-  +---------+----------+  +-------------+-------------+
-           |                             |
-  +---------------------------------------------------+
-  | Alert Priority Engine                             |
-  |   -> Voice / Haptic / LED / Beacon               |
-  +---------------------------------------------------+
+  +--------------------+  +---------------------------+  +----------------------------+
+  | Intersection       |  | Lane Speed                |  | Turn Signal / Lane         |
+  | Module             |  | Module                    |  | Change Module              |
+  |  * Stop sign       |  |  * Lane assignment        |  |  * Amber light detection   |
+  |  * Occupancy       |  |  * Relative velocity      |  |  * Lateral motion track    |
+  |  * Deceleration    |  |  * Hysteresis timer       |  |  * Multi-lane cut detect   |
+  +---------+----------+  +-------------+-------------+  +--------------+-------------+
+           |                             |                             |
+  +--------------------------------------------------------------------+
+  | Alert Priority Engine                                              |
+  |   -> Voice / Haptic / LED / Beacon                                |
+  +--------------------------------------------------------------------+
 =====================================================================
 ```
 
@@ -103,7 +106,16 @@ All variants process **100% on-device**. No cloud upload. No subscription.
 - Camping in the left lane causes compression, road rage, reduced throughput.
 - GPS doesn't provide real-time lane-level speed awareness.
 
-### 3. Road Hazards Go Unreported
+### 3. Turn Signal? None. I Turn Now.
+- The Family Guy maneuver is real: drivers cut across multiple lanes with zero warning.
+- **Missing or late turn signals** cause 25% of lane-change crashes (NHTSA).
+- CivicSense detects amber turn-signal lights, tracks lateral vehicle motion, and flags unsignaled lane changes before they become collisions.
+- Three specific violations:
+  - **No signal** — lane change with zero blinker activation.
+  - **Late signal** — blinker comes on after the vehicle is already moving laterally.
+  - **Multi-lane cut** — vehicle crosses two or more lanes in a single continuous path.
+
+### 4. Road Hazards Go Unreported
 - Fallen trees, debris, wildlife, crashes — often no one reports them until it's too late.
 - CivicSense turns every unit into a distributed hazard sensor network.
 
@@ -117,6 +129,9 @@ All variants process **100% on-device**. No cloud upload. No subscription.
 | **Blocked Intersection** | Occupancy > 70%, ego > 15 mph, distance < 30 ft | *"Intersection blocked. Don't enter."* |
 | **Merge Right Reminder** | Right lane +5 mph faster for > 3 seconds | *"You're being passed on the right. Move over."* |
 | **Slow Traffic Ahead** | Lead vehicle speed < threshold for > 5 seconds | *"Someone slow ahead. Prepare to merge."* |
+| **Lane Change No Signal** | Vehicle moves laterally, no amber blinker detected | *"Turn signal? Or do you expect everyone to read your mind?"* |
+| **Multi-Lane Cut** | Vehicle crosses 2+ lanes in one path without signal | *"That's three lanes without a signal. Pick a lane and commit."* |
+| **Late Signal** | Blinker activates after lateral movement begins | *"Signal first, then merge. That's the deal."* |
 | **Road Hazard** | Detected debris / animal / obstruction | Voice + broadcast beacon to mesh |
 | **Emergency Vehicle** | Flashing lights detected (future) | *"Emergency vehicle behind. Pull right."* |
 | **Speed Feedback** | Ego significantly below traffic flow | *"Speed up — you're holding up traffic."* |
