@@ -1,10 +1,7 @@
 //! Video source abstraction and frame I/O.
 //!
-//! Provides a unified [`open_source`] function that accepts a source string
-//! (file, directory, camera, or V4L2 device) and returns a frame iterator
-//! along with the frame dimensions.
-//!
-//! Also provides [`save_frame`] for writing raw RGB buffers to JPEG files.
+//! Provides [`open_source`] to get a frame iterator from a source string,
+//! and [`save_frame`] to write raw RGB buffers to JPEG files.
 
 use std::path::Path;
 
@@ -12,32 +9,37 @@ use std::path::Path;
 //  FrameIter
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Frame iterator closure.
-///
-/// Returns `Some((rgb_buffer, frame_index))` for each frame, or `None` when
-/// the source is exhausted.
+/// Frame iterator: yields `(rgb_buffer, frame_index)` per call, or `None` when
+/// exhausted.
 pub type FrameIter = Box<dyn FnMut() -> Option<(Vec<u8>, u64)>>;
 
+/// Wraps a single buffer into a one-shot frame iterator.
+fn once_iter(buffer: Vec<u8>) -> FrameIter {
+    let mut called = false;
+    Box::new(move || {
+        if called {
+            return None;
+        }
+        called = true;
+        Some((buffer.clone(), 0))
+    })
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-//  SourceKind
+//  Source classification
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Classified source type derived from the user-supplied source string.
+/// Classified source type.
 #[derive(Debug, Clone, PartialEq)]
 enum SourceKind {
-    /// A video file (mp4, avi, mov, mkv, webm, m4v).
     Video,
-    /// A single image file (jpg, jpeg, png).
     Image,
-    /// A directory of images.
     Directory,
-    /// Live camera (libcamera-still, raspistill, or dummy fallback).
     Camera,
-    /// A V4L2 video device (e.g. `/dev/video0`).
     V4l2Device(String),
 }
 
-/// Parse a source string into a [`SourceKind`].
+/// Parse a source string into [`SourceKind`].
 fn classify_source(source: &str) -> SourceKind {
     let path = Path::new(source);
 
@@ -68,7 +70,7 @@ fn classify_source(source: &str) -> SourceKind {
         return SourceKind::V4l2Device(dev_path);
     }
 
-    SourceKind::Video // let the caller error
+    SourceKind::Video // unrecognised — caller will error
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -98,7 +100,7 @@ pub fn open_source(
     log::info!("Opening {kind:?} source: {source}");
 
     match kind {
-        SourceKind::Video => open_video_file(Path::new(source), default_width, default_height),
+        SourceKind::Video => open_video_file(Path::new(source)),
         SourceKind::Image => open_single_image(Path::new(source)),
         SourceKind::Directory => open_image_directory(Path::new(source), default_width, default_height),
         SourceKind::Camera => open_camera(default_width, default_height),
@@ -113,35 +115,17 @@ pub fn open_source(
 /// Opens a video or image file as a single-frame source.
 ///
 /// **Note:** The `image` crate decodes only the first frame of a video file.
-/// For multi-frame extraction, an ffmpeg-based pipeline is needed.
-fn open_video_file(
-    path: &Path,
-    _default_width: u32,
-    _default_height: u32,
-) -> Result<(FrameIter, u32, u32), String> {
+fn open_video_file(path: &Path) -> Result<(FrameIter, u32, u32), String> {
     let img = image::open(path)
         .map_err(|e| format!("Failed to open image file: {e}"))?
         .into_rgb8();
     let (w, h) = img.dimensions();
-    let buffer = img.into_raw();
-
-    let mut called = false;
-    Ok((
-        Box::new(move || {
-            if called {
-                return None;
-            }
-            called = true;
-            Some((buffer.clone(), 0))
-        }),
-        w,
-        h,
-    ))
+    Ok((once_iter(img.into_raw()), w, h))
 }
 
-/// Single image → one-frame iterator.
+/// Single image -> one-frame iterator.
 fn open_single_image(path: &Path) -> Result<(FrameIter, u32, u32), String> {
-    open_video_file(path, 0, 0)
+    open_video_file(path)
 }
 
 /// Sorted directory of images → frame-per-file iterator.
@@ -248,63 +232,30 @@ fn capture_frame_via(tool: &str, args: &[&str], capture_path: &Path) -> Option<V
 /// Live camera frame iterator.
 ///
 /// Backend detection order:
-/// 1. `libcamera-still` — modern Raspberry Pi OS (Bookworm+)
+/// 1. `libcamera-still` — modern Raspberry Pi OS
 /// 2. `raspistill` — legacy Raspberry Pi OS
 /// 3. If neither is found, logs setup instructions and returns a single dummy frame.
 fn open_camera(
     default_width: u32,
     default_height: u32,
 ) -> Result<(FrameIter, u32, u32), String> {
+    // Determine available backend.
+    let tool = if has_tool("libcamera-still") {
+        log::info!("Raspberry Pi camera detected (libcamera)");
+        "libcamera-still"
+    } else if has_tool("raspistill") {
+        log::info!("Raspberry Pi camera detected (raspistill)");
+        "raspistill"
+    } else {
+        log::warn!(
+            "No camera backend found. Use a video file, or install libcamera-apps on Pi."
+        );
+        return Ok((once_iter(dummy_frame(default_width, default_height)), default_width, default_height));
+    };
+
     let tmp_dir = std::env::temp_dir().join("civicsense_capture");
     std::fs::create_dir_all(&tmp_dir)
         .map_err(|e| format!("Cannot create temp dir: {e}"))?;
-
-    let (tool, tool_args): (&str, Box<dyn Fn(u32, u32, &Path) -> Vec<String>>) =
-        if has_tool("libcamera-still") {
-            log::info!("Raspberry Pi camera detected (libcamera)");
-            ("libcamera-still", Box::new(|w, h, path| {
-                vec![
-                    "-o".into(), path.to_str().unwrap().into(),
-                    "--width".into(), w.to_string(),
-                    "--height".into(), h.to_string(),
-                    "--nopreview".into(), "--timeout".into(), "1".into(),
-                    "--immediate".into(),
-                ]
-            }))
-        } else if has_tool("raspistill") {
-            log::info!("Raspberry Pi camera detected (raspistill)");
-            ("raspistill", Box::new(|w, h, path| {
-                vec![
-                    "-o".into(), path.to_str().unwrap().into(),
-                    "-w".into(), w.to_string(),
-                    "-h".into(), h.to_string(),
-                    "-t".into(), "1".into(),
-                    "-n".into(),
-                ]
-            }))
-        } else {
-            // No camera backend found.
-            log::warn!(
-                "No camera backend found. To collect data on Raspberry Pi:\n\
-                 1. Install: sudo apt install libcamera-apps\n\
-                 2. Run: cargo run --bin civicsense -- collect --source camera\n\
-                 \n\
-                 For now, use a video file: cargo run --bin civicsense -- collect --source video.mp4"
-            );
-            let buffer = dummy_frame(default_width, default_height);
-            let mut called = false;
-            return Ok((
-                Box::new(move || {
-                    if called {
-                        return None;
-                    }
-                    called = true;
-                    Some((buffer.clone(), 0))
-                }),
-                default_width,
-                default_height,
-            ));
-        };
 
     let mut frame_idx: u64 = 0;
     let w = default_width;
@@ -314,7 +265,7 @@ fn open_camera(
     Ok((
         Box::new(move || {
             let capture_path = tmp_dir.join(format!("capture_{frame_idx}.jpg"));
-            let args = tool_args(w, h, &capture_path);
+            let args = build_camera_args(&tool_owned, w, h, &capture_path);
             let args_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
 
             if let Some(buffer) = capture_frame_via(&tool_owned, &args_refs, &capture_path) {
@@ -330,10 +281,39 @@ fn open_camera(
     ))
 }
 
+/// Build CLI argument list for a camera capture tool.
+fn build_camera_args(tool: &str, w: u32, h: u32, path: &Path) -> Vec<String> {
+    match tool {
+        "libcamera-still" => vec![
+            "-o".into(),
+            path.to_str().unwrap().into(),
+            "--width".into(),
+            w.to_string(),
+            "--height".into(),
+            h.to_string(),
+            "--nopreview".into(),
+            "--timeout".into(),
+            "1".into(),
+            "--immediate".into(),
+        ],
+        "raspistill" => vec![
+            "-o".into(),
+            path.to_str().unwrap().into(),
+            "-w".into(),
+            w.to_string(),
+            "-h".into(),
+            h.to_string(),
+            "-t".into(),
+            "1".into(),
+            "-n".into(),
+        ],
+        _ => panic!("Unknown camera tool: {tool}"),
+    }
+}
+
 /// V4L2 device capture (Linux, placeholder).
 ///
-/// Returns a single-frame iterator with a gray test pattern. V4L2 capture is
-/// not yet implemented.
+/// Returns a single-frame iterator with a gray test pattern.
 fn open_v4l2_device(
     _dev_path: &str,
     default_width: u32,
@@ -343,19 +323,7 @@ fn open_v4l2_device(
         "V4L2 device capture not yet implemented. \
          Use a video file or the libcamera backend."
     );
-    let buffer = dummy_frame(default_width, default_height);
-    let mut called = false;
-    Ok((
-        Box::new(move || {
-            if called {
-                return None;
-            }
-            called = true;
-            Some((buffer.clone(), 0))
-        }),
-        default_width,
-        default_height,
-    ))
+    Ok((once_iter(dummy_frame(default_width, default_height)), default_width, default_height))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

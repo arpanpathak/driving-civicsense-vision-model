@@ -160,26 +160,34 @@ impl LaneSpeedAnalyzer {
         ego_speed: f32,
         dt_secs: f32,
     ) -> Vec<LaneSpeedAlert> {
-        // 1. Reset per-lane accumulators.
+        let lane_dists = self.collect_lane_distances(tracks);
+        self.compute_lane_speeds(&lane_dists, dt_secs);
+        self.check_right_lane_faster(ego_speed, dt_secs)
+    }
+
+    /// Assign each track to a lane and estimate its distance.
+    fn collect_lane_distances(&self, tracks: &[Track]) -> [Vec<f32>; 3] {
         let mut lane_dists: [Vec<f32>; 3] = [Vec::new(), Vec::new(), Vec::new()];
 
         for track in tracks {
             let lane = self.assign_lane(&track.bbox);
             let pixel_width = (track.bbox.2 - track.bbox.0).abs();
             if pixel_width < 2.0 {
-                continue; // too small, unreliable distance
+                continue;
             }
 
             let distance_m =
                 estimate_distance(pixel_width, self.vehicle_width_m, self.focal_length);
-            if distance_m < 0.5 || distance_m > 200.0 {
-                continue; // outlier
+            if distance_m >= 0.5 && distance_m <= 200.0 {
+                lane_dists[lane].push(distance_m);
             }
-
-            lane_dists[lane].push(distance_m);
         }
 
-        // 2. Compute average speed per lane from distance changes.
+        lane_dists
+    }
+
+    /// Update per-lane smoothed speeds from distance measurements.
+    fn compute_lane_speeds(&mut self, lane_dists: &[Vec<f32>; 3], dt_secs: f32) {
         for lane_idx in 0..3 {
             let prev = &self.lanes[lane_idx].prev_distances;
             let curr = &lane_dists[lane_idx];
@@ -189,8 +197,7 @@ impl LaneSpeedAnalyzer {
                 let total_vel: f32 = (0..n)
                     .map(|i| compute_relative_velocity(prev[i], curr[i], dt_secs))
                     .sum();
-                let avg_vel_ms = total_vel / n as f32;
-                avg_vel_ms * 2.237 // m/s → mph
+                (total_vel / n as f32) * 2.237 // m/s -> mph
             } else {
                 0.0
             };
@@ -201,16 +208,18 @@ impl LaneSpeedAnalyzer {
                 self.lanes[lane_idx].smoothed_speed,
                 self.alpha,
             );
-            self.lanes[lane_idx].prev_distances = curr.clone();
+            self.lanes[lane_idx].prev_distances = curr.to_vec();
         }
+    }
 
-        // 3. Detect right-lane-faster condition.
-        let mut alerts = Vec::new();
+    /// If the right lane is faster than the ego lane past the threshold and
+    /// hysteresis, emit an alert.
+    fn check_right_lane_faster(&mut self, ego_speed: f32, dt_secs: f32) -> Vec<LaneSpeedAlert> {
         let right_speed = self.lanes[2].smoothed_speed;
         let ego_lane_speed = if self.lanes[1].smoothed_speed.abs() > 0.1 {
             self.lanes[1].smoothed_speed
         } else {
-            ego_speed // fall back to reported ego speed
+            ego_speed
         };
 
         let speed_diff = right_speed - ego_lane_speed;
@@ -222,13 +231,13 @@ impl LaneSpeedAnalyzer {
         }
 
         if self.lanes[2].trigger_duration >= self.config.hysteresis_seconds {
-            alerts.push(LaneSpeedAlert {
+            vec![LaneSpeedAlert {
                 speed_diff_mph: speed_diff,
                 duration_secs: self.lanes[2].trigger_duration,
-            });
+            }]
+        } else {
+            vec![]
         }
-
-        alerts
     }
 }
 

@@ -132,17 +132,22 @@ impl IntersectionAnalyzer {
         ego_speed: f32,
         dt_secs: f32,
     ) -> Vec<IntersectionAlert> {
-        let _ = dt_secs; // reserved for future temporal filtering
+        let _ = dt_secs;
         let mut alerts = Vec::new();
+        self.check_stop_signs(detections, ego_speed, &mut alerts);
+        self.check_blocked_intersection(detections, ego_speed, &mut alerts);
+        alerts
+    }
 
-        // ── 1. Stop sign detection ────────────────────────────────────
-        const MIN_STOP_SIGN_CONFIDENCE: f32 = 0.5;
-        let stop_signs: Vec<&Detection> = detections
-            .iter()
-            .filter(|d| d.class_id == 0 && d.confidence >= MIN_STOP_SIGN_CONFIDENCE)
-            .collect();
-
-        for sign in &stop_signs {
+    /// Check for stop-sign violations: ego speed too high near a stop sign.
+    fn check_stop_signs(
+        &self,
+        detections: &[Detection],
+        ego_speed: f32,
+        alerts: &mut Vec<IntersectionAlert>,
+    ) {
+        const MIN_CONFIDENCE: f32 = 0.5;
+        for sign in detections.iter().filter(|d| d.class_id == 0 && d.confidence >= MIN_CONFIDENCE) {
             let pixel_width = (sign.x2 - sign.x1).abs();
             if pixel_width < 1.0 {
                 continue;
@@ -152,9 +157,8 @@ impl IntersectionAnalyzer {
                 pixel_width,
                 self.stop_sign_width_m,
                 self.config.stop_sign_warning_distance,
-            );
-
-            let distance = distance.clamp(1.0, 200.0);
+            )
+            .clamp(1.0, 200.0);
 
             if distance <= self.config.stop_sign_warning_distance
                 && ego_speed >= self.config.stop_sign_warning_speed
@@ -166,37 +170,36 @@ impl IntersectionAnalyzer {
                 });
             }
         }
+    }
 
-        // ── 2. Blocked intersection detection ─────────────────────────
+    /// Check for blocked intersection: high occupancy by vehicles ahead.
+    fn check_blocked_intersection(
+        &self,
+        detections: &[Detection],
+        ego_speed: f32,
+        alerts: &mut Vec<IntersectionAlert>,
+    ) {
         let vehicles: Vec<&Detection> = detections
             .iter()
-            .filter(|d| {
-                (d.class_id == 3 || d.class_id == 4 || d.class_id == 5) // vehicle/truck/bus
-                    && d.confidence > 0.4
-            })
+            .filter(|d| (3..=5).contains(&d.class_id) && d.confidence > 0.4)
             .collect();
 
-        if !vehicles.is_empty() {
-            let total_area: f32 = (self.frame_width * self.frame_height) as f32;
-            let occupied_area: f32 = vehicles
-                .iter()
-                .map(|d| (d.x2 - d.x1) * (d.y2 - d.y1))
-                .sum();
-
-            let occupancy_pct = (occupied_area / total_area) * 100.0;
-            let occupancy_pct = occupancy_pct.clamp(0.0, 100.0);
-
-            if occupancy_pct > 30.0 && ego_speed >= self.config.blocked_intersection_speed {
-                alerts.push(IntersectionAlert::BlockedIntersection {
-                    confidence: occupancy_pct / 100.0,
-                    occupancy_pct,
-                    distance_to_stop_line: self.config.blocked_distance_to_stop,
-                    ego_speed,
-                });
-            }
+        if vehicles.is_empty() {
+            return;
         }
 
-        alerts
+        let total_area: f32 = (self.frame_width * self.frame_height) as f32;
+        let occupied_area: f32 = vehicles.iter().map(|d| (d.x2 - d.x1) * (d.y2 - d.y1)).sum();
+        let occupancy_pct = ((occupied_area / total_area) * 100.0).clamp(0.0, 100.0);
+
+        if occupancy_pct > 30.0 && ego_speed >= self.config.blocked_intersection_speed {
+            alerts.push(IntersectionAlert::BlockedIntersection {
+                confidence: occupancy_pct / 100.0,
+                occupancy_pct,
+                distance_to_stop_line: self.config.blocked_distance_to_stop,
+                ego_speed,
+            });
+        }
     }
 }
 

@@ -354,24 +354,32 @@ impl MultiObjectTracker {
             return (0..detections.len()).collect();
         }
 
-        // Build candidate matches (IoU > 0.3 gate).
-        let mut matches: Vec<(usize, usize, f32)> = Vec::new();
+        let matches = self.build_match_candidates(detections);
+        self.apply_matches(detections, &matches)
+    }
+
+    /// Build IoU-gated candidate matches between all tracks and detections.
+    fn build_match_candidates(&self, detections: &[Detection]) -> Vec<(usize, usize, f32)> {
+        let mut candidates = Vec::new();
         for (ti, track) in self.tracks.iter().enumerate() {
             for (di, det) in detections.iter().enumerate() {
                 let iou_val = compute_iou(track.bbox, (det.x1, det.y1, det.x2, det.y2));
                 if iou_val > 0.3 {
-                    matches.push((ti, di, iou_val));
+                    candidates.push((ti, di, iou_val));
                 }
             }
         }
+        candidates.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
+        candidates
+    }
 
-        // Greedy assignment: sort by descending IoU.
-        matches.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
-
+    /// Greedily assign detections to tracks from candidate list.
+    /// Returns indices of unmatched detections.
+    fn apply_matches(&mut self, detections: &[Detection], matches: &[(usize, usize, f32)]) -> Vec<usize> {
         let mut used_trk = vec![false; self.tracks.len()];
         let mut used_det = vec![false; detections.len()];
 
-        for &(ti, di, _iou) in &matches {
+        for &(ti, di, _) in matches {
             if !used_trk[ti] && !used_det[di] {
                 self.tracks[ti].update(&detections[di]);
                 used_trk[ti] = true;
@@ -379,7 +387,6 @@ impl MultiObjectTracker {
             }
         }
 
-        // Collect unmatched detection indices.
         detections
             .iter()
             .enumerate()
