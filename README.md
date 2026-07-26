@@ -10,6 +10,7 @@
 [![Rust](https://img.shields.io/badge/Rust-1.85+-orange.svg)](https://www.rust-lang.org)
 [![YOLOv8](https://img.shields.io/badge/YOLO-v8/v11-00BBFF)](https://github.com/ultralytics/ultralytics)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Cloud GPU](https://img.shields.io/badge/☁️-Cloud%20GPU%20Guide-8A2BE2)](CLOUD_TRAINING.md)
 
 </div>
 
@@ -130,6 +131,22 @@ cargo run --bin civicsense -- --source path/to/video.mp4 --visualize
 ```
 
 > **Note:** `cargo build` will fail on `todo!()` — this is intentional. Pick a module and start hacking!
+
+---
+
+## ☁️ No GPU? No Problem.
+
+Don't have an NVIDIA GPU for training YOLO models?
+
+**Rent one for $0.19/hr.** Full guide with provider comparison, step-by-step RunPod setup, and cost estimates:
+
+| Dataset | Epochs | GPU | Est. Cost |
+|---------|--------|-----|-----------|
+| 5,000 images | 100 | RTX 3090 | **~$0.60** |
+| 15,000 images | 150 | RTX 4090 | **~$2.04** |
+| 50,000 images | 200 | RTX 4090 | **~$6.80** |
+
+👉 **[CLOUD_TRAINING.md](CLOUD_TRAINING.md)**
 
 ---
 
