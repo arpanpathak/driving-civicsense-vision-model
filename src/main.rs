@@ -191,10 +191,12 @@ impl Pipeline {
 
         self.frame_count += 1;
 
-        if self.frame_count >= 300 && !self.visualize {
-            log::info!("Processed {} frames (dev limit). Pass --visualize for output.", self.frame_count);
-            return Ok(false);
-        }
+        log::info!(
+            "Frame {}: {} detections, {} tracks",
+            self.frame_count,
+            detections.len(),
+            tracks.len(),
+        );
 
         Ok(true)
     }
