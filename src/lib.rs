@@ -1,0 +1,27 @@
+//! # 🚗 Driving-CivicSense-Vision-Model
+//!
+//! AI-driven auxiliary perception for intersection discipline and lane-awareness.
+//! Processes forward-facing video to prevent intersection violations and
+//! encourage proper lane etiquette.
+//!
+//! ## 🧠 Modules
+//!
+//! | Module | Path | Purpose |
+//! |--------|------|---------|
+//! | `detection` | `src/detection/` | YOLOv8 ONNX inference wrapper |
+//! | `tracking` | `src/tracking/` | Deep SORT multi-object tracker |
+//! | `modules::intersection` | `src/modules/intersection.rs` | Stop sign & occupancy logic |
+//! | `modules::lane_speed` | `src/modules/lane_speed.rs` | Relative speed estimation |
+//! | `utils::geometry` | `src/utils/geometry.rs` | IPM, distance, bbox utilities |
+//! | `utils::visualization` | `src/utils/visualization.rs` | Debug overlay rendering |
+//! | `config` | `src/config.rs` | YAML-based configuration |
+//!
+//! ## 🚧 Status
+//!
+//! **Pre-alpha / Skeleton.** All modules stubbed with `todo!()`.
+
+pub mod detection;
+pub mod tracking;
+pub mod modules;
+pub mod utils;
+pub mod config;

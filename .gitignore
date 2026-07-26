@@ -1,51 +1,40 @@
-# ── Python ─────────────────────────────────────────────
-__pycache__/
-*.py[cod]
-*$py.class
+# ── Rust ──────────────────────────────────────────────
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# ── Build Artifacts ───────────────────────────────────
+*.o
 *.so
-*.egg-info/
-dist/
-build/
-*.egg
+*.dylib
+*.dll
+*.onnx
+*.pt
+*.pth
+*.engine
+*.bin
 
-# ── Virtual Environments ───────────────────────────────
-.env
-.venv
-venv/
-env/
-
-# ── IDE / Editor ───────────────────────────────────────
+# ── IDE / Editor ─────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# ── OS ─────────────────────────────────────────────────
+# ── OS ───────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# ── Data / Weights ─────────────────────────────────────
-*.onnx
-*.pt
-*.pth
-*.engine
-*.bin
-weights/*.onnx
-weights/*.pt
+# ── Data / Weights ───────────────────────────────────
+weights/
 data/raw/
 data/processed/
 
-# ── Jupyter / Notebooks ────────────────────────────────
-.ipynb_checkpoints/
-
-# ── Logs / Outputs ─────────────────────────────────────
+# ── Logs / Outputs ───────────────────────────────────
 *.log
 output/
 runs/
-wandb/
 
-# ── Environment ────────────────────────────────────────
+# ── Environment ──────────────────────────────────────
 .env
 .env.local
-*.env

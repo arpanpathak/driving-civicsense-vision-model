@@ -1,0 +1,30 @@
+[package]
+name = "driving-civicsense-vision-model"
+version = "0.1.0"
+description = "AI-driven auxiliary perception for intersection discipline and lane-awareness — built in Rust"
+authors = ["Arpan Pathak <arpanpathak1996@gmail.com>"]
+edition = "2021"
+license = "AGPL-3.0-only"
+repository = "https://github.com/arpanpathak/driving-civicsense-vision-model"
+homepage = "https://github.com/arpanpathak/driving-civicsense-vision-model"
+keywords = ["computer-vision", "adas", "traffic-safety", "edge-ai", "yolo"]
+categories = ["multimedia::video", "science::robotics"]
+
+[dependencies]
+# TODO: Add dependencies incrementally as modules are built
+# onnxruntime = "0.1"          # ONNX Runtime bindings for Rust
+# opencv = "0.90"              # OpenCV bindings (image I/O, drawing)
+# serde = { version = "1", features = ["derive"] }    # Config deserialization
+# serde_yaml = "0.9"           # YAML config parsing
+# clap = { version = "4", features = ["derive"] }   # CLI argument parsing
+# image = "0.25"               # Image loading/manipulation
+# ndarray = "0.16"             # N-dimensional array for tensor ops
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[[bin]]
+name = "civicsense"
+path = "src/main.rs"
