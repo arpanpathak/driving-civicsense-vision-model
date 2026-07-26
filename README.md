@@ -43,32 +43,32 @@ The system runs **entirely on-device** (Edge AI) — privacy, < 50ms latency, no
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                   DRIVING-CIVICSENSE PIPELINE                │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  [Camera Frame]                                             │
-│       ↓                                                     │
-│  [YOLOv8/v11 ONNX] → [NMS] → [Detections]                  │
-│       ↓                                                     │
-│  [Deep SORT Tracker] → [Kalman Filter] → [Tracks]           │
-│       ↓                                                     │
-│  ┌─────────────────┐  ┌──────────────────────────┐          │
-│  │ Intersection     │  │ Lane Speed               │          │
-│  │ Module           │  │ Module                   │          │
-│  │  • Stop sign     │  │  • Lane assignment       │          │
-│  │  • Occupancy     │  │  • Relative velocity     │          │
-│  │  • Deceleration  │  │  • Hysteresis timer      │          │
-│  └────────┬────────┘  └───────────┬──────────────┘          │
-│           ↓                       ↓                         │
-│  ┌──────────────────────────────────────────┐               │
-│  │ Alert Priority Engine                    │               │
-│  │   → LED / Haptic / Audio / Log           │               │
-│  └──────────────────────────────────────────┘               │
-└─────────────────────────────────────────────────────────────┘
+=====================================================================
+                     DRIVING-CIVICSENSE PIPELINE                     
+=====================================================================
+
+  [Camera Frame]
+       |
+  [YOLOv8/v11 ONNX] ---> [NMS] ---> [Detections]
+       |
+  [Deep SORT Tracker] ---> [Kalman Filter] ---> [Tracks]
+       |
+  +--------------------+  +---------------------------+
+  | Intersection       |  | Lane Speed                |
+  | Module             |  | Module                    |
+  |  * Stop sign       |  |  * Lane assignment        |
+  |  * Occupancy       |  |  * Relative velocity      |
+  |  * Deceleration    |  |  * Hysteresis timer       |
+  +---------+----------+  +-------------+-------------+
+           |                             |
+  +---------------------------------------------------+
+  | Alert Priority Engine                             |
+  |   -> LED / Haptic / Audio / Log                   |
+  +---------------------------------------------------+
+=====================================================================
 ```
 
 ---
