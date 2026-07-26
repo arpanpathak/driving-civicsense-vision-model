@@ -1,0 +1,51 @@
+# ── Python ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Virtual Environments ───────────────────────────────
+.env
+.venv
+venv/
+env/
+
+# ── IDE / Editor ───────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Data / Weights ─────────────────────────────────────
+*.onnx
+*.pt
+*.pth
+*.engine
+*.bin
+weights/*.onnx
+weights/*.pt
+data/raw/
+data/processed/
+
+# ── Jupyter / Notebooks ────────────────────────────────
+.ipynb_checkpoints/
+
+# ── Logs / Outputs ─────────────────────────────────────
+*.log
+output/
+runs/
+wandb/
+
+# ── Environment ────────────────────────────────────────
+.env
+.env.local
+*.env
