@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo.svg" alt="CivicSense" width="200"/>
+
 # CivicSense
 
 > *Aftermarket AI vision for your windshield. Voice-guided, edge-native, socially aware.*
