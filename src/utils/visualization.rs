@@ -1,23 +1,44 @@
 //! # 🎨 Visualization Utilities
 //!
-//! Debug overlay rendering for bounding boxes, track IDs, speed labels,
-//! and the BEV occupancy grid. Used during development and validation.
+//! Debug overlay rendering for bounding boxes, alert banners, and status
+//! indicators.  Used during development and validation (`--visualize` flag).
 //!
 //! ## Implementation Note
 //!
-//! Raw pixel buffer drawing (without a graphics library) supports only
-//! solid-color overlays — text rendering requires `image` crate font
-//! support or OpenCV. For development, we draw colored rectangles to
-//! indicate detections and alerts.
+//! Because we avoid pulling in a full graphics library (OpenCV, etc.),
+//! text rendering is **not available**.  Instead:
+//!
+//! - Bounding boxes are drawn as coloured rectangles with a filled "label
+//!   bar" at the top.
+//! - Alerts are shown as a coloured strip across the top 20 rows of the
+//!   frame plus a log message.
 
 use crate::detection::yolo::Detection;
 
-/// Colors for different classes (RGB tuples).
-const STOP_SIGN_COLOR: (u8, u8, u8) = (255, 0, 0);    // Red
-const TRAFFIC_LIGHT_COLOR: (u8, u8, u8) = (255, 255, 0); // Yellow
-const VEHICLE_COLOR: (u8, u8, u8) = (0, 255, 0);       // Green
-const DEFAULT_COLOR: (u8, u8, u8) = (128, 128, 128);   // Gray
+// ─────────────────────────────────────────────────────────────────────────────
+//  Colour palette
+// ─────────────────────────────────────────────────────────────────────────────
 
+/// Red — used for stop signs (class 0).
+const STOP_SIGN_COLOR: (u8, u8, u8) = (255, 0, 0);
+
+/// Yellow — used for traffic lights and crosswalks (classes 1, 2).
+const TRAFFIC_LIGHT_COLOR: (u8, u8, u8) = (255, 255, 0);
+
+/// Green — used for vehicles (classes 3, 4, 5).
+const VEHICLE_COLOR: (u8, u8, u8) = (0, 255, 0);
+
+/// Gray — fallback for unknown classes.
+const DEFAULT_COLOR: (u8, u8, u8) = (128, 128, 128);
+
+/// Returns the display colour for a given class ID.
+///
+/// # Parameters
+/// - `class_id` — YOLO class index (0 = stop_sign, 1-2 = traffic stuff,
+///   3-5 = vehicles, etc.).
+///
+/// # Returns
+/// An `(R, G, B)` tuple.
 fn class_color(class_id: u32) -> (u8, u8, u8) {
     match class_id {
         0 => STOP_SIGN_COLOR,
@@ -27,7 +48,23 @@ fn class_color(class_id: u32) -> (u8, u8, u8) {
     }
 }
 
-/// Sets a pixel in the frame buffer at (x, y) to the given RGB color.
+// ─────────────────────────────────────────────────────────────────────────────
+//  Pixel-level drawing helpers (private)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Sets a single pixel in a flattened RGB8 buffer.
+///
+/// # Parameters
+/// - `frame` — Mutable RGB8 pixel buffer `(H × W × 3)`.
+/// - `x` — Column (0-based, clamped to `[0, width)`).
+/// - `y` — Row (0-based, clamped to `[0, height)`).
+/// - `width` — Frame width in pixels.
+/// - `height` — Frame height in pixels.
+/// - `color` — `(R, G, B)` tuple.  Values are written as-is (no clamping).
+///
+/// # Safety
+/// Bounds-checked: silently returns if `(x, y)` is out of range or the
+/// buffer is too small.
 fn set_pixel(frame: &mut [u8], x: u32, y: u32, width: u32, height: u32, color: (u8, u8, u8)) {
     if x >= width || y >= height {
         return;
@@ -40,7 +77,15 @@ fn set_pixel(frame: &mut [u8], x: u32, y: u32, width: u32, height: u32, color: (
     }
 }
 
-/// Draws a rectangle outline on the frame buffer.
+/// Draws a rectangular outline on the frame buffer.
+///
+/// # Parameters
+/// - `frame` — Mutable RGB8 buffer.
+/// - `x1`, `y1` — Top-left corner (clamped to frame bounds).
+/// - `x2`, `y2` — Bottom-right corner (clamped to frame bounds).
+/// - `width`, `height` — Frame dimensions.
+/// - `color` — `(R, G, B)` colour.
+/// - `thickness` — Line thickness in pixels (≥ 1).
 fn draw_rect(
     frame: &mut [u8],
     x1: u32,
@@ -66,7 +111,16 @@ fn draw_rect(
     }
 }
 
-/// Fills a horizontal strip of pixels with a solid color (for alert banners).
+/// Fills a horizontal strip of pixels with a solid colour.
+///
+/// Used to draw the alert banner at the top of the frame.
+///
+/// # Parameters
+/// - `frame` — Mutable RGB8 buffer.
+/// - `y_start` — First row to fill (inclusive).
+/// - `y_end` — Last row to fill (exclusive, clamped to `height`).
+/// - `width`, `height` — Frame dimensions.
+/// - `color` — `(R, G, B)` fill colour.
 fn fill_strip(
     frame: &mut [u8],
     y_start: u32,
@@ -82,14 +136,27 @@ fn fill_strip(
     }
 }
 
-/// Draws detection bounding boxes and labels on a raw frame buffer.
+// ─────────────────────────────────────────────────────────────────────────────
+//  Public API
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Draws detection bounding boxes and class-colour bars on a raw frame.
 ///
-/// # Arguments
-/// * `frame` - Mutable RGB8 frame buffer (flattened, H×W×3).
-/// * `width` - Image width in pixels.
-/// * `height` - Image height in pixels.
-/// * `detections` - Detections to render.
-/// * `class_names` - Mapping of class_id → display name.
+/// Each detection is rendered as:
+/// - A **rectangular outline** (2 px thick) colour-coded by class.
+/// - A **filled label bar** (12 px tall) at the top of the bounding box,
+///   spanning up to 80 px wide.
+///
+/// # Parameters
+/// - `frame` — Mutable RGB8 frame buffer `(H × W × 3)`.  Modified in place.
+/// - `width` — Frame width in pixels.
+/// - `height` — Frame height in pixels.
+/// - `detections` — Slice of [`Detection`] objects to render.
+/// - `class_names` — Class-name lookup table (index → display name).
+///   Only used for debug logging; text is not drawn on the buffer.
+///
+/// # Panics
+/// Never panics.  Out-of-bounds coordinates are silently clamped.
 pub fn draw_detections(
     frame: &mut [u8],
     width: u32,
@@ -106,49 +173,65 @@ pub fn draw_detections(
         let color = class_color(det.class_id);
         draw_rect(frame, x1, y1, x2, y2, width, height, color, 2);
 
-        // Draw a small filled rectangle at the top of the bbox for a "label bar".
         let label = class_names
             .get(det.class_id as usize)
             .cloned()
             .unwrap_or_else(|| format!("cls_{}", det.class_id));
 
-        // Just color the top-left corner area to indicate the class.
+        // Filled label bar at the top of the bounding box.
         let bar_h = 12u32;
         let bar_y2 = (y1 + bar_h).min(y2);
         for row in y1..bar_y2 {
             for col in x1..(x1 + 80).min(x2) {
                 set_pixel(frame, col, row, width, height, color);
-                // Slightly dim the bar so text (if drawn) could be visible.
             }
         }
 
-        // TODO: Render actual text. Requires a font rasterizer or OpenCV.
         log::debug!("  Detection: {} at ({}, {}, {}, {})", label, x1, y1, x2, y2);
     }
 }
 
-/// Draws alert text in the top-left corner of the frame.
+/// Draws a coloured alert banner at the top of the frame.
 ///
-/// Since we don't have text rendering in raw pixel buffers, we draw a
-/// colored banner at the top of the frame to indicate alert state.
+/// Because raw-pixel buffers lack text rendering, the alert is shown as a
+/// solid-colour strip and also logged via `log::info!`.
+///
+/// # Colour coding
+///
+/// | Alert text contains | Colour       | Meaning   |
+/// |---------------------|--------------|-----------|
+/// | `"STOP"` / `"BLOCKED"` | Red        | Critical  |
+/// | `"MERGE"`           | Orange       | Courtesy  |
+/// | (anything else)     | Yellow       | Default   |
+///
+/// # Parameters
+/// - `frame` — Mutable RGB8 buffer.  The top 20 rows are overwritten.
+/// - `width` — Frame width in pixels.
+/// - `height` — Frame height in pixels.
+/// - `text` — Alert description.  Used for colour selection and logging.
+///
+/// # Panics
+/// Never panics.
 pub fn draw_alert_text(frame: &mut [u8], width: u32, height: u32, text: &str) {
     let alert_color = match text {
-        t if t.contains("STOP") || t.contains("BLOCKED") => (255, 0, 0),   // Red for critical
-        t if t.contains("MERGE") => (255, 165, 0),                          // Orange for courtesy
-        _ => (255, 255, 0),                                                 // Yellow default
+        t if t.contains("STOP") || t.contains("BLOCKED") => (255, 0, 0),
+        t if t.contains("MERGE") => (255, 165, 0),
+        _ => (255, 255, 0),
     };
 
-    // Fill a banner across the top 20 pixels.
     fill_strip(frame, 0, 20, width, height, alert_color);
-
-    // Log the alert so the user can see it in the console.
     log::info!("🚦 ALERT: {}", text);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Tests
+// ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    /// Drawing detections on a blank frame should modify some pixels.
     #[test]
     fn test_draw_detections_no_panic() {
         let mut frame = vec![0u8; 640 * 480 * 3];
@@ -161,13 +244,12 @@ mod tests {
             class_id: 0,
         }];
         let names = vec!["stop_sign".to_string()];
-        // Should not panic.
         draw_detections(&mut frame, 640, 480, &dets, &names);
-        // Some pixels should have been modified.
         let has_color = frame.iter().any(|&p| p != 0);
         assert!(has_color);
     }
 
+    /// Drawing alert text on a blank frame should modify some pixels.
     #[test]
     fn test_draw_alert_text_no_panic() {
         let mut frame = vec![0u8; 640 * 480 * 3];

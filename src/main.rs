@@ -1,18 +1,23 @@
 //! # 🚀 Driving-CivicSense — Entry Point
 //!
-//! CLI binary that orchestrates:
+//! CLI binary that orchestrates the perception pipeline or captures training
+//! data from a camera or video source.
 //!
-//! - **run**  : detection → tracking → analysis → alert pipeline
-//! - **collect** : frame capture for training data collection
+//! ## Subcommands
+//!
+//! | Command | Description |
+//! |---------|-------------|
+//! | `run` | Detection → tracking → analysis → alert pipeline |
+//! | `collect` | Frame capture for training-data collection |
 //!
 //! ## Usage
 //!
 //! ```bash
-//! # Run the pipeline on a video file
-//! cargo run --bin civicsense -- run --source video.mp4
+//! # Run the pipeline on a video file (macOS / development)
+//! cargo run --bin civicsense -- run --source video.mp4 --visualize
 //!
-//! # Collect training data (extract frames at 2 fps)
-//! cargo run --bin civicsense -- collect --source video.mp4 --output ./data/raw/ --rate 2
+//! # Collect training data from head-mounted Pi camera
+//! cargo run --bin civicsense -- collect --source camera --output ./data/raw/ --rate 2
 //! ```
 
 use std::path::PathBuf;
@@ -27,8 +32,12 @@ use civicsense::modules::lane_speed::LaneSpeedAnalyzer;
 use civicsense::tracking::deep_sort::MultiObjectTracker;
 use civicsense::utils::visualization;
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  CLI
+// ─────────────────────────────────────────────────────────────────────────────
+
 /// Driving-CivicSense: AI-driven auxiliary perception for intersection
-/// discipline and lane-awareness.
+/// discipline and lane-awareness — built in Rust.
 #[derive(Parser)]
 #[command(name = "civicsense", version, about)]
 struct Cli {
@@ -38,49 +47,76 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Run the full detection + tracking + analysis pipeline.
+    /// Runs the full detection → tracking → analysis → alert pipeline on a
+    /// single video source.
     Run {
-        /// Video file or camera device path.
+        /// Input source: path to a video/image/directory file, or `"camera"`
+        /// for live capture from a Raspberry Pi camera module.
+        ///
+        /// Defaults to `"0"`, which tries camera mode.
         #[arg(short, long, default_value = "0")]
         source: String,
 
-        /// Path to YAML config file.
+        /// Path to the YAML configuration file.
+        ///
+        /// Falls back to built-in defaults if the file does not exist.
         #[arg(short, long, default_value = "configs/default.yaml")]
         config: String,
 
-        /// Enable debug visualization (writes overlay frames to output/).
+        /// If set, writes annotated frames to `./output/frame_*.jpg` for
+        /// visual debugging.  Also enables longer processing (no dev limit).
         #[arg(short, long)]
         visualize: bool,
 
-        /// Ego vehicle speed in mph (for simulation / testing).
+        /// Ego-vehicle speed in mph (used when no real GPS/OBD feed is
+        /// available, e.g. when processing pre-recorded video).
         #[arg(long, default_value = "0.0")]
         ego_speed: f32,
     },
 
-    /// Capture frames for training data collection.
+    /// Captures frames from a video/camera source and saves them as JPEG
+    /// images for YOLO training-data annotation.
     Collect {
-        /// Source: video file path, image directory, or "camera".
+        /// Input source: video file, image directory, or `"camera"`.
+        ///
+        /// On Raspberry Pi with `libcamera-still` installed, `"camera"`
+        /// captures live frames via the Pi Camera Module.
         #[arg(short, long, default_value = "0")]
         source: String,
 
-        /// Output directory for captured frames.
+        /// Directory where captured JPEG frames will be saved.
+        ///
+        /// Created automatically if it does not exist.
         #[arg(short, long, default_value = "data/raw")]
         output: String,
 
-        /// Frame capture rate (frames per second).
+        /// Target frame-capture rate in frames-per-second.
+        ///
+        /// The actual rate depends on the source speed; this is the
+        /// **maximum** rate at which frames are saved (time-throttled).
         #[arg(short, long, default_value_t = 2.0)]
         rate: f32,
 
-        /// Maximum number of frames to capture (0 = unlimited).
+        /// Maximum number of frames to save before stopping.
+        ///
+        /// `0` = unlimited (stop when the source ends).
         #[arg(short = 'n', long, default_value_t = 0)]
         max_frames: u64,
 
-        /// Path to YAML config file.
+        /// Path to the YAML config (used for camera intrinsics).
         #[arg(short, long, default_value = "configs/default.yaml")]
         config: String,
     },
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Entry point
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Program entry point.
+///
+/// Initialises logging, parses CLI arguments, and dispatches to the
+/// requested subcommand handler.
 fn main() {
     env_logger::Builder::from_env(
         env_logger::Env::default().default_filter_or("info"),
@@ -117,9 +153,37 @@ fn main() {
     }
 }
 
-// ── Run Pipeline ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+//  Run Pipeline
+// ─────────────────────────────────────────────────────────────────────────────
 
-/// Runs the full detection → tracking → analysis → alert pipeline.
+/// Executes the perception pipeline for a single video source.
+///
+/// # Pipeline stages
+///
+/// 1. **Config** — load YAML (or defaults).
+/// 2. **Init** — create detector, tracker, intersection analyzer, lane-speed
+///    analyzer.
+/// 3. **Frame loop** — for each frame:
+///    - Run YOLO detection → get [`Detection`]s.
+///    - Update Deep SORT tracker → get [`Track`]s.
+///    - Run intersection analysis → alerts.
+///    - Run lane-speed analysis → alerts.
+///    - Log alerts.
+///    - (Optional) save annotated overlay frame to `./output/`.
+///
+/// # Parameters
+/// - `source` — Video file path, image directory, `"camera"`, or device node.
+/// - `config_path` — Path to YAML config (falls back to defaults).
+/// - `visualize` — If `true`, rendered frames are saved to `./output/`.
+/// - `ego_speed` — Ego speed in mph (for testing pre-recorded footage).
+///
+/// # Returns
+/// - `Ok(())` on normal completion.
+/// - `Err(String)` on initialisation or I/O errors.
+///
+/// # Panics
+/// Never panics.  Errors are returned as `Err(String)`.
 fn run_pipeline(
     source: &str,
     config_path: &str,
@@ -172,21 +236,21 @@ fn run_pipeline(
         let (frame_buffer, _frame_index) = frame_data;
         let dt_secs = 1.0 / config.camera.fps as f32;
 
-        // ── Detection ────────────────────────────────────────────────
+        // Detection
         let detections = detector.detect(&frame_buffer, frame_width, frame_height)?;
         if !detections.is_empty() {
             log::debug!("Frame {frame_count}: {} detections", detections.len());
         }
 
-        // ── Tracking ─────────────────────────────────────────────────
+        // Tracking
         let tracks = tracker.update(&detections);
 
-        // ── Analysis modules ──────────────────────────────────────────
+        // Analysis modules
         let intersection_alerts =
             intersection_analyzer.analyze(&detections, ego_speed, dt_secs);
         let lane_alerts = lane_speed_analyzer.analyze(&tracks, ego_speed, dt_secs);
 
-        // ── Dispatch alerts ──────────────────────────────────────────
+        // Dispatch alerts
         for alert in &intersection_alerts {
             match alert {
                 civicsense::modules::intersection::IntersectionAlert::StopSignViolation {
@@ -226,7 +290,7 @@ fn run_pipeline(
             );
         }
 
-        // ── Visualization ────────────────────────────────────────────
+        // Visualization
         if visualize && !detections.is_empty() {
             let mut viz_frame = frame_buffer.to_vec();
             let class_names = config.model.classes.clone();
@@ -264,7 +328,7 @@ fn run_pipeline(
 
         frame_count += 1;
 
-        // Break after a reasonable number of frames for dev testing.
+        // Dev limit: stop after 300 frames when not visualizing.
         if frame_count >= 300 && !visualize {
             log::info!("Processed {frame_count} frames (dev limit). Pass --visualize for output.");
             break;
@@ -274,9 +338,26 @@ fn run_pipeline(
     Ok(())
 }
 
-// ── Data Collection ──────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+//  Data Collection
+// ─────────────────────────────────────────────────────────────────────────────
 
-/// Captures frames from a source and saves them as training data.
+/// Captures frames from a source and saves them as timestamped JPEGs.
+///
+/// Used to build a training dataset for YOLO fine-tuning.  Frames are
+/// saved at a throttled rate (default 2 fps) to avoid storing near-identical
+/// consecutive frames.
+///
+/// # Parameters
+/// - `source` — Video file path, image directory, or `"camera"`.
+/// - `output_dir` — Directory to write JPEG files into (created if missing).
+/// - `rate` — Maximum save rate in frames-per-second (time-throttled).
+/// - `max_frames` — Stop after saving this many frames (`0` = unlimited).
+///
+/// # Returns
+/// - `Ok(())` on completion.
+/// - `Err(String)` if the output directory cannot be created or the source
+///   cannot be opened.
 fn collect_data(
     source: &str,
     output_dir: &str,
@@ -287,7 +368,6 @@ fn collect_data(
     std::fs::create_dir_all(&output_path)
         .map_err(|e| format!("Cannot create output dir '{output_dir}': {e}"))?;
 
-    // Open the video/device source.
     let (mut frame_iter, frame_width, frame_height) =
         open_video_source(source, 1280, 720)?;
 
@@ -303,6 +383,7 @@ fn collect_data(
         }
     );
 
+    // Minimum interval between saves in milliseconds.
     let min_interval_ms = if rate > 0.0 {
         (1000.0 / rate) as u64
     } else {
@@ -311,7 +392,7 @@ fn collect_data(
 
     let start = Instant::now();
     let mut saved_count: u64 = 0;
-    // Initialize to the distant past so the first frame is always saved.
+    // Initialise last_save to the distant past so the first frame is always saved.
     let mut last_save = Instant::now()
         .checked_sub(std::time::Duration::from_secs(3600))
         .unwrap_or(Instant::now());
@@ -327,7 +408,7 @@ fn collect_data(
 
         let (frame_buffer, _frame_index) = frame_data;
 
-        // Save at the configured rate (time-based throttling).
+        // Time-based throttling: only save if enough time has passed.
         let elapsed_since_last = last_save.elapsed().as_millis() as u64;
         if elapsed_since_last >= min_interval_ms {
             let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S%3f");
@@ -364,65 +445,76 @@ fn collect_data(
     Ok(())
 }
 
-// ── Video Source Abstraction ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+//  Video Source Abstraction
+// ─────────────────────────────────────────────────────────────────────────────
 
-/// Opens a video source and returns a frame iterator function.
+/// Type alias for a frame-iterator closure.
 ///
-/// Supports:
-/// - Video files (.mp4, .avi, .mov, etc.) via frame extraction
-/// - The string "camera" → reads from Raspberry Pi camera via shell
-/// - A numeric string → reads from /dev/video{N} on Linux
+/// Returns `Some((rgb_buffer, frame_index))` for each frame, or `None`
+/// when the source is exhausted.
+type FrameIter = Box<dyn FnMut() -> Option<(Vec<u8>, u64)>>;
+
+/// Opens a video/image source and returns a frame iterator.
 ///
-/// Returns `(frame_iter_fn, width, height)`.
+/// # Supported source strings
+///
+/// | Pattern | Behaviour |
+/// |---------|-----------|
+/// | `"video.mp4"` (or .avi/.mov/…) | Extracts a single frame (thumbnail) from the file.  Full video decoding requires ffmpeg integration (TODO). |
+/// | `"image.jpg"` | Single image → one frame. |
+/// | `"/path/to/dir/"` | Sorted directory of images → frame per file. |
+/// | `"camera"` or `"0"` | Live camera: `libcamera-still` on Raspberry Pi, instructions on macOS. |
+/// | `"/dev/video0"` | V4L2 device (Linux, placeholder). |
+///
+/// # Parameters
+/// - `source` — Source identifier (see table above).
+/// - `default_width` — Fallback frame width when the source doesn't specify.
+/// - `default_height` — Fallback frame height.
+///
+/// # Returns
+/// A tuple `(frame_iter, width, height)`.
+///
+/// # Errors
+/// Returns `Err` if the source string doesn't match any known pattern or
+/// the path doesn't exist.
 fn open_video_source(
     source: &str,
     default_width: u32,
     default_height: u32,
-) -> Result<
-    (
-        Box<dyn FnMut() -> Option<(Vec<u8>, u64)>>,
-        u32,
-        u32,
-    ),
-    String,
-> {
-    // Check if source is a video file.
+) -> Result<(FrameIter, u32, u32), String> {
     let path = std::path::Path::new(source);
+
+    // Existing file?
     if path.exists() && path.is_file() {
         let ext = path
             .extension()
             .and_then(|e| e.to_str())
             .unwrap_or("")
             .to_lowercase();
-        if ["mp4", "avi", "mov", "mkv", "webm", "m4v"]
-            .contains(&ext.as_str())
-        {
+        if ["mp4", "avi", "mov", "mkv", "webm", "m4v"].contains(&ext.as_str()) {
             log::info!("Opening video file: {source}");
             return open_video_file(path, default_width, default_height);
         }
-        // If it's an image directory, handle it.
         if ext == "jpg" || ext == "jpeg" || ext == "png" {
             log::info!("Opening single image: {source}");
             return open_single_image(path, default_width, default_height);
         }
     }
 
-    // Check if source is a directory (batch of images).
+    // Existing directory?
     if path.exists() && path.is_dir() {
         log::info!("Opening image directory: {source}");
         return open_image_directory(path, default_width, default_height);
     }
 
-    // Handle "camera" or numeric device path.
+    // Camera mode?
     if source == "camera" || source == "0" {
         log::info!("Camera mode: {source}");
-        // Return a frame iterator that reads from the camera.
-        // On Raspberry Pi, we shell out to libcamera-still.
-        // On macOS, this will produce a helpful message.
         return open_camera(source, default_width, default_height);
     }
 
-    // Check for V4L2 device on Linux.
+    // V4L2 device on Linux?
     let dev_path = format!("/dev/video{}", source);
     if std::path::Path::new(&dev_path).exists() {
         log::info!("Opening V4L2 device: {dev_path}");
@@ -434,25 +526,24 @@ fn open_video_source(
     ))
 }
 
-/// Opens a video file and iterates frames using `image` crate decoding.
+/// Loads a single image file as a one-frame source.
+///
+/// **Note on video files:** The `image` crate can only decode one frame
+/// from a video file.  For multi-frame extraction, an ffmpeg-based
+/// pipeline is needed (future work).
+///
+/// # Parameters
+/// - `path` — Path to an image file (JPEG, PNG, etc.).
+/// - `_default_width`, `_default_height` — Ignored; actual dimensions come
+///   from the decoded image.
+///
+/// # Returns
+/// A frame iterator that yields exactly one frame.
 fn open_video_file(
     path: &std::path::Path,
     _default_width: u32,
     _default_height: u32,
-) -> Result<
-    (
-        Box<dyn FnMut() -> Option<(Vec<u8>, u64)>>,
-        u32,
-        u32,
-    ),
-    String,
-> {
-    // Use image crate to load each frame.
-    // For video files, we load them as a GIF (animated) or just a single image.
-    // This is a simplification — for real video processing, we'd need ffmpeg.
-    // Here we treat it as a single frame (video files with multiple frames
-    // will need ffmpeg integration).
-
+) -> Result<(FrameIter, u32, u32), String> {
     let img = image::open(path)
         .map_err(|e| format!("Failed to open image file: {e}"))?
         .into_rgb8();
@@ -475,35 +566,40 @@ fn open_video_file(
     ))
 }
 
-/// Opens a single image file as a one-frame source.
+/// Wrapper around [`open_video_file`] that reads a single image.
+///
+/// # Parameters
+/// - `path` — Path to an image file.
+/// - `_default_width`, `_default_height` — Ignored.
+///
+/// # Returns
+/// A single-frame iterator.
 fn open_single_image(
     path: &std::path::Path,
     _default_width: u32,
     _default_height: u32,
-) -> Result<
-    (
-        Box<dyn FnMut() -> Option<(Vec<u8>, u64)>>,
-        u32,
-        u32,
-    ),
-    String,
-> {
+) -> Result<(FrameIter, u32, u32), String> {
     open_video_file(path, 0, 0)
 }
 
-/// Opens an image directory and iterates through sorted files.
+/// Iterates over a directory of image files, sorted alphabetically.
+///
+/// Supported extensions: `.jpg`, `.jpeg`, `.png`, `.bmp`.
+///
+/// # Parameters
+/// - `path` — Directory containing images.
+/// - `_default_width`, `_default_height` — Ignored (sized from first image).
+///
+/// # Returns
+/// A frame iterator yielding one frame per image file.
+///
+/// # Errors
+/// Returns `Err` if the directory cannot be read or contains no images.
 fn open_image_directory(
     path: &std::path::Path,
     _default_width: u32,
     _default_height: u32,
-) -> Result<
-    (
-        Box<dyn FnMut() -> Option<(Vec<u8>, u64)>>,
-        u32,
-        u32,
-    ),
-    String,
-> {
+) -> Result<(FrameIter, u32, u32), String> {
     let mut entries: Vec<_> = std::fs::read_dir(path)
         .map_err(|e| format!("Cannot read directory: {e}"))?
         .filter_map(|r| r.ok())
@@ -548,23 +644,28 @@ fn open_image_directory(
     ))
 }
 
-/// Opens a camera device.
+/// Opens a camera device for live capture.
 ///
-/// On Raspberry Pi, this shells out to `libcamera-still` for capture.
-/// On macOS, this provides instructions for setting up capture.
+/// # Backend detection order
+///
+/// 1. `libcamera-still` — modern Raspberry Pi OS (Bookworm+).
+/// 2. `raspistill` — legacy Raspberry Pi OS.
+/// 3. If neither is found, logs setup instructions and returns a dummy frame.
+///
+/// # Parameters
+/// - `_source` — The original source string (unused, kept for logging).
+/// - `default_width` — Desired capture width.
+/// - `default_height` — Desired capture height.
+///
+/// # Returns
+/// A frame iterator that captures one image per call via shelling out.
+/// On macOS / non-Pi systems, yields a single gray test frame.
 fn open_camera(
     _source: &str,
     default_width: u32,
     default_height: u32,
-) -> Result<
-    (
-        Box<dyn FnMut() -> Option<(Vec<u8>, u64)>>,
-        u32,
-        u32,
-    ),
-    String,
-> {
-    // Check if we're on a Raspberry Pi with libcamera.
+) -> Result<(FrameIter, u32, u32), String> {
+    // Check for libcamera (modern Pi).
     let has_libcamera = std::process::Command::new("which")
         .arg("libcamera-still")
         .output()
@@ -576,7 +677,7 @@ fn open_camera(
         return open_libcamera_camera(default_width, default_height);
     }
 
-    // Check for raspistill (legacy Pi camera).
+    // Check for raspistill (legacy Pi).
     let has_raspistill = std::process::Command::new("which")
         .arg("raspistill")
         .output()
@@ -588,7 +689,7 @@ fn open_camera(
         return open_raspistill_camera(default_width, default_height);
     }
 
-    // On macOS / other platforms, provide instructions.
+    // No camera backend found → give instructions.
     log::warn!(
         "No camera backend found. To collect data on Raspberry Pi:\n\
          1. Install: sudo apt install libcamera-apps\n\
@@ -597,7 +698,6 @@ fn open_camera(
         For now, use a video file: cargo run --bin civicsense -- collect --source video.mp4"
     );
 
-    // Return a dummy source that captures a test pattern once.
     let buffer = vec![128u8; (default_width * default_height * 3) as usize];
     let mut called = false;
     Ok((
@@ -613,18 +713,20 @@ fn open_camera(
     ))
 }
 
-/// Opens Raspberry Pi camera via libcamera-still.
+/// Spawns `libcamera-still` for each frame, reads the captured JPEG,
+/// and returns the decoded RGB buffer.
+///
+/// # Parameters
+/// - `width` — Capture width in pixels.
+/// - `height` — Capture height in pixels.
+///
+/// # Returns
+/// A frame iterator; each call shells out to `libcamera-still`, waits for
+/// capture, and decodes the result.
 fn open_libcamera_camera(
     width: u32,
     height: u32,
-) -> Result<
-    (
-        Box<dyn FnMut() -> Option<(Vec<u8>, u64)>>,
-        u32,
-        u32,
-    ),
-    String,
-> {
+) -> Result<(FrameIter, u32, u32), String> {
     let tmp_dir = std::env::temp_dir().join("civicsense_capture");
     std::fs::create_dir_all(&tmp_dir)
         .map_err(|e| format!("Cannot create temp dir: {e}"))?;
@@ -647,21 +749,19 @@ fn open_libcamera_camera(
                     &h.to_string(),
                     "--nopreview",
                     "--timeout",
-                    "1", // minimal timeout
+                    "1",
                     "--immediate",
                 ])
                 .output();
 
             match status {
                 Ok(output) if output.status.success() => {
-                    // Read the captured image.
                     match image::open(&capture_path) {
                         Ok(img) => {
                             let rgb = img.into_rgb8();
                             let buffer = rgb.into_raw();
                             let idx = frame_idx;
                             frame_idx += 1;
-                            // Clean up.
                             let _ = std::fs::remove_file(&capture_path);
                             Some((buffer, idx))
                         }
@@ -687,19 +787,18 @@ fn open_libcamera_camera(
     ))
 }
 
-/// Opens Raspberry Pi camera via raspistill (legacy).
+/// Legacy Raspberry Pi camera backend using `raspistill`.
+///
+/// # Parameters
+/// - `width` — Capture width in pixels.
+/// - `height` — Capture height in pixels.
+///
+/// # Returns
+/// A frame iterator; each call shells out to `raspistill`.
 fn open_raspistill_camera(
     width: u32,
     height: u32,
-) -> Result<
-    (
-        Box<dyn FnMut() -> Option<(Vec<u8>, u64)>>,
-        u32,
-        u32,
-    ),
-    String,
-> {
-    // Same pattern as libcamera but with raspistill args.
+) -> Result<(FrameIter, u32, u32), String> {
     let tmp_dir = std::env::temp_dir().join("civicsense_capture");
     std::fs::create_dir_all(&tmp_dir)
         .map_err(|e| format!("Cannot create temp dir: {e}"))?;
@@ -759,21 +858,20 @@ fn open_raspistill_camera(
     ))
 }
 
-/// Opens a V4L2 device on Linux (placeholder).
+/// V4L2 device capture (Linux, placeholder).
+///
+/// # Parameters
+/// - `_dev_path` — Path to the V4L2 device (e.g. `/dev/video0`).
+/// - `default_width`, `default_height` — Fallback frame dimensions.
+///
+/// # Returns
+/// A single-frame iterator with a gray test pattern (V4L2 capture not yet
+/// implemented).
 fn open_v4l2_device(
     _dev_path: &str,
     default_width: u32,
     default_height: u32,
-) -> Result<
-    (
-        Box<dyn FnMut() -> Option<(Vec<u8>, u64)>>,
-        u32,
-        u32,
-    ),
-    String,
-> {
-    // TODO: Implement V4L2 frame capture via the v4l crate.
-    // For now, return a single test pattern frame.
+) -> Result<(FrameIter, u32, u32), String> {
     log::warn!(
         "V4L2 device capture not yet implemented. \
          Use 'collect --source video.mp4' or the libcamera backend."
@@ -793,16 +891,28 @@ fn open_v4l2_device(
     ))
 }
 
-// ── Frame Saving ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+//  Frame Saving
+// ─────────────────────────────────────────────────────────────────────────────
 
-/// Saves an RGB8 raw buffer as a JPEG file.
+/// Saves a raw RGB8 pixel buffer as a JPEG file on disk.
+///
+/// # Parameters
+/// - `buffer` — Flattened `(H × W × 3)` RGB8 pixel data.
+/// - `width` — Image width in pixels.
+/// - `height` — Image height in pixels.
+/// - `path` — Destination file path (should end in `.jpg`).
+///
+/// # Returns
+/// - `Ok(())` on success.
+/// - `Err(String)` if the buffer dimensions are invalid or the file cannot
+///   be written.
 fn save_frame(
     buffer: &[u8],
     width: u32,
     height: u32,
     path: &std::path::Path,
 ) -> Result<(), String> {
-    // Reconstruct the image from raw RGB data.
     let img = image::RgbImage::from_raw(width, height, buffer.to_vec())
         .ok_or_else(|| "Failed to create image from raw buffer".to_string())?;
 
