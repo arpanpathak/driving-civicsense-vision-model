@@ -1,0 +1,24 @@
+# ── Driving-CivicSense — YOLO Dataset Configuration ────
+# Paths are relative to the training script or absolute.
+# Copy this file, edit the paths, and pass to `yolo train data=...`
+
+# Dataset root directory (adjust for your cloud VM paths)
+path: /content/datasets/civicsense  # root dataset dir
+
+# Train / val / test splits (relative to `path`)
+train: images/train
+val: images/val
+# test: images/test   # optional
+
+# Number of classes
+nc: 7
+
+# Class names (must match src/config.rs ModelConfig.classes order)
+names:
+  0: stop_sign
+  1: traffic_light
+  2: crosswalk
+  3: vehicle
+  4: truck
+  5: bus
+  6: intersection_zone

@@ -3,6 +3,7 @@
 //! Subcommands:
 //! - `run` — detection -> tracking -> analysis -> alert pipeline
 //! - `collect` — frame capture for training-data collection
+//! - `train` — YOLO training orchestrator (dataset prep, training, ONNX validation)
 
 use std::path::PathBuf;
 use std::time::Instant;
@@ -14,6 +15,7 @@ use civicsense::detection::yolo::{YoloConfig, YoloDetector};
 use civicsense::modules::intersection::{IntersectionAlert, IntersectionAnalyzer};
 use civicsense::modules::lane_speed::{LaneSpeedAlert, LaneSpeedAnalyzer};
 use civicsense::tracking::deep_sort::MultiObjectTracker;
+use civicsense::train::{Dataset, TrainingRun};
 use civicsense::utils::visualization;
 use civicsense::video;
 
@@ -54,6 +56,61 @@ enum Commands {
         #[arg(short, long, default_value = "configs/default.yaml")]
         config: String,
     },
+    /// YOLO model training: prepare dataset, train on GPU, validate ONNX.
+    #[command(subcommand)]
+    Train(TrainCommand),
+}
+
+#[derive(Subcommand)]
+enum TrainCommand {
+    /// Validate dataset structure, count images, check label formats.
+    Prepare {
+        /// Root directory of the labelled dataset.
+        #[arg(short, long, default_value = "data/civicsense")]
+        dataset: String,
+        /// Split a flat directory of labelled images into train/val.
+        #[arg(long)]
+        split: Option<String>,
+        /// Fraction of data to use for validation (0.0 – 0.5).
+        #[arg(long, default_value_t = 0.2)]
+        val_fraction: f64,
+        /// Output YAML config path.
+        #[arg(short, long, default_value = "configs/dataset.yaml")]
+        output: String,
+    },
+    /// Run YOLO training + ONNX export on a GPU cloud instance.
+    Run {
+        /// Dataset YAML config path.
+        #[arg(short, long, default_value = "configs/dataset.yaml")]
+        data: String,
+        /// Pretrained model (e.g. "yolov8n.pt" or a local path).
+        #[arg(short, long, default_value = "yolov8n.pt")]
+        model: String,
+        /// Number of training epochs.
+        #[arg(short, long, default_value_t = 100)]
+        epochs: u32,
+        /// Batch size.
+        #[arg(short, long, default_value_t = 32)]
+        batch: u32,
+        /// Input image size.
+        #[arg(long, default_value_t = 640)]
+        imgsz: u32,
+        /// GPU device(s).
+        #[arg(long, default_value = "0")]
+        device: String,
+        /// Output project directory.
+        #[arg(short, long, default_value = "runs/train")]
+        project: String,
+        /// Experiment name.
+        #[arg(short, long, default_value = "civicsense")]
+        name: String,
+    },
+    /// Load and validate an exported ONNX model with ort.
+    Validate {
+        /// Path to the ONNX model file.
+        #[arg(short, long, default_value = "runs/train/civicsense/weights/best.onnx")]
+        model: String,
+    },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,7 +141,91 @@ fn main() {
                 std::process::exit(1);
             }
         }
+        Commands::Train(cmd) => match cmd {
+            TrainCommand::Prepare { dataset, split, val_fraction, output } => {
+                let result = run_train_prepare(&dataset, split.as_deref(), val_fraction, &output);
+                if let Err(e) = result {
+                    log::error!("Dataset preparation failed: {e}");
+                    std::process::exit(1);
+                }
+            }
+            TrainCommand::Run { data, model, epochs, batch, imgsz, device, project, name } => {
+                let result = run_train_run(&data, &model, epochs, batch, imgsz, &device, &project, &name);
+                if let Err(e) = result {
+                    log::error!("Training failed: {e}");
+                    std::process::exit(1);
+                }
+            }
+            TrainCommand::Validate { model } => {
+                let result = run_train_validate(&model);
+                if let Err(e) = result {
+                    log::error!("Model validation failed: {e}");
+                    std::process::exit(1);
+                }
+            }
+        },
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Train subcommand implementations
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// `civicsense train prepare`: validate/split dataset, write YAML config.
+fn run_train_prepare(dataset: &str, split: Option<&str>, val_fraction: f64, output: &str) -> Result<(), String> {
+    let dataset_path = std::path::Path::new(dataset);
+
+    if let Some(source) = split {
+        log::info!("Splitting flat directory '{}' -> '{}'", source, dataset);
+        let ds = Dataset::split(std::path::Path::new(source), dataset_path, val_fraction)?;
+        ds.write_yaml(std::path::Path::new(output))?;
+        log::info!("Dataset config written to '{}'", output);
+    } else {
+        log::info!("Validating dataset at '{}'", dataset);
+        let ds = Dataset::open(dataset_path)?;
+        ds.write_yaml(std::path::Path::new(output))?;
+        log::info!(
+            "Dataset validated. {} train + {} val images. Config written to '{}'",
+            ds.train_count,
+            ds.val_count,
+            output
+        );
+    }
+
+    Ok(())
+}
+
+/// `civicsense train run`: train YOLO on GPU, export ONNX, validate.
+fn run_train_run(
+    data: &str,
+    model: &str,
+    epochs: u32,
+    batch: u32,
+    imgsz: u32,
+    device: &str,
+    project: &str,
+    name: &str,
+) -> Result<(), String> {
+    let run = TrainingRun {
+        data_yaml: std::path::PathBuf::from(data),
+        model: model.to_string(),
+        epochs,
+        batch,
+        imgsz,
+        device: device.to_string(),
+        project: std::path::PathBuf::from(project),
+        name: name.to_string(),
+    };
+
+    let onnx_path = run.run()?;
+    log::info!("Trained model: {:?}", onnx_path);
+    log::info!("Copy to weights/ and run: civicsense run --source test_video.mp4 --visualize");
+    Ok(())
+}
+
+/// `civicsense train validate`: quick sanity check on an ONNX model.
+fn run_train_validate(model: &str) -> Result<(), String> {
+    civicsense::train::validate_onnx(std::path::Path::new(model))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

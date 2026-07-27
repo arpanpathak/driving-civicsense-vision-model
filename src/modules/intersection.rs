@@ -82,6 +82,9 @@ pub struct IntersectionAnalyzer {
 
     /// Frame height in pixels (from camera config).
     frame_height: u32,
+
+    /// Camera focal length in pixels (from camera config).
+    focal_length: f32,
 }
 
 impl IntersectionAnalyzer {
@@ -99,6 +102,7 @@ impl IntersectionAnalyzer {
             stop_sign_width_m: 0.75,
             frame_width,
             frame_height,
+            focal_length: config.camera.focal_length,
         }
     }
 
@@ -156,7 +160,7 @@ impl IntersectionAnalyzer {
             let distance = estimate_distance(
                 pixel_width,
                 self.stop_sign_width_m,
-                self.config.stop_sign_warning_distance,
+                self.focal_length,
             )
             .clamp(1.0, 200.0);
 

@@ -41,5 +41,6 @@ pub mod config;
 pub mod detection;
 pub mod modules;
 pub mod tracking;
+pub mod train;
 pub mod utils;
 pub mod video;
