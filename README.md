@@ -99,24 +99,27 @@ All variants process **100% on-device**. No cloud upload. No subscription.
 
 ## Companion App (Kotlin Multiplatform)
 
-The **CivicSense Companion** is a [Kotlin Multiplatform](frontend/) mobile app that displays real-time detection alerts from the Rust pipeline via a **gRPC bridge**.
+Get real-time alerts from the Rust pipeline right on your phone. The companion app connects over gRPC to display intersection violations, lane warnings, hazards, and more.
 
-| Platform | UI Framework | gRPC Transport |
-|----------|-------------|----------------|
-| Android | Jetpack Compose + Material 3 | `grpc-okhttp` (direct) |
-| iOS | SwiftUI | Ktor HTTP client (gRPC-web) |
+**Repo:** [github.com/arpanpathak/civicsense-companion](https://github.com/arpanpathak/civicsense-companion)  
+**License:** Apache 2.0 (separate from the pipeline's AGPL v3)
 
-**Shared business logic** (ViewModel, domain models, service interface) lives in `frontend/shared/` — one codebase, two native UIs.
+| Platform | UI Framework | Transport |
+|----------|-------------|-----------|
+| Android | Jetpack Compose + Material 3 | gRPC + OkHttp |
+| iOS | SwiftUI | Ktor HTTP (gRPC-web) |
+
+**Shared layer:** Domain models, service interface, and ViewModel live in `frontend/shared/` — one Kotlin codebase, two native UIs.
 
 ```bash
-# Clone with submodule
+# Clone everything (pipeline + companion) in one shot
 git clone --recurse-submodules https://github.com/arpanpathak/driving-civicsense-vision-model.git
 
-# Or init submodule after clone
+# Or if already cloned
 git submodule update --init --recursive
 ```
 
-> See the [`frontend/` README](frontend/) for full build instructions.
+> Full build instructions in the [`frontend/` README](frontend/).
 
 ---
 
