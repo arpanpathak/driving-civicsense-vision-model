@@ -13,7 +13,7 @@
 [![YOLOv8](https://img.shields.io/badge/YOLO-v8/v11-00BBFF)](https://github.com/ultralytics/ultralytics)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Cloud GPU](https://img.shields.io/badge/Cloud%20GPU%20Guide-8A2BE2)](CLOUD_TRAINING.md)
-[![KMP Companion](https://img.shields.io/badge/KMP-Companion-purple)](frontend/)
+[![KMP Companion](https://img.shields.io/badge/KMP-Companion-purple)](https://github.com/arpanpathak/civicsense-companion)
 
 </div>
 
@@ -119,7 +119,7 @@ git clone --recurse-submodules https://github.com/arpanpathak/driving-civicsense
 git submodule update --init --recursive
 ```
 
-> Full build instructions in the [`frontend/` README](frontend/).
+> Full build instructions in the [companion repo README](https://github.com/arpanpathak/civicsense-companion).
 
 ---
 
