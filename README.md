@@ -13,6 +13,7 @@
 [![YOLOv8](https://img.shields.io/badge/YOLO-v8/v11-00BBFF)](https://github.com/ultralytics/ultralytics)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Cloud GPU](https://img.shields.io/badge/Cloud%20GPU%20Guide-8A2BE2)](CLOUD_TRAINING.md)
+[![KMP Companion](https://img.shields.io/badge/KMP-Companion-purple)](frontend/)
 
 </div>
 
@@ -96,6 +97,29 @@ All variants process **100% on-device**. No cloud upload. No subscription.
 
 ---
 
+## Companion App (Kotlin Multiplatform)
+
+The **CivicSense Companion** is a [Kotlin Multiplatform](frontend/) mobile app that displays real-time detection alerts from the Rust pipeline via a **gRPC bridge**.
+
+| Platform | UI Framework | gRPC Transport |
+|----------|-------------|----------------|
+| Android | Jetpack Compose + Material 3 | `grpc-okhttp` (direct) |
+| iOS | SwiftUI | Ktor HTTP client (gRPC-web) |
+
+**Shared business logic** (ViewModel, domain models, service interface) lives in `frontend/shared/` — one codebase, two native UIs.
+
+```bash
+# Clone with submodule
+git clone --recurse-submodules https://github.com/arpanpathak/driving-civicsense-vision-model.git
+
+# Or init submodule after clone
+git submodule update --init --recursive
+```
+
+> See the [`frontend/` README](frontend/) for full build instructions.
+
+---
+
 ## The Problems We Solve
 
 ### 1. The Intersection Crisis
@@ -144,7 +168,7 @@ All variants process **100% on-device**. No cloud upload. No subscription.
 
 | Layer | Technology |
 |-------|-----------|
-| Language | Rust (edition 2021) |
+| **Pipeline Language** | Rust (edition 2021) |
 | Detection | YOLOv8n / YOLOv11n via ONNX Runtime |
 | Tracking | Deep SORT (custom Rust, Kalman filter + IoU matching) |
 | Geometry | Pinhole camera model |
@@ -152,6 +176,12 @@ All variants process **100% on-device**. No cloud upload. No subscription.
 | Mesh | LoRa / BLE / cellular fallback |
 | Edge AI | Qualcomm AR1, Coral, RPi5 + Hailo-8L |
 | Inference | ONNX Runtime |
+| **Companion Language** | Kotlin Multiplatform (Kotlin 2.1.20) |
+| Shared logic | KMP common module (coroutines, StateFlow) |
+| Android UI | Jetpack Compose + Material 3 |
+| iOS UI | SwiftUI |
+| App Transport | gRPC (Android: OkHttp, iOS: Ktor) |
+| Build | Gradle 8.12, Version Catalog |
 
 ### Performance Targets
 
@@ -175,8 +205,8 @@ All variants process **100% on-device**. No cloud upload. No subscription.
 ## Quick Start
 
 ```bash
-# Prerequisites: Rust 1.85+
-git clone https://github.com/arpanpathak/driving-civicsense-vision-model.git
+# Prerequisites: Rust 1.85+, JDK 17 (for companion app)
+git clone --recurse-submodules https://github.com/arpanpathak/driving-civicsense-vision-model.git
 cd driving-civicsense-vision-model
 
 # Download a test YOLO model
@@ -184,6 +214,14 @@ cd driving-civicsense-vision-model
 
 # Run the pipeline on a test video
 cargo run -- run --source test_video.mp4 --visualize
+```
+
+### Companion App (Android)
+
+```bash
+cd frontend
+./gradlew :androidApp:assembleDebug
+# Install the APK on a device connected to the same network as the pipeline
 ```
 
 ---
@@ -216,6 +254,8 @@ Don't have an NVIDIA GPU for training YOLO models?
 
 We need:
 - **Rust engineers** — implement detection, tracking, voice output, mesh networking
+- **Kotlin / Android engineers** — Jetpack Compose UI, gRPC integration
+- **iOS engineers** — SwiftUI views, KMP framework integration
 - **Hardware designers** — 3D-printable glasses clip, dashcam enclosure
 - **Data labelers** — annotate intersection blocking, wildlife, road debris
 - **Testers** — run on your commute and report real-world performance
