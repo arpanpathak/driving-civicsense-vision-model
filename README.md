@@ -193,6 +193,10 @@ git submodule update --init --recursive
 
 ### 3. Turn Signal? None. I Turn Now.
 - The Family Guy maneuver is real — *"How much turn signal? ... good luck everybody!"* — drivers cut across multiple lanes with zero warning.
+
+<p align="center">
+  <img src="assets/family-guy-meme.svg" alt="Family Guy driving meme — I turn now. Good luck everybody else!" width="560"/>
+</p>
 - **Missing or late turn signals** cause 25% of lane-change crashes (NHTSA).
 - CivicSense detects amber turn-signal lights, tracks lateral vehicle motion, and flags unsignaled lane changes before they become collisions.
 - Three specific violations:
