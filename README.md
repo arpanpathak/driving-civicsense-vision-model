@@ -31,6 +31,7 @@ It's not a self-driving system. It's a **co-pilot that cares about traffic civil
 - **Privacy-first** — 100% on-device inference. No video ever leaves the device.
 - **Ultra-fast & low latency** — a perception pipeline that must react in real time, from frame to voice in a blink.
 - **Low power-hungry** — squeezing serious computer vision onto watts, not kilowatts.
+- **Distributed edge pipeline** — don't cram YOLO into 512 MB; a Pico triggers, a Pi Zero streams, and a Pi 5 / desktop GPU runs the heavy inference.
 - **3D-printed hardware accessories** — open, printable frames and dashcam pucks, not black-box gadgets.
 - **Copilot as civic sense teacher** — alerts that correct, teach, and nudge good road citizenship.
 
@@ -114,6 +115,38 @@ All variants process **100% on-device**. No cloud upload. No subscription.
   |   -> Voice / Haptic / LED / Beacon                                |
   +--------------------------------------------------------------------+
 =====================================================================
+```
+
+---
+
+## The Full Pipeline: Distributed Edge Vision
+
+Squeezing a YOLO model into 512 MB of RAM on a Pi Zero is a losing game — you trade accuracy for 2 FPS and watch it thermal-throttle. **Don't embed — distribute.** Each node does the job it's best at, and the heaviest brain in the room runs the real inference:
+
+<p align="center">
+  <img src="assets/pipeline.svg" alt="CivicSense distributed edge pipeline: Pico triggers, Pi Zero streams, the brain infers, KMP app alerts" width="860"/>
+</p>
+
+| Tier | Node | Job | Stack |
+|------|------|-----|-------|
+| **1 · Trigger** | Raspberry Pi Pico | Physical sensing & control: PIR motion, buttons, ultrasonic, power states, LED/buzzer | RP2040 **PIO** state machines |
+| **2 · Capture & Stream** | Raspberry Pi Zero | CSI camera capture, MJPEG/H.264 encode, low-latency streaming | libcamera, Rust/Go stream daemon |
+| **3 · Brain** | Pi 5 + Hailo-8L / desktop GPU | Heavy inference: YOLO ONNX (INT8), NMS, Deep SORT + Kalman, alert engine | ONNX Runtime, Rust |
+| **4 · Companion** | Phone (KMP) | Live alerts, violations, map view | Kotlin Multiplatform, gRPC |
+
+**Why this wins over one-board-everything:**
+
+- **The Pico's PIO** handles triggers with zero CPU cost — the camera only wakes when there's something to see.
+- **The Pi Zero** stays a dumb, low-power camera node: capture, encode, stream. No model to squeeze, no RAM anxiety, no thermal throttling.
+- **The brain** (Pi 5 or your desktop GPU) runs the full-fat model — you never trade accuracy to fit in 512 MB.
+- **Every hop stays on your network** — frames leave the Pi Zero, but they never leave the car.
+
+```text
+[ Pi Pico ] --GPIO trigger--> [ Pi Zero ] --UDP frames--> [ Brain: Pi 5 / GPU ]
+     ^                                                         |
+     +---------------------- ack / re-trigger -----------------+
+                                                               v
+                                                   [ KMP Companion App ]
 ```
 
 ---
@@ -213,11 +246,12 @@ git submodule update --init --recursive
 |--------|---------------|-------|----------|
 | Qualcomm Snapdragon AR1 | ~22 ms | < 500 mW | AR Glasses |
 | Google Coral Dev Board | ~15 ms | 2 W | Dashcam |
-| Raspberry Pi 5 + Hailo-8L | ~18 ms | 8 W | DIY Kit |
-| **Raspberry Pi Zero 2 W** | squeeze target (INT8 + tiny models) | ~1 W | Bare-metal ultralight dashcam |
-| **Raspberry Pi Pico** | wake-word / haptic / sensor offload | < 0.5 W | Co-processor companion |
+| Raspberry Pi 5 + Hailo-8L | ~18 ms | 8 W | **The brain** — DIY Kit |
+| Desktop GPU (training) | full-fat YOLO | 200–350 W | Model training & heavy inference |
+| **Raspberry Pi Zero 2 W** | capture + stream (MJPEG/H.264) | ~1 W | Camera node — feeds the brain |
+| **Raspberry Pi Pico** | trigger plane: PIO sensors, power states | < 0.5 W | Always-on trigger co-processor |
 
-> **Squeeze mission:** I have a Pi Zero and a Pi Pico on my desk — the goal is to push the perception pipeline down onto the absolute cheapest, lowest-power silicon possible, and prove performance-per-watt-per-dollar is not a toy metric.
+> **Squeeze mission:** Pi Zero + Pi Pico on my desk. The goal is *not* to cram YOLO into 512 MB of RAM — it's to **distribute the pipeline**: the Pico triggers, the Pi Zero streams, and the strongest brain in the room runs inference. Performance-per-watt-per-dollar is not a toy metric.
 
 ---
 
