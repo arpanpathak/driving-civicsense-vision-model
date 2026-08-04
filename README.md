@@ -43,6 +43,7 @@ It's not a self-driving system. It's a **co-pilot that cares about traffic civil
 | You're crawling in the left lane | *"Speed up — too slow! You're holding up traffic."* |
 | Someone passing on the right | *"You're getting passed from the right. Maybe choose the correct lane."* |
 | Stop sign ahead, you're not slowing | *"Stop sign in 200 feet. You need to brake."* |
+| Green light, but the box is still full | *"Green light — but the intersection's still blocked. Hold back, don't block the box."* |
 | Bear or deer on the road | *"Large animal ahead. Slow down."* |
 | Fallen tree or debris | *"Obstruction in the road ahead. Stop or take evasive action."* |
 | Emergency vehicle approaching | *"Emergency vehicle behind you. Pull right."* |
@@ -182,6 +183,7 @@ git submodule update --init --recursive
 ### 1. The Intersection Crisis
 - **~40%** of all crashes occur at intersections (NHTSA).
 - "Blocking the box" causes T-bone impacts.
+- **Misjudged green lights** — drivers see green, misjudge the gap, roll in, and trap themselves when the light flips. The worst kind of "blocking the box."
 - Current ADAS detects vehicles but **fails** to semantically interpret intersection occupancy.
 
 ### 2. Left-Lane Camping
@@ -190,7 +192,7 @@ git submodule update --init --recursive
 - GPS doesn't provide real-time lane-level speed awareness.
 
 ### 3. Turn Signal? None. I Turn Now.
-- The Family Guy maneuver is real: drivers cut across multiple lanes with zero warning.
+- The Family Guy maneuver is real — *"How much turn signal? ... good luck everybody!"* — drivers cut across multiple lanes with zero warning.
 - **Missing or late turn signals** cause 25% of lane-change crashes (NHTSA).
 - CivicSense detects amber turn-signal lights, tracks lateral vehicle motion, and flags unsignaled lane changes before they become collisions.
 - Three specific violations:
@@ -210,6 +212,7 @@ git submodule update --init --recursive
 |-------|---------|--------|
 | **Stop Sign Warning** | Stop sign detected, ego > 10 mph, distance < 50 ft | *"Stop sign ahead. Brake now."* |
 | **Blocked Intersection** | Occupancy > 70%, ego > 15 mph, distance < 30 ft | *"Intersection blocked. Don't enter."* |
+| **Blocked Box on Green** | Green light + intersection still occupied, no room to clear (misjudged the gap) | *"Green light — but the box is still full. Hold back, don't block the box."* |
 | **Merge Right Reminder** | Right lane +5 mph faster for > 3 seconds | *"You're being passed on the right. Move over."* |
 | **Slow Traffic Ahead** | Lead vehicle speed < threshold for > 5 seconds | *"Someone slow ahead. Prepare to merge."* |
 | **Lane Change No Signal** | Vehicle moves laterally, no amber blinker detected | *"Turn signal? Or do you expect everyone to read your mind?"* |
