@@ -14,6 +14,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Cloud GPU](https://img.shields.io/badge/Cloud%20GPU%20Guide-8A2BE2)](CLOUD_TRAINING.md)
 [![KMP Companion](https://img.shields.io/badge/KMP-Companion-purple)](https://github.com/arpanpathak/civicsense-companion)
+[![Book: Seeing Machines](https://img.shields.io/badge/Book-Seeing%20Machines-FF6B6B)](https://arpanpathak.github.io/seeing-machines-book/foreword.html)
 
 </div>
 
@@ -23,7 +24,15 @@
 
 CivicSense is an aftermarket edge-AI accessory that clips onto glasses or mounts on a dashcam. It watches the road, understands traffic behavior, detects hazards, and talks to you — politely but firmly.
 
-It's not a self-driving system. It's a **co-pilot that cares about traffic civility**.
+It's not a self-driving system. It's a **co-pilot that cares about traffic civility** — a civic sense teacher on your dashboard.
+
+### The engineering vision
+
+- **Privacy-first** — 100% on-device inference. No video ever leaves the device.
+- **Ultra-fast & low latency** — a perception pipeline that must react in real time, from frame to voice in a blink.
+- **Low power-hungry** — squeezing serious computer vision onto watts, not kilowatts.
+- **3D-printed hardware accessories** — open, printable frames and dashcam pucks, not black-box gadgets.
+- **Copilot as civic sense teacher** — alerts that correct, teach, and nudge good road citizenship.
 
 ### What it says to you
 
@@ -52,6 +61,18 @@ Beyond just alerting you, CivicSense broadcasts to the mesh:
 - **Cooperative awareness** — If three CivicSense units detect the same hazard independently, the system auto-escalates to a verified road condition alert.
 
 This turns every unit from a personal assistant into a **distributed sensor node** — making roads safer for everyone, not just the person wearing them.
+
+---
+
+## The Book: *Seeing Machines*
+
+> **["Seeing Machines: Deep Learning & Computer Vision from Python to Bare Metal"](https://arpanpathak.github.io/seeing-machines-book/foreword.html)** — the companion book to this project, written by the same author.
+
+This repo is the capstone project behind the book, and the book is the engineer's diary behind the repo: every line of code written after a mistake, every equation derived after a model failed to converge, a tracker lost its target, or a pipeline got squeezed onto a tiny edge device.
+
+Together they tell one story — **how to take computer vision from cloud to bare metal**: from Python prototypes to an ultra-fast, privacy-first, low-power Rust pipeline, plus a [Kotlin Multiplatform companion app](https://github.com/arpanpathak/civicsense-companion) on Android and iOS.
+
+**Read the foreword → [arpanpathak.github.io/seeing-machines-book/foreword.html](https://arpanpathak.github.io/seeing-machines-book/foreword.html)**
 
 ---
 
@@ -193,6 +214,10 @@ git submodule update --init --recursive
 | Qualcomm Snapdragon AR1 | ~22 ms | < 500 mW | AR Glasses |
 | Google Coral Dev Board | ~15 ms | 2 W | Dashcam |
 | Raspberry Pi 5 + Hailo-8L | ~18 ms | 8 W | DIY Kit |
+| **Raspberry Pi Zero 2 W** | squeeze target (INT8 + tiny models) | ~1 W | Bare-metal ultralight dashcam |
+| **Raspberry Pi Pico** | wake-word / haptic / sensor offload | < 0.5 W | Co-processor companion |
+
+> **Squeeze mission:** I have a Pi Zero and a Pi Pico on my desk — the goal is to push the perception pipeline down onto the absolute cheapest, lowest-power silicon possible, and prove performance-per-watt-per-dollar is not a toy metric.
 
 ---
 
@@ -202,6 +227,25 @@ git submodule update --init --recursive
 - **Hazard beacons are anonymous** — they contain only GPS coordinates and hazard type, no video, no identifier.
 - **Officer notifications are data-only** — structured reports, not surveillance footage.
 - **No cloud dependency** — everything runs locally.
+
+---
+
+## Performance per Watt per Dollar — Civic Sense STONKS 📈
+
+Edge AI is a three-way squeeze: **fast enough, cheap enough, low-power enough**. Cloud ADAS vendors monetize you with subscriptions and siphon your video to a server. CivicSense flips the graph:
+
+| Metric | Cloud ADAS | CivicSense (edge) |
+|--------|-----------|-------------------|
+| **Dollar** | $10–30/mo subscription, forever | ~$0 — one-time hardware, no subscription |
+| **Watt** | server rack somewhere + 4G upload | < 8 W on-device, no uplink |
+| **Performance** | network RTT + cloud queue | frame-to-voice in real time, on the device |
+| **Privacy** | your video leaves the car | 100% on-device, nothing leaves |
+
+<p align="center">
+  <img src="assets/stonks.svg" alt="Civic Sense STONKS — performance per watt per dollar goes up" width="640"/>
+</p>
+
+The whole point of squeezing onto a Pi Zero / Pi Pico is this: if you can do civic sense on **watts and one-time dollars**, it stops being a luxury feature and becomes a civic right.
 
 ---
 
