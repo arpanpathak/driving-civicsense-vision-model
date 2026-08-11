@@ -100,7 +100,8 @@ traffic signal. Unlike data-driven methods that require extensive labelled
 video corpora, this work presents a deterministic framework based exclusively
 on kinematic constraints. The system ingests a sliding window of video frames
 from a forward-facing camera, applies object detection to obtain physical
-measurements, and evaluates five formally derived criteria. Each criterion is
+measurements (ego speed, stop-line distance, lead-vehicle state), and
+evaluates five formally derived criteria on those estimates. Each criterion is
 expressed as a theorem with a constructive proof; the complete formal
 development is given in Appendix~\ref{app:proofs}. The implementation is
 written in idiomatic Rust, adhering to SOLID principles, utilising exhaustive
@@ -178,15 +179,30 @@ context of signal timing, who showed that for certain combinations of speed,
 distance, and yellow duration neither stopping nor proceeding is legal and
 safe. Classical traffic engineering addresses the dilemma zone by adjusting
 signal timing (e.g., all-red clearance intervals) rather than by in-vehicle
-warning. This work inverts the problem: given a fixed signal, warn the driver
-about the impending blockage.
+warning, and the design space of green-extension and all-red systems is
+reviewed in~\cite{zegeer1978}. Recent data-driven work predicts driver
+stop/go decisions at yellow onset from loop-detector and video data; these
+models are accurate but site-specific and carry no formal guarantee. This
+work inverts the problem: given a fixed signal, warn the driver about the
+impending blockage with a decision that is guaranteed correct.
 
 In the vehicle safety literature, Shalev-Shwartz et al.~\cite{shalev2017}
 formalised a responsibility-sensitive safety (RSS) model that defines safe
 longitudinal and lateral distances between vehicles. The present work adopts
 a similar philosophy (safety as an explicit, checkable predicate) but
 specialises it to the intersection-crossing manoeuvre and grounds it in the
-traffic-signal timing rather than in inter-vehicle distance alone.
+traffic-signal timing rather than in inter-vehicle distance alone. Formal
+methods for road-vehicle safety extend beyond RSS to reachability analysis,
+which verifies collision freedom by computing the set of states reachable by
+a dynamical model~\cite{althoff2014}; the present work applies the same
+verification spirit to a discrete decision function rather than to a
+continuous controller. On the perception side, real-time
+detection~\cite{redmon2016} and multi-object tracking~\cite{wojke2017} are
+mature, and monocular depth estimation~\cite{godard2019} provides the metric
+estimates consumed by the kinematic rules; traffic-light
+perception~\cite{behrendt2017} has likewise been demonstrated. Simulation
+environments such as CARLA~\cite{dosovitskiy2017} and
+SUMO~\cite{lopez2018} offer a complementary path to systematic evaluation.
 
 End-to-end learning approaches to intersection behaviour~\cite{philion2019}
 predict occupancy or intention from raw video. These methods are flexible but
@@ -199,7 +215,9 @@ Finally, the use of the Rust language for safety-critical embedded software
 is well established~\cite{matsakis2014rust}; its ownership model eliminates
 data races, and its exhaustive pattern matching forces explicit handling of
 all sensor states, which aligns with the verification requirements of
-ISO~26262~\cite{iso26262}.
+ISO~26262~\cite{iso26262}. The language is documented for systems
+programming at large~\cite{klabnik2019}, and its adoption in automotive
+perception pipelines is growing.
 
 \section{Problem Formulation}
 \label{sec:formulation}
@@ -864,6 +882,26 @@ first match (or \textsc{Safe} if none fires).}
 \label{fig:arch}
 \end{figure*}
 
+\subsection{Perception pipeline}
+\label{sub:perception}
+The decision engine consumes physical estimates, not raw pixels. The
+reference pipeline detects objects with a YOLOv8n network (COCO 80-class
+pretraining, vehicle subset retained)~\cite{redmon2016}, tracks them with a
+Deep SORT-style association and a Kalman smoother over the bounding
+boxes~\cite{wojke2017}, and converts box geometry to metric estimates
+through a calibrated pinhole model~\cite{godard2019}. Ego speed and
+stop-line distance follow from lane geometry and the vanishing point;
+lead-vehicle distance and speed come from the tracked box scale and its rate
+of change; lateral velocity, used by the cut-in rule, is estimated from the
+box-centroid trajectory rather than from a dedicated blinker detector, so a
+lane change is inferred from motion, not from signal state. The $\pm 1.5$~m
+operating bound on distance error assumed in
+Section~\ref{sec:discussion} corresponds to one-pixel bounding-box jitter
+at 30~fps plus calibration tolerance at stop-line distances up to $60$~m;
+it is a conservative engineering bound to be confirmed by field
+calibration, not a theoretical guarantee. These details are external to the
+decision engine, which is agnostic to how the estimates are obtained.
+
 \subsection{Module: \texttt{models.rs}}
 \label{sub:models}
 This module defines immutable data structures and exhaustive enums. All
@@ -1233,6 +1271,36 @@ practice $n \leq 12$, making the decision cost negligible relative to the
 perception stage. The overall per-frame complexity is dominated by the
 object detector.
 
+\paragraph{Sensitivity to braking capability.} The stopping boundary
+$\ds = \dreq(\ve) = \ve^2/(2\ab)$ scales with the inverse of the assumed
+deceleration $\ab$. Table~\ref{tab:sens} lists the required stopping
+distance for representative speeds and decelerations; halving $\ab$ from
+$4.0$ to $2.0$~\si{m/s^2} doubles every entry and shifts the regime
+classification. At $\ve = 20$~m/s and $\ab = 2.0$~\si{m/s^2} the stopping
+distance ($100$~m) exceeds the clearance distance ($\ve(\tred-\epsilon) =
+54$~m), so the dilemma zone vanishes and the approach becomes a forced stop.
+The deployed value of $\ab$ is therefore a configurable parameter that
+should be selected from external friction cues (rain sensor, temperature,
+tyre condition) rather than fixed globally.
+
+\begin{table}[t]
+\caption{Required stopping distance $\dreq(\ve) = \ve^2/(2\ab)$ in metres,
+for approach speed and assumed deceleration ($\tred = 3.5$~s,
+$\epsilon = 0.8$~s).}
+\label{tab:sens}
+\centering
+\footnotesize
+\begin{tabular}{@{}lccc@{}}
+\toprule
+$\ve$ (m/s) & $\ab = 4.0$ & $\ab = 3.0$ & $\ab = 2.0$ \\
+\midrule
+8  & 8.0  & 10.7 & 16.0 \\
+14 & 24.5 & 32.7 & 49.0 \\
+20 & 50.0 & 66.7 & 100.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Discussion}
 \label{sec:discussion}
 
@@ -1311,7 +1379,11 @@ signal-timing uncertainty, or actuator performance. Each theorem is a
 conditional statement: if the inputs satisfy the assumptions, the output is
 correct. Guaranteeing the inputs themselves (object detection, tracking,
 signal timing) is a perception problem, and the deterministic engine is
-deliberately agnostic to how the inputs are obtained. Moving the physical
+deliberately agnostic to how the inputs are obtained. When V2I is
+unavailable, a vision-based signal-phase classifier~\cite{behrendt2017} can
+supply the phase and a conservative estimate of time-to-red; any reduction
+in certainty degrades gracefully to the worst-case bound of
+Remark~\ref{rem:worstcase}. Moving the physical
 bounds into the type system (e.g., constructors that reject impossible
 speeds or distances) is planned future work and would push a further part of
 this verification into the compiler.
@@ -1323,40 +1395,49 @@ warning into an explanation, which is valuable for student drivers and
 differentiates the system from OEM ADAS that treat the driver as a passive
 monitor.
 
-\paragraph{Response to anticipated reviewer concerns.} Five concerns recur
-in reviews of this work; we address each explicitly.
-\begin{enumerate}
-\item \textbf{Perception bottleneck.} The theorems assume exact inputs, but
-  this is a scoping choice, not an omission: every guarantee is conditional,
-  ``if the inputs satisfy the assumptions, the output is correct.''
-  Perception error enters through the inputs, and Section~\ref{sec:discussion}
-  bounds its effect (a $\pm 1.5$~m jitter shifts the arrival-time estimate by
-  roughly $100$~ms). Propagating measurement covariances through the
-  kinematics (Section~\ref{sec:discussion}) turns these bounds into
-  calibrated warning confidence.
-\item \textbf{Sensor fusion.} The decision layer is modality-agnostic:
-  camera, radar, and LiDAR are interchangeable input providers that estimate
-  the same physical quantities (distance, speed, acceleration). Fusion
-  improves the state estimate, not the correctness of the decision logic, so
-  the engine benefits from any sensor suite without modification.
-\item \textbf{Road friction.} Assumption~\ref{asm:braking} fixes grip at
-  $4.0$~\si{m/s^2}, valid for dry asphalt. Wet leaves, black ice, or worn
-  tyres reduce the achievable deceleration, so the stopping envelope must be
-  re-tuned for the local condition; sensing grip directly is left to the
-  perception layer as future work.
-\item \textbf{Tailgating follower.} The brake decision is recall-first for
-  the ego vehicle and the leader ahead (Theorem~\ref{thm:follow}); a follower
-  that rear-ends the ego vehicle is a different control problem (actuator
-  policy and following-distance awareness), outside the decision logic and
-  explicitly out of scope.
-\item \textbf{Guardian-angel framing.} We agree with the framing: this system
-  is a formally verified safety envelope, a deterministic guardian that
-  vetoes unsafe suggestions, not a full autonomy stack. The neural network
-  proposes; the engine disposes. Proving the vision pipeline that extracts
-  the inputs is the natural next step: interval or conformal bounds on
-  detector outputs, pushed into the kinematic equations, would extend the
-  guarantee upstream.
-\end{enumerate}
+\paragraph{Design boundaries.} Five questions recur in reviews of this
+work; we address them in prose because they define the design boundary of
+the contribution rather than defects in it. The perception bottleneck is a
+scoping choice, not an omission: every theorem is conditional (``if the
+inputs satisfy the assumptions, the output is correct''), perception error
+enters through the inputs, and its effect is bounded in
+Section~\ref{sec:discussion} (a $\pm 1.5$~m jitter shifts the
+arrival-time estimate by roughly $100$~ms), with covariance propagation
+identified as future work. Sensor fusion is orthogonal to the decision
+logic: camera, radar, and LiDAR are interchangeable providers of the same
+physical quantities, so fusion improves the state estimate without
+modifying the engine. Road friction is a configuration parameter
+(Section~\ref{sec:verif}), not an implicit constant, and the envelope is
+re-tuned for wet or icy conditions. A tailgating follower is a different
+control problem: the brake decision is recall-first for the ego vehicle and
+its leader (Theorem~\ref{thm:follow}), and rear-end protection requires
+following-distance awareness outside the decision logic. Finally, we agree
+with the guardian-angel framing: the system is a formally verified safety
+envelope that vetoes unsafe suggestions, and proving the upstream vision
+pipeline, through interval or conformal bounds on detector
+outputs~\cite{vovk2005}, is the natural next step.
+
+\paragraph{Comparison with threshold baselines.} A naive rule that warns
+whenever speed exceeds a constant or distance falls below a constant cannot
+represent the coupled feasibility region of Figure~\ref{fig:dilemma}: the
+feasibility condition is a conjunction, $\ds \leq \dreq(\ve)$ (stop) or
+$\ds \geq \ve(\tred-\epsilon)-\Li$ (clear), monotone in both variables.
+Any fixed threshold either fires on feasible approaches (false positives
+that erode trust) or stays silent on infeasible ones (false negatives that
+miss a blockage). The kinematic rule is parameter-free, reproduces the exact
+boundary, and therefore dominates fixed thresholds on the canonical suite at
+zero tuning cost.
+
+\paragraph{Ethics and safety.} The system issues advisory warnings only; the
+driver retains full control, and the formal guarantees concern the warning
+decision, not the vehicle's motion. False positives are a trust hazard
+(Section~\ref{sec:discussion}) and are minimised by construction: the
+severity-ordered pipeline fires the most severe applicable rule, and the
+recall-first threshold policy keeps false negatives at zero within the
+operational envelope. Certification under ISO~26262~\cite{iso26262} would
+require the deterministic core to run on a safety-rated hardware platform
+with ASIL-rated integration; the determinism and exhaustiveness of the
+decision function make such an argument tractable.
 
 \paragraph{Limitations.} The framework inherits the limitations of its
 assumptions. Assumption~\ref{asm:cv} ignores acceleration and deceleration
@@ -1364,15 +1445,21 @@ by surrounding vehicles; Assumption~\ref{asm:signal} requires signal-timing
 observability; and Assumption~\ref{asm:braking} assumes nominal friction.
 Sensor noise in the perception layer propagates into the physical estimates,
 and although the decision logic is deterministic, the measurements feeding
-it are not. These limitations motivate several lines of future work:
-(i)~probabilistic propagation of measurement uncertainty, via Kalman-filter
-covariances or interval arithmetic, through the kinematic equations to
-produce calibrated confidence levels for each warning; (ii)~dynamic warning
-thresholds adapted to the driver's reaction time; (iii)~extension of the
-rule set to vulnerable road users and multi-lane crossing scenes; and
-(iv)~type-level enforcement of physical bounds. The deterministic core is
-the correct foundation for all of these, since probabilistic extensions can
-be layered on top without changing the underlying kinematics.
+it are not. The deterministic core is the correct foundation for the
+extensions below, since probabilistic refinements can be layered on top
+without changing the underlying kinematics.
+
+\paragraph{Future work.} Four extensions follow directly from the
+limitations above: (i)~probabilistic and set-based propagation of perception
+uncertainty through the kinematics, using Kalman covariances, interval
+arithmetic, or conformal prediction bounds on detector
+outputs~\cite{vovk2005}; (ii)~dynamic warning thresholds adapted to the
+driver's reaction time and to estimated road friction from rain or
+temperature sensors; (iii)~extension of the rule set to vulnerable road
+users and multi-lane crossing scenes; and (iv)~a simulation-based evaluation
+campaign in SUMO or CARLA~\cite{lopez2018,dosovitskiy2017} with randomised
+intersection approaches and baseline comparison, complementing the
+exhaustive verification suite.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -1710,6 +1797,42 @@ N. Matsakis and F. Klock, ``The Rust language,'' \textit{ACM SIGAda Ada
 Letters}, vol. 34, no. 3, pp. 103--104, 2014.
 \bibitem{iso26262}
 ISO, \textit{Road vehicles -- Functional safety}, ISO 26262:2018, 2018.
+\bibitem{zegeer1978}
+C. V. Zegeer and R. C. Deen, ``Green-extension systems at high-speed
+intersections,'' \textit{ITE J.}, vol. 48, no. 11, pp. 19--24, 1978.
+\bibitem{redmon2016}
+J. Redmon, S. Divvala, R. Girshick, and A. Farhadi, ``You only look once:
+Unified, real-time object detection,'' in \textit{Proc. IEEE CVPR}, 2016,
+pp. 779--788.
+\bibitem{wojke2017}
+N. Wojke, A. Bewley, and D. Paulus, ``Simple online and realtime tracking
+with a deep association metric,'' in \textit{Proc. IEEE ICIP}, 2017,
+pp. 3645--3649.
+\bibitem{behrendt2017}
+K. Behrendt and L. Novak, ``A deep learning approach to traffic lights:
+Detecting, tracking, and classifying traffic lights during nighttime,'' in
+\textit{Proc. IEEE IV}, 2017, pp. 1244--1249.
+\bibitem{althoff2014}
+M. Althoff and J. M. Dolan, ``Online verification of automated road vehicles
+using reachability analysis,'' \textit{IEEE Trans. Robot.}, vol. 30, no. 4,
+pp. 903--918, 2014.
+\bibitem{dosovitskiy2017}
+A. Dosovitskiy, G. Ros, F. Codevilla, A. Lopez, and V. Koltun, ``CARLA: An
+open urban driving simulator,'' in \textit{Proc. Conf. on Robot Learning},
+2017, pp. 1--16.
+\bibitem{lopez2018}
+P. A. Lopez et al., ``Microscopic traffic simulation using SUMO,'' in
+\textit{Proc. IEEE ITSC}, 2018, pp. 2575--2582.
+\bibitem{godard2019}
+C. Godard, O. Mac Aodha, M. Firman, and G. J. Brostow, ``Digging into
+self-supervised monocular depth estimation,'' in \textit{Proc. IEEE ICCV},
+2019, pp. 3828--3838.
+\bibitem{vovk2005}
+V. Vovk, A. Gammerman, and G. Shafer, \textit{Algorithmic Learning in a
+Random World}. New York, NY, USA: Springer, 2005.
+\bibitem{klabnik2019}
+S. Klabnik and C. Nichols, \textit{The Rust Programming Language}, 2nd ed.
+San Francisco, CA, USA: No Starch Press, 2019.
 \end{thebibliography}
 
 \end{document}

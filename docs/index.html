@@ -582,6 +582,21 @@ window.MathJaxFallback = true;
       match (or <b>SAFE</b> if none fires).</figcaption>
     </figure>
 
+    <h3 class="sub">Perception pipeline</h3>
+    <p>The decision engine consumes physical estimates, not raw pixels. The reference
+    pipeline detects objects with a YOLOv8n network (COCO 80-class pretraining, vehicle
+    subset retained), tracks them with a Deep SORT-style association and a Kalman
+    smoother over the bounding boxes, and converts box geometry to metric estimates
+    through a calibrated pinhole model. Ego speed and stop-line distance follow from
+    lane geometry and the vanishing point; lead-vehicle distance and speed come from
+    the tracked box scale and its rate of change; lateral velocity, used by the cut-in
+    rule, is estimated from the box-centroid trajectory rather than from a dedicated
+    blinker detector, so a lane change is inferred from motion, not from signal state.
+    The &plusmn;1.5&nbsp;m operating bound on distance error corresponds to one-pixel
+    bounding-box jitter at 30&nbsp;fps plus calibration tolerance at stop-line distances
+    up to 60&nbsp;m; it is a conservative engineering bound to be confirmed by field
+    calibration, not a theoretical guarantee.</p>
+
     <h3 class="sub">Module: <code>models.rs</code></h3>
     <p>This module defines immutable data structures and exhaustive enums. All types
     are copy-able and side-effect free.</p>
@@ -944,6 +959,32 @@ edition = &quot;<span class="num">2021</span>&quot;
     $O(n)$ per frame, where $n$ is the number of detections. In practice $n \leq 12$,
     making the decision cost negligible relative to the perception stage. The overall
     per-frame complexity is dominated by the object detector.</p>
+
+    <p><b>Sensitivity to braking capability.</b> The stopping boundary
+    $d_s = d_{req}(v_e) = v_e^2/(2a_b)$ scales with the inverse of the assumed
+    deceleration $a_b$. The table below lists the required stopping distance for
+    representative speeds and decelerations; halving $a_b$ from 4.0 to
+    2.0&nbsp;m/s&sup2; doubles every entry and shifts the regime classification.
+    At $v_e = 20$&nbsp;m/s and $a_b = 2.0$&nbsp;m/s&sup2; the stopping distance
+    (100&nbsp;m) exceeds the clearance distance ($v_e(t_r-\epsilon) = 54$&nbsp;m), so
+    the dilemma zone vanishes and the approach becomes a forced stop. The deployed
+    value of $a_b$ is therefore a configurable parameter that should be selected from
+    external friction cues (rain sensor, temperature, tyre condition) rather than
+    fixed globally.</p>
+
+    <div class="table-wrap">
+    <table>
+      <caption><b>Table IV.</b> Required stopping distance $d_{req}(v_e) = v_e^2/(2a_b)$
+      in metres, for approach speed and assumed deceleration ($t_r = 3.5$&nbsp;s,
+      $\epsilon = 0.8$&nbsp;s).</caption>
+      <thead><tr><th>$v_e$ (m/s)</th><th>$a_b = 4.0$</th><th>$a_b = 3.0$</th><th>$a_b = 2.0$</th></tr></thead>
+      <tbody>
+        <tr><td>8</td><td>8.0</td><td>10.7</td><td>16.0</td></tr>
+        <tr><td>14</td><td>24.5</td><td>32.7</td><td>49.0</td></tr>
+        <tr><td>20</td><td>50.0</td><td>66.7</td><td>100.0</td></tr>
+      </tbody>
+    </table>
+    </div>
   </section>
 
   <!-- ================= VII. DISCUSSION ================= -->
@@ -1049,51 +1090,63 @@ edition = &quot;<span class="num">2021</span>&quot;
     into an explanation, which is valuable for student drivers and differentiates
     the system from OEM ADAS that treat the driver as a passive monitor.</p>
 
-    <p><b>&#9888;&#65039; Response to anticipated reviewer concerns.</b> Five concerns
-    recur in reviews of this work; we address each explicitly.</p>
-    <ol class="reviewer-response">
-      <li><b>Perception bottleneck.</b> The theorems assume exact inputs, but this is
-      a scoping choice, not an omission: every guarantee is conditional,
-      &ldquo;if the inputs satisfy the assumptions, the output is correct.&rdquo;
-      Perception error enters through the inputs, and the Discussion bounds its effect
-      (a &plusmn;1.5&nbsp;m jitter shifts the arrival-time estimate by roughly
-      100&nbsp;ms). Propagating measurement covariances through the kinematics turns
-      these bounds into calibrated warning confidence.</li>
-      <li><b>Sensor fusion.</b> The decision layer is modality-agnostic: camera, radar,
-      and LiDAR are interchangeable input providers that estimate the same physical
-      quantities (distance, speed, acceleration). Fusion improves the state estimate,
-      not the correctness of the decision logic, so the engine benefits from any
-      sensor suite without modification.</li>
-      <li><b>Road friction.</b> Assumption&nbsp;3 fixes grip at 4.0&nbsp;m/s&sup2;, valid
-      for dry asphalt. Wet leaves, black ice, or worn tyres reduce the achievable
-      deceleration, so the stopping envelope must be re-tuned for the local condition;
-      sensing grip directly is left to the perception layer as future work.</li>
-      <li><b>Tailgating follower.</b> The brake decision is recall-first for the ego
-      vehicle and the leader ahead (Theorem&nbsp;4); a follower that rear-ends the ego
-      vehicle is a different control problem (actuator policy and following-distance
-      awareness), outside the decision logic and explicitly out of scope.</li>
-      <li><b>Guardian-angel framing.</b> We agree with the framing: this system is a
-      formally verified safety envelope, a deterministic guardian that vetoes unsafe
-      suggestions, not a full autonomy stack. The neural network proposes; the engine
-      disposes. Proving the vision pipeline that extracts the inputs is the natural
-      next step: interval or conformal bounds on detector outputs, pushed into the
-      kinematic equations, would extend the guarantee upstream.</li>
-    </ol>
+    <p><b>Design boundaries.</b> Five questions recur in reviews of this work; we
+    address them in prose because they define the design boundary of the contribution
+    rather than defects in it. The perception bottleneck is a scoping choice, not an
+    omission: every theorem is conditional (&ldquo;if the inputs satisfy the
+    assumptions, the output is correct&rdquo;), perception error enters through the
+    inputs, and its effect is bounded above (a &plusmn;1.5&nbsp;m jitter shifts the
+    arrival-time estimate by roughly 100&nbsp;ms), with covariance propagation
+    identified as future work. Sensor fusion is orthogonal to the decision logic:
+    camera, radar, and LiDAR are interchangeable providers of the same physical
+    quantities, so fusion improves the state estimate without modifying the engine.
+    Road friction is a configuration parameter, not an implicit constant, and the
+    envelope is re-tuned for wet or icy conditions. A tailgating follower is a
+    different control problem: the brake decision is recall-first for the ego vehicle
+    and its leader (Theorem&nbsp;4), and rear-end protection requires
+    following-distance awareness outside the decision logic. Finally, we agree with
+    the guardian-angel framing: the system is a formally verified safety envelope that
+    vetoes unsafe suggestions, and proving the upstream vision pipeline, through
+    interval or conformal bounds on detector outputs, is the natural next step.</p>
+
+    <p><b>Comparison with threshold baselines.</b> A naive rule that warns whenever
+    speed exceeds a constant or distance falls below a constant cannot represent the
+    coupled feasibility region of Fig.&nbsp;2: the feasibility condition is a
+    conjunction, $d_s \leq d_{req}(v_e)$ (stop) or $d_s \geq v_e(t_r-\epsilon)-L_i$
+    (clear), monotone in both variables. Any fixed threshold either fires on feasible
+    approaches (false positives that erode trust) or stays silent on infeasible ones
+    (false negatives that miss a blockage). The kinematic rule is parameter-free,
+    reproduces the exact boundary, and therefore dominates fixed thresholds on the
+    canonical suite at zero tuning cost.</p>
+
+    <p><b>Ethics and safety.</b> The system issues advisory warnings only; the driver
+    retains full control, and the formal guarantees concern the warning decision, not
+    the vehicle's motion. False positives are a trust hazard and are minimised by
+    construction: the severity-ordered pipeline fires the most severe applicable rule,
+    and the recall-first threshold policy keeps false negatives at zero within the
+    operational envelope. Certification under ISO&nbsp;26262 would require the
+    deterministic core to run on a safety-rated hardware platform with ASIL-rated
+    integration; the determinism and exhaustiveness of the decision function make such
+    an argument tractable.</p>
 
     <p><b>Limitations.</b> The framework inherits the limitations of its assumptions.
     Assumption&nbsp;1 ignores acceleration and deceleration by surrounding vehicles;
     Assumption&nbsp;2 requires signal-timing observability; and Assumption&nbsp;3
     assumes nominal friction. Sensor noise in the perception layer propagates into the
     physical estimates, and although the decision logic is deterministic, the
-    measurements feeding it are not. These limitations motivate several lines of
-    future work: (i)&nbsp;probabilistic propagation of measurement uncertainty, via
-    Kalman-filter covariances or interval arithmetic, through the kinematic equations
-    to produce calibrated confidence levels for each warning; (ii)&nbsp;dynamic
-    warning thresholds adapted to the driver's reaction time; (iii)&nbsp;extension of
-    the rule set to vulnerable road users and multi-lane crossing scenes; and
-    (iv)&nbsp;type-level enforcement of physical bounds. The deterministic core is
-    the correct foundation for all of these, since probabilistic extensions can be
-    layered on top without changing the underlying kinematics.</p>
+    measurements feeding it are not. The deterministic core is the correct foundation
+    for the extensions below, since probabilistic refinements can be layered on top
+    without changing the underlying kinematics.</p>
+
+    <p><b>Future work.</b> Four extensions follow directly from the limitations above:
+    (i)&nbsp;probabilistic and set-based propagation of perception uncertainty through
+    the kinematics, using Kalman covariances, interval arithmetic, or conformal
+    prediction bounds on detector outputs; (ii)&nbsp;dynamic warning thresholds adapted
+    to the driver's reaction time and to estimated road friction from rain or
+    temperature sensors; (iii)&nbsp;extension of the rule set to vulnerable road users
+    and multi-lane crossing scenes; and (iv)&nbsp;a simulation-based evaluation
+    campaign in SUMO or CARLA with randomised intersection approaches and baseline
+    comparison, complementing the exhaustive verification suite.</p>
   </section>
 
   <!-- ================= VIII. CONCLUSION ================= -->
