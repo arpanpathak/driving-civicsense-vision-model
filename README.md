@@ -68,7 +68,7 @@ This turns every unit from a personal assistant into a **distributed sensor node
 
 ## Research Paper: Deterministic Intersection Blockage Prediction
 
-> **[\"Deterministic Intersection Blockage Prediction: A Kinematic Framework with Formal Proofs and a Modular Rust Implementation\"](https://arpanpathak.github.io/driving-civicsense-vision-model/)** — a peer-review-ready paper on the deterministic decision engine behind CivicSense's blocked-box alerts.
+> **[\"Deterministic Intersection Blockage Prediction: A Kinematic Framework with Formal Proofs and a Modular Rust Implementation\"](https://arpanpathak.github.io/driving-civicsense-vision-model/)** is a peer-review-ready paper on the deterministic decision engine behind CivicSense's blocked-box alerts.
 
 The paper formalises the intersection "dilemma zone" with five theorems (each proved in the [complete proofs appendix](https://arpanpathak.github.io/driving-civicsense-vision-model/appendix.html)), derives the stopping and clearance conditions from first principles, and presents the severity-ordered Rust rule pipeline (`rule_light → rule_dilemma → rule_lead → rule_cutin → rule_stale`). Zero training data. Zero external dependencies. Fully interpretable and ISO 26262-friendly.
 

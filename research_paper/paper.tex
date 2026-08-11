@@ -1,4 +1,4 @@
-\documentclass[twocolumn, a4paper, 10pt]{IEEEtran}
+\documentclass[conference, a4paper]{IEEEtran}
 
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage{graphicx}
@@ -8,6 +8,7 @@
 \usepackage{inconsolata}
 \usepackage{booktabs}
 \usepackage{siunitx}
+\usepackage{microtype}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning, calc, fit, backgrounds, decorations.pathreplacing}
 
@@ -25,16 +26,19 @@
   stringstyle=\color{red}\ttfamily,
   numberstyle=\tiny\color{gray},
   stepnumber=1,
-  numbersep=10pt,
-  backgroundcolor=\color{white},
+  numbersep=8pt,
+  backgroundcolor=\color{gray!6},
   tabsize=4,
   showspaces=false,
   showstringspaces=false,
   basicstyle=\ttfamily\footnotesize,
+  columns=fullflexible,
   breaklines=true,
-  frame=single,
-  aboveskip=4pt,
-  belowskip=4pt,
+  postbreak=\mbox{\textcolor{gray}{$\hookrightarrow$}\space},
+  frame=tb,
+  framesep=6pt,
+  aboveskip=6pt,
+  belowskip=6pt,
 }
 
 \lstset{language=Rust}
@@ -78,9 +82,8 @@
 
 % ------------------------------------------------------------------
 \title{Deterministic Intersection Blockage Prediction:\\A Kinematic Framework with Formal Proofs and a Modular Rust Implementation}
-\author{Arpan~Pathak,~%
-\thanks{A. Pathak is the author of the CivicSense project. Correspondence: \href{mailto:author@domain.com}{author@domain.com}.}%
-~CivicSense Research}
+\author{\IEEEauthorblockN{Arpan Pathak}
+\IEEEauthorblockA{CivicSense Research}}
 \date{}
 
 \begin{document}
@@ -126,7 +129,7 @@ formal guarantee of correctness.
 
 This paper proposes an alternative: a mathematically grounded, zero-training
 system. The perception layer (a YOLO-based object detector) supplies physical
-estimates---ego speed, distance to the stop line, lead-vehicle distance and
+estimates: ego speed, distance to the stop line, lead-vehicle distance and
 speed, and lateral movement of adjacent vehicles. The decision layer then
 applies the equations of motion to determine whether a safe stop or a safe
 clearance is possible within the remaining time before the signal turns red.
@@ -177,7 +180,7 @@ about the impending blockage.
 In the vehicle safety literature, Shalev-Shwartz et al.~\cite{shalev2017}
 formalised a responsibility-sensitive safety (RSS) model that defines safe
 longitudinal and lateral distances between vehicles. The present work adopts
-a similar philosophy---safety as an explicit, checkable predicate---but
+a similar philosophy (safety as an explicit, checkable predicate) but
 specialises it to the intersection-crossing manoeuvre and grounds it in the
 traffic-signal timing rather than in inter-vehicle distance alone.
 
@@ -316,7 +319,7 @@ sketches. Figure~\ref{fig:scenario} depicts the scene geometry.
 
 \begin{figure}[t]
 \centering
-\begin{tikzpicture}[scale=0.6, every node/.style={font=\scriptsize}]
+\begin{tikzpicture}[scale=0.58, every node/.style={font=\scriptsize}]
   % --- roads -------------------------------------------------------
   \fill[gray!12] (-2, -0.5) rectangle (10, 21.5);
   \fill[white]   (0, -0.5) rectangle (6, 21.5);   % ego road (northbound)
@@ -599,7 +602,7 @@ halts the vehicle before the line; when it is close ($\ds = 10$~m), constant
 speed clears the box before the red phase; when it is intermediate
 ($\ds = 28$~m), neither braking (the vehicle stops inside the box) nor
 proceeding (the box is not cleared before the margin) succeeds, and the
-vehicle is blocked---the dilemma zone in action.
+vehicle is blocked. This is the dilemma zone in action.
 
 \begin{figure}[t]
 \centering
@@ -662,7 +665,7 @@ $\tred = 4$~s, $\epsilon = 0.8$~s (box shaded). (a) With $\ds = 50$~m,
 braking stops the vehicle before the stop line (safe stop). (b) With
 $\ds = 10$~m, constant speed clears the far side at $t = 2.17$~s, before
 $\tred - \epsilon = 3.2$~s (safe clear). (c) With $\ds = 28$~m, braking
-stops the vehicle at $x = 30$~m---inside the box---while the constant-speed
+stops the vehicle at $x = 30$~m, inside the box, while the constant-speed
 policy clears only at $t = 3.67$~s, after the margin. Neither policy avoids
 blockage: the state is in the dilemma zone.}
 \label{fig:traj}
@@ -1130,7 +1133,7 @@ use decision::evaluate_safety;
 use models::*;
 
 fn main() {
-    // Simulated sensor inputs (dilemma-zone scene of Figure 3a).
+    // Simulated sensor inputs (dilemma-zone scene).
     let ego = EgoState { speed: 14.0, distance_to_stop_line: 25.0 };
     let detections = vec![
         Detection { bbox: (0.0,0.0,0.0,0.0), class_id: 2, speed: 5.0,
@@ -1212,7 +1215,7 @@ outputs, which permits exhaustive verification and reproducible test
 campaigns. All constants in Table~\ref{tab:notation} are either
 standardised or configurable, and the proofs in
 Appendix~\ref{app:proofs} establish that the rules fire exactly when the
-corresponding kinematic condition holds---there is no learned ``hidden
+corresponding kinematic condition holds. There is no learned ``hidden
 logic'' to audit. Conservative choices (constant-velocity clearance,
 $\epsilon$ margin) bias the system toward false positives rather than false
 negatives, which is the correct direction for a warning system: a spurious
@@ -1557,7 +1560,7 @@ ECCV}, 2020, pp. 194--210.
 N. Matsakis and F. Klock, ``The Rust language,'' \textit{ACM SIGAda Ada
 Letters}, vol. 34, no. 3, pp. 103--104, 2014.
 \bibitem{iso26262}
-ISO, \textit{Road vehicles --- Functional safety}, ISO 26262:2018, 2018.
+ISO, \textit{Road vehicles -- Functional safety}, ISO 26262:2018, 2018.
 \end{thebibliography}
 
 \end{document}

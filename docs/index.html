@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Deterministic Intersection Blockage Prediction — CivicSense Research</title>
+<title>Deterministic Intersection Blockage Prediction | CivicSense Research</title>
 <meta name="description" content="A deterministic, formally proven kinematic framework for predicting intersection blockage, with a modular Rust implementation.">
 <link rel="stylesheet" href="assets/style.css">
 <script>
@@ -22,7 +22,7 @@ window.MathJax = {
     <nav>
       <a href="index.html" class="active">Paper</a>
       <a href="appendix.html">Proofs Appendix</a>
-      <a href="paper.pdf">PDF</a>
+      <a href="https://raw.githubusercontent.com/arpanpathak/driving-civicsense-vision-model/main/research_paper/paper.pdf">PDF</a>
       <a href="https://github.com/arpanpathak/driving-civicsense-vision-model">GitHub</a>
     </nav>
   </div>
@@ -35,9 +35,9 @@ window.MathJax = {
     <h1>Deterministic Intersection Blockage Prediction:<br>
         A Kinematic Framework with Formal Proofs and a Modular Rust Implementation</h1>
     <div class="authors">Arpan Pathak</div>
-    <div class="affil">CivicSense Research &middot; <a href="mailto:author@domain.com">author@domain.com</a></div>
+    <div class="affil">CivicSense Research</div>
     <div class="links">
-      <a href="paper.pdf">&#128196; Download PDF</a>
+      <a href="https://raw.githubusercontent.com/arpanpathak/driving-civicsense-vision-model/main/research_paper/paper.pdf">&#128196; Download PDF</a>
       <a href="appendix.html">&#10003; Proofs Appendix</a>
       <a href="https://github.com/arpanpathak/driving-civicsense-vision-model/tree/main/research_paper">&#128279; LaTeX source</a>
     </div>
@@ -62,7 +62,7 @@ window.MathJax = {
     ISO&nbsp;26262-compliant automotive systems.</p>
   </div>
 
-  <p class="keywords"><b>Index terms&nbsp;&mdash;</b> intersection blockage, dilemma zone, kinematic safety,
+  <p class="keywords"><b>Index terms&nbsp;:</b> intersection blockage, dilemma zone, kinematic safety,
   driver assistance, deterministic decision making, Rust, formal verification</p>
 
   <nav class="toc">
@@ -87,7 +87,7 @@ window.MathJax = {
       <li><a href="#s7">Discussion</a></li>
       <li><a href="#s8">Conclusion</a></li>
       <li><a href="#refs">References</a></li>
-      <li><a href="appendix.html">Appendix A &mdash; Complete Mathematical Proofs</a></li>
+      <li><a href="appendix.html">Appendix A: Complete Mathematical Proofs</a></li>
     </ol>
   </nav>
 
@@ -106,7 +106,7 @@ window.MathJax = {
     infeasible, and the resulting models offer no formal guarantee of correctness.</p>
     <p>This paper proposes an alternative: a <b>mathematically grounded,
     zero-training system</b>. The perception layer (a YOLO-based object detector)
-    supplies physical estimates &mdash; ego speed, distance to the stop line,
+    supplies physical estimates: ego speed, distance to the stop line,
     lead-vehicle distance and speed, and lateral movement of adjacent vehicles. The
     decision layer then applies the equations of motion to determine whether a safe
     stop or a safe clearance is possible within the remaining time before the signal
@@ -144,7 +144,7 @@ window.MathJax = {
     <p>In the vehicle safety literature, Shalev-Shwartz et&nbsp;al.&nbsp;[3]
     formalised a responsibility-sensitive safety (RSS) model that defines safe
     longitudinal and lateral distances between vehicles. The present work adopts a
-    similar philosophy &mdash; safety as an explicit, checkable predicate &mdash; but
+    similar philosophy (safety as an explicit, checkable predicate) but
     specialises it to the intersection-crossing manoeuvre and grounds it in the
     traffic-signal timing rather than in inter-vehicle distance alone.</p>
     <p>End-to-end learning approaches to intersection behaviour&nbsp;[4] predict
@@ -424,7 +424,7 @@ window.MathJax = {
     clears the box before the red phase; when it is intermediate
     ($d_s = 28$&nbsp;m), neither braking (the vehicle stops inside the box) nor
     proceeding (the box is not cleared before the margin) succeeds, and the vehicle is
-    blocked &mdash; the dilemma zone in action.</p>
+    blocked. This is the dilemma zone in action.</p>
 
     <figure>
       <img src="assets/fig-trajectories.svg" alt="Canonical trajectories">
@@ -433,7 +433,7 @@ window.MathJax = {
       braking stops the vehicle before the stop line (safe stop). (b) With
       $d_s = 10$&nbsp;m, constant speed clears the far side at $t = 2.17$&nbsp;s,
       before $t_y - \epsilon = 3.2$&nbsp;s (safe clear). (c) With $d_s = 28$&nbsp;m,
-      braking stops the vehicle at $x = 30$&nbsp;m &mdash; inside the box &mdash; while
+      braking stops the vehicle at $x = 30$&nbsp;m, inside the box, while
       the constant-speed policy clears only at $t = 3.67$&nbsp;s, after the margin.
       Neither policy avoids blockage: the state is in the dilemma zone.</figcaption>
     </figure>
@@ -838,7 +838,7 @@ window.MathJax = {
 <span class="kw">use</span> models::*;
 
 <span class="kw">fn</span> main() {
-    <span class="cmt">// Simulated sensor inputs (dilemma-zone scene of Figure 3a).</span>
+    <span class="cmt">// Simulated sensor inputs (dilemma-zone scene).</span>
     <span class="kw">let</span> ego = EgoState { speed: <span class="num">14.0</span>, distance_to_stop_line: <span class="num">25.0</span> };
     <span class="kw">let</span> detections = vec![
         Detection { bbox: (<span class="num">0.0</span>,<span class="num">0.0</span>,<span class="num">0.0</span>,<span class="num">0.0</span>), class_id: <span class="num">2</span>, speed: <span class="num">5.0</span>,
@@ -923,7 +923,7 @@ edition = &quot;<span class="num">2021</span>&quot;
     which permits exhaustive verification and reproducible test campaigns. All
     constants in Table&nbsp;I are either standardised or configurable, and the proofs
     in <a href="appendix.html">Appendix&nbsp;A</a> establish that the rules fire
-    exactly when the corresponding kinematic condition holds &mdash; there is no
+    exactly when the corresponding kinematic condition holds. There is no
     learned &ldquo;hidden logic&rdquo; to audit. Conservative choices (constant-velocity
     clearance, $\epsilon$ margin) bias the system toward false positives rather than
     false negatives, which is the correct direction for a warning system: a spurious
@@ -983,7 +983,7 @@ edition = &quot;<span class="num">2021</span>&quot;
       <li><span class="cite">[5]</span> N. Matsakis and F. Klock, &ldquo;The Rust
           language,&rdquo; <i>ACM SIGAda Ada Letters</i>, vol. 34, no. 3, pp.
           103&ndash;104, 2014.</li>
-      <li><span class="cite">[6]</span> ISO, <i>Road vehicles &mdash; Functional
+      <li><span class="cite">[6]</span> ISO, <i>Road vehicles &ndash; Functional
           safety</i>, ISO 26262:2018, 2018.</li>
     </ol>
   </section>
@@ -993,7 +993,7 @@ edition = &quot;<span class="num">2021</span>&quot;
     <span>
       <a href="index.html">Paper</a> &middot;
       <a href="appendix.html">Proofs Appendix</a> &middot;
-      <a href="paper.pdf">PDF</a> &middot;
+      <a href="https://raw.githubusercontent.com/arpanpathak/driving-civicsense-vision-model/main/research_paper/paper.pdf">PDF</a> &middot;
       <a href="https://github.com/arpanpathak/driving-civicsense-vision-model">GitHub</a>
     </span>
   </footer>
