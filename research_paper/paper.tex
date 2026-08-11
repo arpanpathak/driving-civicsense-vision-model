@@ -1261,19 +1261,18 @@ warning is annoying; a missed blockage can be fatal.
 \begin{tikzpicture}[
   font=\scriptsize,
   >=Stealth,
-  envbox/.style={draw=orange!80!black, thick, rounded corners=2pt, align=center,
-                 inner sep=4pt, text width=2.3cm, fill=orange!10},
   pbox/.style={draw=gray!70, thick, rounded corners=2pt, align=center,
                inner sep=4pt, text width=2.2cm},
-  wnote/.style={align=center, text width=3.4cm, font=\scriptsize, text=black!80},
 ]
-  % environment row
-  \node[font=\small\itshape, text=orange!80!black] at (6.3, 5.8) {Environment (assumed, not sensed)};
-  \node[envbox] (e1) at (2.9, 4.7) {\warnicon\ 1 Signal timing\\ (V2I / SPaT)};
-  \node[envbox] (e2) at (6.3, 4.7) {\warnicon\ 3 Lead vehicle\\ deceleration $\leq 0.4g$};
-  \node[envbox] (e3) at (9.7, 4.7) {\warnicon\ 6 Road grip\\ $a_b = 4$~m/s$^2$};
-  % pipeline row
-  \node[pbox] (p1) at (0, 0) {Video\\window};
+  % warning markers above the affected stages
+  \node at (2.0, 1.05) {\warnicon~2};
+  \node at (3.1, 1.05) {\warnicon~5};
+  \node at (6.7, 1.05) {\warnicon~1};
+  \node at (7.6, 1.05) {\warnicon~3};
+  \node at (8.5, 1.05) {\warnicon~6};
+  \node at (10.0, 1.05) {\warnicon~4};
+  % pipeline stages
+  \node[pbox] (p1) at (0.0, 0) {Video\\window};
   \node[pbox] (p2) at (2.5, 0) {Perception\\YOLO (NN)};
   \node[pbox] (p3) at (5.0, 0) {Feature\\extraction};
   \node[pbox] (p4) at (7.5, 0) {Decision\\engine};
@@ -1282,54 +1281,57 @@ warning is annoying; a missed blockage can be fatal.
   \draw[->, thick] (p2) -- (p3);
   \draw[->, thick] (p3) -- (p4);
   \draw[->, thick] (p4) -- (p5);
-  % environment feeds the decision chain
-  \draw[->, thick, orange!80!black] (e1.south) -- (4.2, 0.7);
-  \draw[->, thick, orange!80!black] (e2.south) -- (7.0, 0.7);
-  \draw[->, thick, orange!80!black] (e3.south) -- (8.8, 0.7);
-  % warnings below the pipeline
-  \node[wnote] (w2) at (2.5, -1.7) {\warnicon\ 2 Perception uncertainty:\\ bbox jitter $\pm 1.5$~m $\approx 100$~ms};
-  \node[wnote] (w5) at (2.5, -2.9) {\warnicon\ 5 Occlusion:\\ stop line hidden};
-  \node[wnote] (w4) at (10.0, -1.7) {\warnicon\ 4 Trust erosion:\\ false positives get ignored};
-  \draw[dashed, gray] (p2.south) -- (2.5, -1.25);
-  \draw[dashed, gray] (p5.south) -- (10.0, -1.25);
+  % legend, two columns
+  \node[align=left, anchor=west, font=\scriptsize] at (-0.3, -1.6) {
+    \warnicon~1 Signal timing (V2I / SPaT)\\
+    \warnicon~2 Perception uncertainty ($\pm 1.5$~m $\approx 100$~ms)\\
+    \warnicon~3 Lead-vehicle motion ($\leq 0.4g$)};
+  \node[align=left, anchor=west, font=\scriptsize] at (5.2, -1.6) {
+    \warnicon~4 Trust erosion (false positives)\\
+    \warnicon~5 Occlusion (stop line hidden)\\
+    \warnicon~6 Road friction ($4$~m/s$^2$)};
 \end{tikzpicture}
-\caption{Known vulnerabilities mapped onto the system pipeline. The three
-environmental quantities (signal timing, lead-vehicle motion, road grip) are
-assumed rather than sensed and enter the formal guarantees as explicit bounds;
-the perception-stage vulnerabilities affect the accuracy of the inputs; the
-HMI-stage vulnerability affects whether warnings are obeyed. Numbered icons
-match the discussion in Section~\ref{sec:discussion}.}
+\caption{Known vulnerabilities mapped onto the pipeline stages they affect.
+Markers: 1 signal timing, 2 perception uncertainty, 3 lead-vehicle motion,
+4 HMI trust erosion, 5 occlusion, 6 road friction. Each marker denotes an
+explicit operational boundary of the formal guarantees
+(Section~\ref{sec:discussion}).}
 \label{fig:vuln}
 \end{figure*}
 
 \paragraph{\warnicon~Known vulnerabilities and operational boundaries.}
 Peer review of an earlier draft surfaced six concerns that we state explicitly
-rather than hide.
-Figure~\ref{fig:vuln} maps each vulnerability onto the pipeline stage where it
-enters.
-\warnicon~\textbf{(1) Signal timing.} Without V2I or a SPaT (signal phase and timing)
-feed, a vision-only system cannot know when a stale green turns yellow;
-Remark~\ref{rem:worstcase} applies, and the ``stale'' aspect of the warning
-reduces to pure geometry.
-\warnicon~\textbf{(2) Perception uncertainty.} Neural network outputs are point
-estimates, and a confidence score is not a formal bound. A bounding-box
-jitter of $\pm 1.5$~m at $14$~m/s shifts the arrival-time estimate by roughly
-$100$~ms, which can flip a safe decision into a blocked one. The formal
-results therefore hold for the given inputs, not for the unobserved ground
-truth.
-\warnicon~\textbf{(3) Lead-vehicle motion.} Theorem~\ref{thm:follow} is conditional on
-a bounded leader deceleration (Remark~\ref{rem:leadbound}); the operational
-envelope is defined by that bound.
-\warnicon~\textbf{(4) HMI trust.} Frequent false positives erode driver trust and can
-cause the system to be ignored, turning the next missed warning into a fatal
-outcome. The threshold policy is therefore recall-first, minimizing false
-negatives, and future work targets a dynamic threshold adapted to the
-driver's reaction time, with warning intensity modulated by confidence.
-\warnicon~\textbf{(5) Occlusion.} A large vehicle can hide the stop line or the lead
-vehicle entirely; such detection gaps lie outside the formal scope.
-\warnicon~\textbf{(6) Road friction.} Assumption~\ref{asm:braking} fixes grip at
-$4.0$~\si{m/s^2}; wet or icy surfaces reduce it, and the stopping envelope
-must be re-tuned for the local condition.
+rather than hide; Figure~\ref{fig:vuln} maps each onto the pipeline stage
+where it enters.
+\begin{enumerate}
+\item[\warnicon~\textbf{1. Signal timing.}] Without V2I or a SPaT (signal
+  phase and timing) feed, a vision-only system cannot know when a stale green
+  turns yellow; Remark~\ref{rem:worstcase} applies, and the ``stale'' aspect
+  of the warning reduces to pure geometry.
+\item[\warnicon~\textbf{2. Perception uncertainty.}] Neural network outputs
+  are point estimates, and a confidence score is not a formal bound. A
+  bounding-box jitter of $\pm 1.5$~m at $14$~m/s shifts the arrival-time
+  estimate by roughly $100$~ms, which can flip a safe decision into a blocked
+  one. The formal results therefore hold for the given inputs, not for the
+  unobserved ground truth.
+\item[\warnicon~\textbf{3. Lead-vehicle motion.}]
+  Theorem~\ref{thm:follow} is conditional on a bounded leader deceleration
+  (Remark~\ref{rem:leadbound}); the operational envelope is defined by that
+  bound.
+\item[\warnicon~\textbf{4. HMI trust.}] Frequent false positives erode driver
+  trust and can cause the system to be ignored, turning the next missed
+  warning into a fatal outcome. The threshold policy is therefore
+  recall-first, minimizing false negatives, and future work targets a dynamic
+  threshold adapted to the driver's reaction time, with warning intensity
+  modulated by confidence.
+\item[\warnicon~\textbf{5. Occlusion.}] A large vehicle can hide the stop
+  line or the lead vehicle entirely; such detection gaps lie outside the
+  formal scope.
+\item[\warnicon~\textbf{6. Road friction.}]
+  Assumption~\ref{asm:braking} fixes grip at $4.0$~\si{m/s^2}; wet or icy
+  surfaces reduce it, and the stopping envelope must be re-tuned for the
+  local condition.
+\end{enumerate}
 
 \paragraph{Scope of the formal results.} The proofs establish properties of
 the decision logic given exact inputs. They do not bound perception error,

@@ -327,3 +327,10 @@ ol.refs .cite { font-family: var(--mono); font-size: 12px; color: var(--accent);
   .toc { columns: 1; }
   .topbar nav { margin-left: 0; }
 }
+
+/* ---------- vulnerability warning blocks ---------- */
+.vuln-item {
+  border-left: 4px solid #f9a825;
+  background: #fffbe6;
+}
+.vuln-item .head { color: #8a6d00; font-weight: 700; font-family: var(--sans); font-size: 14px; }

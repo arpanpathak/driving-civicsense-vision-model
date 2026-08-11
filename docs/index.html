@@ -970,32 +970,56 @@ edition = &quot;<span class="num">2021</span>&quot;
 
     <figure>
       <img src="assets/fig-vulnerabilities.svg" alt="Known vulnerabilities mapped onto the pipeline">
-      <figcaption><b>Fig. 5.</b> Known vulnerabilities mapped onto the system pipeline. The three environmental quantities (signal timing, lead-vehicle motion, road grip) are assumed rather than sensed and enter the formal guarantees as explicit bounds; the perception-stage vulnerabilities affect the accuracy of the inputs; the HMI-stage vulnerability affects whether warnings are obeyed. Numbered icons match the discussion in this section.</figcaption>
+      <figcaption><b>Fig. 5.</b> Known vulnerabilities mapped onto the pipeline stages they affect. Markers: 1 signal timing, 2 perception uncertainty, 3 lead-vehicle motion, 4 HMI trust erosion, 5 occlusion, 6 road friction.</figcaption>
     </figure>
 
-    <p><b>&#9888;&#65039; Known vulnerabilities and operational boundaries.</b> Peer review of an
-    earlier draft surfaced six concerns that we state explicitly rather than hide;
-    Fig. 5 maps each vulnerability onto the pipeline stage where it enters.
-    <b>&#9888;&#65039; (1) Signal timing.</b> Without V2I or a SPaT (signal phase and timing) feed, a
+        <p><b>&#9888;&#65039; Known vulnerabilities and operational boundaries.</b>
+    Peer review of an earlier draft surfaced six concerns that we state explicitly
+    rather than hide; Fig. 5 maps each onto the pipeline stage where it enters.</p>
+
+    <div class="vuln">
+      <div class="thm remark vuln-item">
+        <span class="head">&#9888;&#65039; 1. Signal timing.</span>
+        <p>Without V2I or a SPaT (signal phase and timing) feed, a
     vision-only system cannot know when a stale green turns yellow; the
     worst-case remark in Section&nbsp;III applies, and the &ldquo;stale&rdquo; aspect of the
-    warning reduces to pure geometry. <b>&#9888;&#65039; (2) Perception uncertainty.</b> Neural
+    warning reduces to pure geometry.</p>
+      </div>
+      <div class="thm remark vuln-item">
+        <span class="head">&#9888;&#65039; 2. Perception uncertainty.</span>
+        <p>Neural
     network outputs are point estimates, and a confidence score is not a formal
     bound. A bounding-box jitter of $\pm 1.5$&nbsp;m at $14$&nbsp;m/s shifts the
     arrival-time estimate by roughly $100$&nbsp;ms, which can flip a safe decision
     into a blocked one. The formal results therefore hold for the given inputs,
-    not for the unobserved ground truth. <b>&#9888;&#65039; (3) Lead-vehicle motion.</b>
-    Theorem&nbsp;5 is conditional on a bounded leader deceleration (see the remark
-    in Section&nbsp;IV-E); the operational envelope is defined by that bound.
-    <b>&#9888;&#65039; (4) HMI trust.</b> Frequent false positives erode driver trust and can cause
+    not for the unobserved ground truth.</p>
+      </div>
+      <div class="thm remark vuln-item">
+        <span class="head">&#9888;&#65039; 3. Lead-vehicle motion.</span>
+        <p>Theorem&nbsp;5 is conditional on a bounded leader deceleration (see the remark
+    in Section&nbsp;IV-E); the operational envelope is defined by that bound.</p>
+      </div>
+      <div class="thm remark vuln-item">
+        <span class="head">&#9888;&#65039; 4. HMI trust.</span>
+        <p>Frequent false positives erode driver trust and can cause
     the system to be ignored, turning the next missed warning into a fatal outcome.
     The threshold policy is therefore recall-first, minimizing false negatives, and
     future work targets a dynamic threshold adapted to the driver's reaction time,
-    with warning intensity modulated by confidence. <b>&#9888;&#65039; (5) Occlusion.</b> A large
+    with warning intensity modulated by confidence.</p>
+      </div>
+      <div class="thm remark vuln-item">
+        <span class="head">&#9888;&#65039; 5. Occlusion.</span>
+        <p>A large
     vehicle can hide the stop line or the lead vehicle entirely; such detection
-    gaps lie outside the formal scope. <b>&#9888;&#65039; (6) Road friction.</b> Assumption&nbsp;3
+    gaps lie outside the formal scope.</p>
+      </div>
+      <div class="thm remark vuln-item">
+        <span class="head">&#9888;&#65039; 6. Road friction.</span>
+        <p>Assumption&nbsp;3
     fixes grip at $4.0$&nbsp;m/s$^2$; wet or icy surfaces reduce it, and the
     stopping envelope must be re-tuned for the local condition.</p>
+      </div>
+    </div>
 
     <p><b>Scope of the formal results.</b> The proofs establish properties of the
     decision logic given exact inputs. They do not bound perception error,
