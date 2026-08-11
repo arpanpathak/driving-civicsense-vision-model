@@ -15,6 +15,7 @@
 [![Cloud GPU](https://img.shields.io/badge/Cloud%20GPU%20Guide-8A2BE2)](CLOUD_TRAINING.md)
 [![KMP Companion](https://img.shields.io/badge/KMP-Companion-purple)](https://github.com/arpanpathak/civicsense-companion)
 [![Book: Seeing Machines](https://img.shields.io/badge/Book-Seeing%20Machines-FF6B6B)](https://arpanpathak.github.io/seeing-machines-book/foreword.html)
+[![Paper: Intersection Blockage](https://img.shields.io/badge/Paper-Intersection%20Blockage-8A2BE2)](https://arpanpathak.github.io/driving-civicsense-vision-model/)
 
 </div>
 

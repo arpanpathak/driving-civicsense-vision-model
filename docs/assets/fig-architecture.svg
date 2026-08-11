@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="470" viewBox="0 0 1000 470" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#212121"/></marker></defs>
 <rect x="20" y="60" width="160" height="84" rx="8" fill="#757575" opacity="0.92"/>
 <text x="100.0" y="94.0" font-size="13" font-weight="bold" fill="white" text-anchor="middle">Video window</text>
