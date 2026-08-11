@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix A: Complete Mathematical Proofs — CivicSense Research</title>
+<meta name="description" content="Complete formal proofs for the deterministic intersection blockage prediction framework.">
+<link rel="stylesheet" href="assets/style.css">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], tags: 'ams' },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <span class="brand">CivicSense&nbsp;Research</span>
+    <nav>
+      <a href="index.html">Paper</a>
+      <a href="appendix.html" class="active">Proofs Appendix</a>
+      <a href="paper.pdf">PDF</a>
+      <a href="https://github.com/arpanpathak/driving-civicsense-vision-model">GitHub</a>
+    </nav>
+  </div>
+</div>
+
+<div class="container">
+
+  <header class="paper-header">
+    <div class="kicker">Appendix to &ldquo;Deterministic Intersection Blockage Prediction&rdquo;</div>
+    <h1>Appendix A &mdash; Complete Mathematical Proofs</h1>
+    <div class="authors">Arpan Pathak &middot; CivicSense Research</div>
+    <div class="links">
+      <a href="index.html">&larr; Back to paper</a>
+      <a href="paper.pdf">&#128196; Download PDF</a>
+    </div>
+  </header>
+
+  <div class="abstract">
+    <span class="label">About this appendix</span>
+    <p>This appendix develops the formal results of Section&nbsp;IV of the main paper
+    self-contained. We first prove supporting lemmas, then restate and prove each
+    theorem in full. Throughout, time is measured in seconds, distances in metres,
+    speeds in m/s, and accelerations in m/s$^2$. We assume the kinematic model of
+    Assumptions&nbsp;1&ndash;3: longitudinal motion is governed by
+    $\ddot{x} = a(t)$ with $|a(t)| \leq a_b$ and an actuation delay $t_r$ during which
+    $a(t) = 0$.</p>
+  </div>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#a1">A.1 &mdash; Supporting Lemmas</a></li>
+      <li><a href="#a2">A.2 &mdash; Proof of Theorem 1 (Stopping distance)</a></li>
+      <li><a href="#a3">A.3 &mdash; Proof of Theorem 2 (Stopping feasibility)</a></li>
+      <li><a href="#a4">A.4 &mdash; Proof of Theorem 3 (Clearance feasibility)</a></li>
+      <li><a href="#a5">A.5 &mdash; Proof of Theorem 4 (Dilemma zone)</a></li>
+      <li><a href="#a6">A.6 &mdash; Proof of Theorem 5 (Following blockage)</a></li>
+      <li><a href="#a7">A.7 &mdash; Proof of Theorem 6 (Cut-in warning)</a></li>
+      <li><a href="#a8">A.8 &mdash; Soundness of the Decision Pipeline</a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ A.1 Supporting lemmas ============ -->
+  <section id="a1">
+    <h2 class="sec"><span class="no">A.1</span> Supporting Lemmas</h2>
+
+    <div class="thm lemma">
+      <span class="head">Lemma A.1 (Braking distance).</span>
+      <p>Under constant deceleration $a_b$ from initial speed $v_e$, the distance
+      travelled until rest is $v_e^2 / (2a_b)$.</p>
+    </div>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p>The equation of motion during braking is $\ddot{x} = -a_b$, with initial
+      conditions $x(0)=0$, $\dot{x}(0)=v_e$. Integrating twice:
+      $\dot{x}(t) = v_e - a_b t$ and
+      $x(t) = v_e t - \tfrac{1}{2}a_b t^2$. The vehicle is at rest when
+      $\dot{x}(t_s) = 0$, i.e.&nbsp;$t_s = v_e/a_b$. Substituting:</p>
+      <div class="eq">$$x(t_s) = v_e \cdot \frac{v_e}{a_b} - \frac{1}{2}a_b \cdot
+      \frac{v_e^2}{a_b^2} = \frac{v_e^2}{a_b} - \frac{v_e^2}{2a_b} =
+      \frac{v_e^2}{2a_b}.$$</div>
+      <span class="qed">&#9633;</span>
+    </div>
+
+    <div class="thm lemma">
+      <span class="head">Lemma A.2 (Reaction distance).</span>
+      <p>During the reaction delay $t_r$, during which no braking is applied, the
+      vehicle travels $v_e t_r$ at constant speed.</p>
+    </div>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p>With $a(t) = 0$ for $t \in [0, t_r]$, $\dot{x} = v_e$ is constant, hence
+      $x(t_r) = v_e t_r$.</p>
+      <span class="qed">&#9633;</span>
+    </div>
+
+    <div class="thm lemma">
+      <span class="head">Lemma A.3 (Intermediate value for braking profiles).</span>
+      <p>Let $x_\alpha(t)$ be the trajectory obtained by applying deceleration
+      $\alpha \in [0, a_b]$ after the reaction delay. Then the stopping position
+      $x_\alpha(\infty) = v_e t_r + v_e^2/(2\alpha)$ (with the convention that
+      $\alpha = 0$ means &ldquo;never stops&rdquo;) is continuous and strictly decreasing in
+      $\alpha$ on $(0, a_b]$.</p>
+    </div>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p>By Lemma&nbsp;A.1, the braking contribution is $v_e^2/(2\alpha)$, which is
+      continuous and strictly decreasing in $\alpha$ on $(0, a_b]$; the reaction
+      contribution $v_e t_r$ is independent of $\alpha$. Hence the total stopping
+      position is continuous and strictly decreasing in $\alpha$.</p>
+      <span class="qed">&#9633;</span>
+    </div>
+
+    <div class="thm corollary">
+      <span class="head">Corollary A.1 (Exact-stop profile).</span>
+      <p>If $d_s > d_{\mathrm{req}}(v_e)$, there exists a deceleration
+      $\alpha^* \in (0, a_b)$ such that the vehicle stops exactly at the stop line:
+      $x_{\alpha^*}(\infty) = d_s$.</p>
+    </div>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p>By Lemma&nbsp;A.3, the map $\alpha \mapsto x_\alpha(\infty)$ is continuous on
+      $(0, a_b]$, with $x_{a_b}(\infty) = d_{\mathrm{req}}(v_e) < d_s$ and
+      $\lim_{\alpha \to 0^+} x_\alpha(\infty) = +\infty > d_s$. The intermediate value
+      theorem yields $\alpha^* \in (0, a_b)$ with $x_{\alpha^*}(\infty) = d_s$.</p>
+      <span class="qed">&#9633;</span>
+    </div>
+
+    <div class="thm lemma">
+      <span class="head">Lemma A.4 (Minimum-time position bound).</span>
+      <p>Any trajectory with $|\ddot{x}| \leq a_b$ that begins at $x(0)=0$ with
+      $\dot{x}(0) = v_e$ and applies no braking before $t_r$ satisfies
+      $x(t) \geq x_{\min}(t)$ for all $t$, where $x_{\min}$ is the maximum-braking
+      trajectory.</p>
+    </div>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p>For $t \in [0, t_r]$ all admissible trajectories coincide
+      ($x = v_e t$). For $t > t_r$, the trajectory with the largest deceleration
+      $a = -a_b$ has the smallest velocity and hence the smallest position at every
+      subsequent time; any smaller deceleration (or acceleration) yields
+      $x(t) \geq x_{\min}(t)$ by monotone comparison of the integrated velocity.</p>
+      <span class="qed">&#9633;</span>
+    </div>
+  </section>
+
+  <!-- ============ A.2 ============ -->
+  <section id="a2">
+    <h2 class="sec"><span class="no">A.2</span> Proof of Theorem 1 (Stopping distance)</h2>
+    <p><b>Theorem 1.</b> Under Assumptions&nbsp;1&ndash;3, the minimum distance within
+    which the ego vehicle can be brought to rest, measured from the instant of
+    decision, is $d_{\mathrm{req}}(v_e) = v_e t_r + v_e^2/(2a_b)$.</p>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p>The admissible trajectory is the concatenation of the reaction phase (no
+      braking, $t \in [0, t_r]$) and the braking phase (maximal deceleration $a_b$).
+      By Lemma&nbsp;A.2 the reaction phase contributes $v_e t_r$; by
+      Lemma&nbsp;A.1 the braking phase contributes $v_e^2/(2a_b)$. No braking profile
+      can do better: by Lemma&nbsp;A.4, any trajectory that stops must cover at least
+      the distance covered by the maximum-braking trajectory, and delaying braking
+      beyond $t_r$ or braking at less than $a_b$ only increases the stopping distance
+      (Lemma&nbsp;A.3). Hence $d_{\mathrm{req}}(v_e) = v_e t_r + v_e^2/(2a_b)$ is the
+      exact minimum.</p>
+      <span class="qed">&#9633;</span>
+    </div>
+  </section>
+
+  <!-- ============ A.3 ============ -->
+  <section id="a3">
+    <h2 class="sec"><span class="no">A.3</span> Proof of Theorem 2 (Stopping feasibility)</h2>
+    <p><b>Theorem 2.</b> Let $d_s$ be the distance from the ego vehicle's front bumper
+    to the stop line. A safe stop is physically possible if and only if
+    $d_s > d_{\mathrm{req}}(v_e)$.</p>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p>($\Rightarrow$) Suppose a safe stop exists: some trajectory $x$ with
+      $|a| \leq a_b$ and $a(t) = 0$ for $t \in [0, t_r]$ satisfies $x(t) < d_s$ for
+      all $t$ and $\dot{x}(t) \to 0$. By Lemma&nbsp;A.4, $x(t) \geq x_{\min}(t)$,
+      hence $d_s > \sup_t x(t) \geq x_{\min}(\infty) = d_{\mathrm{req}}(v_e)$. Thus
+      $d_s > d_{\mathrm{req}}(v_e)$.</p>
+      <p>($\Leftarrow$) Suppose $d_s > d_{\mathrm{req}}(v_e)$. By
+      Corollary&nbsp;A.1 there exists $\alpha^* \in (0, a_b)$ such that the trajectory
+      stops exactly at $d_s$. This trajectory satisfies $x(t) \leq d_s$ with equality
+      only at the stopping instant, so it is a safe stop. Hence stopping feasibility
+      is equivalent to $d_s > d_{\mathrm{req}}(v_e)$.</p>
+      <span class="qed">&#9633;</span>
+    </div>
+  </section>
+
+  <!-- ============ A.4 ============ -->
+  <section id="a4">
+    <h2 class="sec"><span class="no">A.4</span> Proof of Theorem 3 (Clearance feasibility)</h2>
+    <p><b>Theorem 3.</b> Let $\epsilon > 0$ be the safety margin. Under the
+    constant-velocity policy, the ego vehicle can clear the intersection before the
+    red phase if and only if $t_c(v_e, d_s) < t_y - \epsilon$.</p>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p>Under the constant-velocity policy of Assumption&nbsp;1, the longitudinal
+      position is $x(t) = v_e t$ for $t \geq 0$. The far boundary $d_s + L_i$ is
+      reached exactly at $t = t_c = (d_s + L_i)/v_e$.</p>
+      <p>($\Rightarrow$) If the vehicle clears before the red phase, then
+      $x(t_y - \epsilon) \geq d_s + L_i$ (Definition&nbsp;3 requires occupancy only
+      for $t \geq t_y - \epsilon$; clearing means no occupancy thereafter). Since $x$
+      is strictly increasing, $t_c \leq t_y - \epsilon$. Requiring strict inequality
+      $t_c < t_y - \epsilon$ guarantees that the entire vehicle has exited with
+      margin to spare.</p>
+      <p>($\Leftarrow$) If $t_c < t_y - \epsilon$, then
+      $x(t_y-\epsilon) = v_e(t_y-\epsilon) > v_e \cdot t_c = d_s + L_i$, so the
+      vehicle has fully crossed the far boundary strictly before the margin instant
+      and hence before the red phase.</p>
+      <span class="qed">&#9633;</span>
+    </div>
+  </section>
+
+  <!-- ============ A.5 ============ -->
+  <section id="a5">
+    <h2 class="sec"><span class="no">A.5</span> Proof of Theorem 4 (Dilemma zone)</h2>
+    <p><b>Theorem 4.</b> A <b>CRITICAL</b> warning is necessary and sufficient if and
+    only if $\left( d_s \leq d_{\mathrm{req}}(v_e) \right) \land
+    \left( \frac{d_s + L_i}{v_e} \geq t_y - \epsilon \right)$.</p>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p>We prove the two implications separately, using the equivalence of stopping
+      feasibility (Theorem&nbsp;2) and clearance feasibility (Theorem&nbsp;3) under
+      Assumption&nbsp;1.</p>
+      <p><i>Sufficiency.</i> Assume $d_s \leq d_{\mathrm{req}}(v_e)$ and
+      $t_c \geq t_y - \epsilon$. By Theorem&nbsp;2, no safe stop exists; by
+      Theorem&nbsp;3, no safe clearance exists. Consider any admissible trajectory.
+      If it never crosses the stop line, it must eventually stop (Assumption&nbsp;1
+      leaves only braking as a way to remain bounded); but stopping is impossible
+      without crossing the line by the first conjunct, contradiction. Therefore every
+      trajectory crosses the stop line, and since it cannot clear before
+      $t_y - \epsilon$ (second conjunct), it occupies the box $[d_s, d_s+L_i]$ at
+      some $t \geq t_y - \epsilon$. By Definition&nbsp;3 the vehicle is blocked under
+      every admissible trajectory, so a <b>CRITICAL</b> warning is necessary.</p>
+      <p><i>Necessity.</i> Suppose a <b>CRITICAL</b> warning is required, i.e.,
+      blockage is unavoidable for every admissible trajectory. If a safe stop were
+      possible ($d_s > d_{\mathrm{req}}(v_e)$), then by Theorem&nbsp;2 the driver
+      could avoid blockage by stopping; contradiction. Hence
+      $d_s \leq d_{\mathrm{req}}(v_e)$. Similarly, if a safe clearance were possible
+      ($t_c < t_y - \epsilon$), the driver could avoid blockage by clearing;
+      contradiction. Hence $t_c \geq t_y - \epsilon$. Both conjuncts hold, so the
+      criterion is also sufficient for the warning.</p>
+      <span class="qed">&#9633;</span>
+    </div>
+
+    <div class="thm corollary">
+      <span class="head">Proof of Corollary 2 (Non-empty dilemma zone for short yellow).</span>
+      <p>With the constants of Table&nbsp;I and $t_y = 3.5$&nbsp;s, the clearance
+      boundary is $d_s = 2.7v_e - 16$ and the stopping boundary is
+      $d_{\mathrm{req}}(v_e) = v_e + v_e^2/8$. Their difference is
+      $d_{\mathrm{req}}(v_e) - (2.7v_e - 16) = v_e^2/8 - 1.7v_e + 16$, a convex
+      quadratic with discriminant $(-1.7)^2 - 4(1/8)(16) = 2.89 - 8 = -5.11 < 0$ and
+      positive leading coefficient. Hence $d_{\mathrm{req}}(v_e) > 2.7v_e - 16$ for
+      all $v_e$, so the dilemma band
+      $\{ (v_e, d_s) : 2.7v_e - 16 \leq d_s \leq d_{\mathrm{req}}(v_e) \}$ is
+      non-empty for every $v_e \geq 5.93$ (below which the lower bound is negative and
+      the band extends to $d_s = 0$).</p>
+      <span class="qed">&#9633;</span>
+    </div>
+  </section>
+
+  <!-- ============ A.6 ============ -->
+  <section id="a6">
+    <h2 class="sec"><span class="no">A.6</span> Proof of Theorem 5 (Following blockage)</h2>
+    <p><b>Theorem 5.</b> If $t_c^{\mathrm{eff}} \geq t_y - \epsilon$ and
+    $d_l < d_{\mathrm{req}}(v_e)$, the ego vehicle will become trapped behind the
+    leader and block the intersection.</p>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p>Let $x_{\mathrm{lead}}(t)$ denote the leader's longitudinal position. The
+      collision-avoidance constraint is
+      $x_{\mathrm{ego}}(t) \leq x_{\mathrm{lead}}(t) - \Delta$ for some positive
+      stand-off $\Delta$; the analysis is insensitive to $\Delta \geq 0$, so take
+      $\Delta = 0$ for the bound. The leader's clearance time is
+      $t_{\mathrm{lead}} = (d_l + L_i)/v_l$, which is exactly
+      $t_c^{\mathrm{eff}}$ of Definition&nbsp;7 (the small constant $\delta$ prevents
+      division by zero when $v_l = 0$ and makes the inequality strict in the border
+      case). If $t_c^{\mathrm{eff}} \geq t_y - \epsilon$, the leader occupies the box
+      at $t = t_y - \epsilon$, i.e.,
+      $x_{\mathrm{lead}}(t_y-\epsilon) < d_l + L_i$. By the collision-avoidance
+      constraint, $x_{\mathrm{ego}}(t_y-\epsilon) \leq
+      x_{\mathrm{lead}}(t_y-\epsilon) < d_l + L_i \leq d_s + L_i$ (using
+      $d_l \leq d_s$), so the ego has not cleared the far boundary by the margin
+      instant; moreover the ego has already crossed the stop line, since it cannot
+      stop (see below). Hence the ego is blocked (Definition&nbsp;3).</p>
+      <p>It remains to show the ego cannot abort. At the decision instant the gap to
+      the leader is $d_l < d_{\mathrm{req}}(v_e)$. By Theorem&nbsp;2, any braking
+      trajectory that halts the ego does so at a position at least
+      $d_{\mathrm{req}}(v_e)$ beyond the decision point, i.e., at or beyond the
+      leader's current position; since the leader is moving forward (or is stopped),
+      the ego cannot come to rest strictly behind the leader without violating the
+      collision-avoidance constraint. The ego therefore cannot stop in time and must
+      proceed, which we have shown leads to blockage.</p>
+      <span class="qed">&#9633;</span>
+    </div>
+  </section>
+
+  <!-- ============ A.7 ============ -->
+  <section id="a7">
+    <h2 class="sec"><span class="no">A.7</span> Proof of Theorem 6 (Cut-in warning)</h2>
+    <p><b>Theorem 6.</b> Let $d_a$ be the distance to an adjacent vehicle with an
+    active turn signal. If $t_i < t_y$ and $d_a < d_{\mathrm{req}}(v_e)$, then the ego
+    must issue a warning.</p>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p>By Definition&nbsp;8, the intruding vehicle crosses the lane boundary at
+      $t = t_i = W_l/|v_{\mathrm{lat}}|$. If $t_i < t_y$, the intrusion occurs
+      strictly before the signal transition. At the intrusion instant, the
+      longitudinal separation between ego and intruder is at most $d_a$ (the intruder
+      is ahead at the ego's lane entry point; if it enters behind the ego the
+      situation is not safety-relevant, so consider the ahead case). Since
+      $d_a < d_{\mathrm{req}}(v_e)$, by Theorem&nbsp;2 the ego cannot brake to a halt
+      before reaching the intruder's position. Two cases arise:</p>
+      <p><i>Case 1 (ego brakes):</i> the ego cannot stop before the intruder, so it
+      either collides with the intruder or, if the intruder is beyond the stop line,
+      stops beyond the stop line and occupies the box. Both outcomes violate
+      Definition&nbsp;3 or safe operation.</p>
+      <p><i>Case 2 (ego proceeds):</i> the intruder now occupies the ego's lane and
+      acts as a slow lead vehicle; by Theorem&nbsp;5 with the intruder as leader (its
+      gap $d_a < d_{\mathrm{req}}(v_e)$ and its speed implying a clearance failure),
+      blockage follows.</p>
+      <p>In either case the kinematic constraints are violated and a warning is
+      required.</p>
+      <span class="qed">&#9633;</span>
+    </div>
+  </section>
+
+  <!-- ============ A.8 ============ -->
+  <section id="a8">
+    <h2 class="sec"><span class="no">A.8</span> Soundness of the Decision Pipeline</h2>
+
+    <div class="thm lemma">
+      <span class="head">Lemma A.5 (Pipeline soundness).</span>
+      <p>Let $\ell^*$ be the output of <code>evaluate_safety</code> on any scene.
+      Then $\ell^* = \max_{\text{severity}} \{\ell_r\}$ over all rules $r$ that fire,
+      where the severity order is
+      <b>SAFE</b> $<$ <b>CAUTION</b> $<$ <b>WARNING</b> $<$ <b>CRITICAL</b>; if no
+      rule fires, $\ell^* = $ <b>SAFE</b>.</p>
+    </div>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p>The pipeline evaluates the rules in the fixed order
+      <code>[rule_light, rule_dilemma, rule_lead, rule_cutin, rule_stale]</code>, and
+      <code>find_map</code> returns the first element that evaluates to
+      <code>Some</code>. Inspection of each rule shows its maximum severity level:
+      <code>rule_light</code> and <code>rule_dilemma</code> can emit
+      <b>CRITICAL</b> (the highest); <code>rule_lead</code> can emit <b>CRITICAL</b>
+      (sub-rule 3a) or <b>WARNING</b>; <code>rule_cutin</code> emits at most
+      <b>WARNING</b>; <code>rule_stale</code> emits at most <b>CAUTION</b>. Because
+      the pipeline order is non-increasing in the severity bound of each rule, the
+      first firing rule carries the maximum severity among all firing rules. If none
+      fires, <code>unwrap_or(Safe)</code> returns <b>SAFE</b>.</p>
+      <span class="qed">&#9633;</span>
+    </div>
+
+    <div class="thm corollary">
+      <span class="head">Corollary A.2 (Red-light dominance).</span>
+      <p>If <code>LightState::Red</code>, the output is <b>CRITICAL</b> regardless of
+      all other inputs.</p>
+    </div>
+    <div class="proof">
+      <span class="head">Proof.</span>
+      <p><code>rule_light</code> maps <code>Red</code> to <b>CRITICAL</b> and is
+      evaluated first; by Lemma&nbsp;A.5 the output is the maximum severity, i.e.,
+      <b>CRITICAL</b>.</p>
+      <span class="qed">&#9633;</span>
+    </div>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 Arpan Pathak &middot; CivicSense Research</span>
+    <span>
+      <a href="index.html">Paper</a> &middot;
+      <a href="appendix.html">Proofs Appendix</a> &middot;
+      <a href="paper.pdf">PDF</a> &middot;
+      <a href="https://github.com/arpanpathak/driving-civicsense-vision-model">GitHub</a>
+    </span>
+  </footer>
+
+</div>
+</body>
+</html>

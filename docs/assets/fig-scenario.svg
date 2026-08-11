@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 470" font-family="Georgia,serif">
+<rect x="0" y="0" width="660" height="470" fill="#f2f2f2"/>
+<rect x="110" y="0.0" width="330" height="462.0" fill="white"/>
+<rect x="0" y="178.5" width="660" height="126.0" fill="white"/>
+<line x1="275" y1="0.0" x2="275" y2="178.5" stroke="#9e9e9e" stroke-dasharray="10,7"/>
+<line x1="275" y1="304.5" x2="275" y2="462.0" stroke="#9e9e9e" stroke-dasharray="10,7"/>
+<line x1="0" y1="241.5" x2="660" y2="241.5" stroke="#9e9e9e" stroke-dasharray="10,7"/>
+<line x1="110" y1="0.0" x2="110" y2="462.0" stroke="#9e9e9e"/>
+<line x1="440" y1="0.0" x2="440" y2="462.0" stroke="#9e9e9e"/>
+<line x1="0" y1="178.5" x2="660" y2="178.5" stroke="#9e9e9e"/>
+<line x1="0" y1="304.5" x2="660" y2="304.5" stroke="#9e9e9e"/>
+<rect x="110" y="178.5" width="330" height="126.0" fill="none" stroke="#1565c0" stroke-width="2.4" stroke-dasharray="8,5"/>
+<text x="275" y="325.5" font-size="14" font-weight="bold" fill="#1565c0" text-anchor="middle">Intersection box</text>
+<text x="275" y="346.5" font-size="11" fill="#1565c0" text-anchor="middle">(width L_i = 16 m)</text>
+<line x1="275" y1="161.70000000000002" x2="440" y2="161.70000000000002" stroke="#212121" stroke-width="5"/>
+<text x="572.0" y="165.70000000000002" font-size="12" fill="#212121">stop line</text>
+<rect x="505.99999999999994" y="233.1" width="99.00000000000006" height="25.200000000000017" fill="#bdbdbd"/>
+<text x="555.5" y="273.0" font-size="10" fill="#616161" text-anchor="middle">cross traffic</text>
+<rect x="302.5" y="42.0" width="110.0" height="46.2" fill="#2e7d32" rx="4"/>
+<rect x="324.5" y="50.4" width="66.0" height="18.9" fill="#81c784" rx="2"/>
+<defs><marker id="arr0" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2e7d32"/></marker></defs>
+<line x1="357.5" y1="100.8" x2="357.5" y2="128.1" stroke="#2e7d32" stroke-width="3" marker-end="url(#arr0)"/>
+<text x="357.5" y="144.9" font-size="13" font-weight="bold" fill="#2e7d32" text-anchor="middle">ego (v_e)</text>
+<rect x="302.5" y="197.4" width="110.0" height="46.19999999999999" fill="#1565c0" rx="4"/>
+<text x="357.5" y="224.7" font-size="12" fill="white" text-anchor="middle">lead (v_l)</text>
+<rect x="132.0" y="216.3" width="99.0" height="46.19999999999999" fill="#ef6c00" rx="4"/>
+<text x="181.5" y="266.7" font-size="11" fill="#212121" text-anchor="middle">cut-in</text>
+<defs><marker id="arr1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ef6c00"/></marker></defs>
+<line x1="242.00000000000003" y1="239.4" x2="291.5" y2="239.4" stroke="#ef6c00" stroke-width="2.6" marker-end="url(#arr1)"/>
+<text x="195.25" y="220.5" font-size="12" fill="#ef6c00" text-anchor="middle">v_lat</text>
+<line x1="484.00000000000006" y1="88.2" x2="484.00000000000006" y2="161.70000000000002" stroke="#212121" stroke-width="1.6"/>
+<line x1="479.00000000000006" y1="88.2" x2="489.00000000000006" y2="88.2" stroke="#212121" stroke-width="1.6"/>
+<line x1="479.00000000000006" y1="161.70000000000002" x2="489.00000000000006" y2="161.70000000000002" stroke="#212121" stroke-width="1.6"/>
+<text x="500.00000000000006" y="128.95" font-size="13" font-style="italic" fill="#212121" text-anchor="middle" paint-order="stroke" stroke="white" stroke-width="3">d_s</text>
+<line x1="484.00000000000006" y1="178.5" x2="484.00000000000006" y2="304.5" stroke="#212121" stroke-width="1.6"/>
+<line x1="479.00000000000006" y1="178.5" x2="489.00000000000006" y2="178.5" stroke="#212121" stroke-width="1.6"/>
+<line x1="479.00000000000006" y1="304.5" x2="489.00000000000006" y2="304.5" stroke="#212121" stroke-width="1.6"/>
+<text x="500.00000000000006" y="245.5" font-size="13" font-style="italic" fill="#212121" text-anchor="middle" paint-order="stroke" stroke="white" stroke-width="3">L_i</text>
+<line x1="115.5" y1="88.2" x2="115.5" y2="197.4" stroke="#212121" stroke-width="1.6"/>
+<line x1="110.5" y1="88.2" x2="120.5" y2="88.2" stroke="#212121" stroke-width="1.6"/>
+<line x1="110.5" y1="197.4" x2="120.5" y2="197.4" stroke="#212121" stroke-width="1.6"/>
+<text x="99.5" y="146.8" font-size="13" font-style="italic" fill="#212121" text-anchor="middle" paint-order="stroke" stroke="white" stroke-width="3">d_l</text>
+<line x1="192.5" y1="277.2" x2="357.5" y2="277.2" stroke="#212121" stroke-width="1.6"/>
+<line x1="192.5" y1="272.2" x2="192.5" y2="282.2" stroke="#212121" stroke-width="1.6"/>
+<line x1="357.5" y1="272.2" x2="357.5" y2="282.2" stroke="#212121" stroke-width="1.6"/>
+<text x="275" y="295.2" font-size="13" font-style="italic" fill="#212121" text-anchor="middle">W_l</text>
+<rect x="462.0" y="350.7" width="33.0" height="63.0" fill="#333" rx="3"/>
+<circle cx="478.49999999999994" cy="394.8" r="6" fill="#d64541"/>
+<circle cx="478.49999999999994" cy="375.9" r="6" fill="#555"/>
+<circle cx="478.49999999999994" cy="357.0" r="6" fill="#555"/>
+<text x="478.49999999999994" y="432.6" font-size="13" font-style="italic" fill="#212121" text-anchor="middle">t_y</text>
+</svg>

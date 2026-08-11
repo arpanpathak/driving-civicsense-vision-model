@@ -38,3 +38,13 @@ runs/
 # ── Environment ──────────────────────────────────────
 .env
 .env.local
+
+# ── LaTeX (research paper) ──────────────────────────
+research_paper/*.aux
+research_paper/*.log
+research_paper/*.out
+research_paper/*.toc
+research_paper/*.bbl
+research_paper/*.blg
+research_paper/*.fls
+research_paper/*.fdb_latexmk
