@@ -1323,6 +1323,41 @@ warning into an explanation, which is valuable for student drivers and
 differentiates the system from OEM ADAS that treat the driver as a passive
 monitor.
 
+\paragraph{Response to anticipated reviewer concerns.} Five concerns recur
+in reviews of this work; we address each explicitly.
+\begin{enumerate}
+\item \textbf{Perception bottleneck.} The theorems assume exact inputs, but
+  this is a scoping choice, not an omission: every guarantee is conditional,
+  ``if the inputs satisfy the assumptions, the output is correct.''
+  Perception error enters through the inputs, and Section~\ref{sec:discussion}
+  bounds its effect (a $\pm 1.5$~m jitter shifts the arrival-time estimate by
+  roughly $100$~ms). Propagating measurement covariances through the
+  kinematics (Section~\ref{sec:discussion}) turns these bounds into
+  calibrated warning confidence.
+\item \textbf{Sensor fusion.} The decision layer is modality-agnostic:
+  camera, radar, and LiDAR are interchangeable input providers that estimate
+  the same physical quantities (distance, speed, acceleration). Fusion
+  improves the state estimate, not the correctness of the decision logic, so
+  the engine benefits from any sensor suite without modification.
+\item \textbf{Road friction.} Assumption~\ref{asm:braking} fixes grip at
+  $4.0$~\si{m/s^2}, valid for dry asphalt. Wet leaves, black ice, or worn
+  tyres reduce the achievable deceleration, so the stopping envelope must be
+  re-tuned for the local condition; sensing grip directly is left to the
+  perception layer as future work.
+\item \textbf{Tailgating follower.} The brake decision is recall-first for
+  the ego vehicle and the leader ahead (Theorem~\ref{thm:follow}); a follower
+  that rear-ends the ego vehicle is a different control problem (actuator
+  policy and following-distance awareness), outside the decision logic and
+  explicitly out of scope.
+\item \textbf{Guardian-angel framing.} We agree with the framing: this system
+  is a formally verified safety envelope, a deterministic guardian that
+  vetoes unsafe suggestions, not a full autonomy stack. The neural network
+  proposes; the engine disposes. Proving the vision pipeline that extracts
+  the inputs is the natural next step: interval or conformal bounds on
+  detector outputs, pushed into the kinematic equations, would extend the
+  guarantee upstream.
+\end{enumerate}
+
 \paragraph{Limitations.} The framework inherits the limitations of its
 assumptions. Assumption~\ref{asm:cv} ignores acceleration and deceleration
 by surrounding vehicles; Assumption~\ref{asm:signal} requires signal-timing
