@@ -14,7 +14,7 @@
 
 % Warning triangle icon used in the vulnerabilities discussion.
 \DeclareRobustCommand{\warnicon}{%
-  \tikz[baseline=-0.55ex, scale=0.3]{%
+  \tikz[baseline=(current bounding box.center), scale=0.22]{%
     \draw[fill=yellow!85, draw=black, very thick, line join=round]
       (0,0) -- (0.9,1.5) -- (1.8,0) -- cycle;
     \draw[very thick] (0.9,1.05) -- (0.9,0.45);
@@ -541,8 +541,10 @@ Figure~\ref{fig:dilemma}.
   % (a) t_y = 3.5 s (yellow)
   % ================================================================
   \begin{scope}[shift={(0,0)}]
-    \draw[->] (-0.3,0) -- (6.4,0) node[below] {$\ve$ (m/s)};
-    \draw[->] (0,-0.4) -- (0,6.6) node[left, rotate=90, anchor=south] {$\ds$ (m)};
+    \draw[->] (-0.3,0) -- (6.4,0);
+    \node[below] at (6.35,-0.4) {$\ve$ (m/s)};
+    \draw[->] (0,-0.4) -- (0,6.6);
+    \node[rotate=90, anchor=center] at (-0.55,3.3) {$\ds$ (m)};
     \foreach \v/\l in {0/0, 6/6, 12/12, 18/18} {
       \draw[gray] (\v/3, -0.05) -- (\v/3, 0.05);
       \node[below, font=\scriptsize] at (\v/3, -0.05) {$\l$};
@@ -573,8 +575,10 @@ Figure~\ref{fig:dilemma}.
   % (b) t_y = 6.0 s (stale green)
   % ================================================================
   \begin{scope}[shift={(8.2,0)}]
-    \draw[->] (-0.3,0) -- (6.4,0) node[below] {$\ve$ (m/s)};
-    \draw[->] (0,-0.4) -- (0,6.6) node[left, rotate=90, anchor=south] {$\ds$ (m)};
+    \draw[->] (-0.3,0) -- (6.4,0);
+    \node[below] at (6.35,-0.4) {$\ve$ (m/s)};
+    \draw[->] (0,-0.4) -- (0,6.6);
+    \node[rotate=90, anchor=center] at (-0.55,3.3) {$\ds$ (m)};
     \foreach \v/\l in {0/0, 6/6, 12/12, 18/18} {
       \draw[gray] (\v/3, -0.05) -- (\v/3, 0.05);
       \node[below, font=\scriptsize] at (\v/3, -0.05) {$\l$};
@@ -592,12 +596,12 @@ Figure~\ref{fig:dilemma}.
     \draw[very thick, black] plot[domain=0:6, samples=80] (\x, {0.3*\x + 0.1125*\x*\x});
     \draw[very thick, blue] plot[domain=1.03:4.87, samples=40] (\x, {1.56*\x - 1.6});
     % labels ---------------------------------------------------------
-    \node[black, align=center, font=\small] at (5.3, 5.5) {$\dreq(\ve)$\\[-2pt] {\scriptsize stop boundary}};
-    \node[blue, align=center, font=\small] at (3.0, 4.7) {$\ve(\tred-\epsilon)-\Li$\\[-2pt] {\scriptsize clear boundary}};
+    \node[black, align=center, font=\small] at (5.6, 5.6) {$\dreq(\ve)$\\[-2pt] {\scriptsize stop boundary}};
+    \node[blue, align=center, font=\small] at (3.9, 4.7) {$\ve(\tred-\epsilon)-\Li$\\[-2pt] {\scriptsize clear boundary}};
     \node[green!50!black, align=center, font=\scriptsize] at (3.4, 0.55) {\textsc{Proceed}};
     \node[red!60!black, align=center, font=\scriptsize] at (0.6, 0.14) {\textsc{Dilemma}};
     \node[green!30!black, align=center, font=\scriptsize] at (3.0, 2.4) {\textsc{Safe}\\(both feasible)};
-    \node[orange!70!black, align=center, font=\scriptsize] at (2.2, 4.7) {\textsc{Brake}};
+    \node[orange!70!black, align=center, font=\scriptsize] at (2.3, 5.3) {\textsc{Brake}};
     \node[font=\small\bfseries] at (0.6, 6.3) {(b) $\tred = 6.0$~s};
   \end{scope}
 \end{tikzpicture}
