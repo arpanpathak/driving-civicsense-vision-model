@@ -1,9 +1,9 @@
 //! Driving-CivicSense binary entry point.
 //!
 //! Subcommands:
-//! - `run` — detection -> tracking -> analysis -> alert pipeline
-//! - `collect` — frame capture for training-data collection
-//! - `train` — YOLO training orchestrator (dataset prep, training, ONNX validation)
+//! - `run`, detection -> tracking -> analysis -> alert pipeline
+//! - `collect`, frame capture for training-data collection
+//! - `train`, YOLO training orchestrator (dataset prep, training, ONNX validation)
 
 use std::path::PathBuf;
 use std::time::Instant;

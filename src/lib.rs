@@ -27,12 +27,12 @@
 //! The [`civicsense` binary](../civicsense/index.html) (defined in `src/main.rs`)
 //! provides two subcommands:
 //!
-//! - **`run`** — full detection → tracking → analysis → alert pipeline
-//! - **`collect`** — frame capture for training-data collection
+//! - **`run`**, full detection → tracking → analysis → alert pipeline
+//! - **`collect`**, frame capture for training-data collection
 //!
 //! ## Status
 //!
-//! **Pre-alpha.** All modules are functional stubs — the ONNX inference
+//! **Pre-alpha.** All modules are functional stubs, the ONNX inference
 //! backend is not yet wired (requires `onnxruntime-rs`), so the detector
 //! returns empty results.  The data-collection pipeline works end-to-end
 //! on Raspberry Pi with a camera module.

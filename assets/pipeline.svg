@@ -15,7 +15,7 @@
   <rect width="1440" height="560" fill="url(#bg)"/>
 
   <!-- title -->
-  <text x="720" y="58" fill="#f9fafb" font-size="34" font-weight="bold" text-anchor="middle">CivicSense — Distributed Edge Pipeline</text>
+  <text x="720" y="58" fill="#f9fafb" font-size="34" font-weight="bold" text-anchor="middle">CivicSense, Distributed Edge Pipeline</text>
   <text x="720" y="92" fill="#9ca3af" font-size="20" text-anchor="middle">trigger → capture → infer → alert · 100% on-device, no cloud</text>
 
   <!-- arrows between tiers -->
@@ -30,7 +30,7 @@
 
   <!-- dashed control channel back to pico -->
   <path d="M 890 370 L 890 450 L 180 450 L 180 378" fill="none" stroke="#10b981" stroke-width="4" stroke-dasharray="10 8" marker-end="url(#arrowGreen)"/>
-  <text x="535" y="440" fill="#6ee7b7" font-size="16" text-anchor="middle">ack / re-trigger — control channel</text>
+  <text x="535" y="440" fill="#6ee7b7" font-size="16" text-anchor="middle">ack / re-trigger, control channel</text>
 
   <!-- TIER 1 : PI PICO -->
   <rect x="40" y="170" width="280" height="200" rx="14" fill="#111827" stroke="#f59e0b" stroke-width="3"/>
@@ -69,5 +69,5 @@
   <text x="1250" y="336" fill="#9ca3af" font-size="17" text-anchor="middle">gRPC + Bluetooth mesh</text>
 
   <!-- footer -->
-  <text x="720" y="520" fill="#6b7280" font-size="18" text-anchor="middle">every hop stays on your network — frames never leave the car</text>
+  <text x="720" y="520" fill="#6b7280" font-size="18" text-anchor="middle">every hop stays on your network, frames never leave the car</text>
 </svg>

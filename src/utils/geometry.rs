@@ -18,11 +18,11 @@
 /// **Formula:** `Z = (focal_length × real_width) / pixel_width`
 ///
 /// # Parameters
-/// - `pixel_width` — Width of the object's bounding box in **pixels**.
+/// - `pixel_width`, Width of the object's bounding box in **pixels**.
 ///   Must be > 0; returns `f32::MAX` if ≤ 0.
-/// - `real_width` — Known real-world width of the object in **meters**
+/// - `real_width`, Known real-world width of the object in **meters**
 ///   (e.g., car ≈ 1.8 m, stop sign ≈ 0.75 m).
-/// - `focal_length` — Camera focal length in **pixels** (from calibration).
+/// - `focal_length`, Camera focal length in **pixels** (from calibration).
 ///
 /// # Returns
 /// Estimated distance **Z** in meters.  Larger values mean the object is
@@ -53,9 +53,9 @@ pub fn estimate_distance(pixel_width: f32, real_width: f32, focal_length: f32) -
 /// **Formula:** `V_rel = (prev_distance - curr_distance) / dt`
 ///
 /// # Parameters
-/// - `prev_distance` — Object distance in the **previous** frame (meters).
-/// - `curr_distance` — Object distance in the **current** frame (meters).
-/// - `dt` — Time elapsed between the two frames (**seconds**). Must be > 0;
+/// - `prev_distance`, Object distance in the **previous** frame (meters).
+/// - `curr_distance`, Object distance in the **current** frame (meters).
+/// - `dt`, Time elapsed between the two frames (**seconds**). Must be > 0;
 ///   returns `0.0` if ≤ 0.
 ///
 /// # Returns
@@ -90,9 +90,9 @@ pub fn compute_relative_velocity(prev_distance: f32, curr_distance: f32, dt: f32
 /// **Formula:** `output = alpha × value + (1 - alpha) × prev_value`
 ///
 /// # Parameters
-/// - `value` — New (raw) measurement.
-/// - `prev_value` — Filtered output from the previous time step.
-/// - `alpha` — Smoothing factor in `[0, 1]`:
+/// - `value`, New (raw) measurement.
+/// - `prev_value`, Filtered output from the previous time step.
+/// - `alpha`, Smoothing factor in `[0, 1]`:
 ///   - `alpha = 1.0` → no smoothing (pass-through).
 ///   - `alpha = 0.0` → output sticks to `prev_value` forever.
 ///   - Typical value: `0.3 – 0.5`.
@@ -117,8 +117,8 @@ pub fn low_pass_filter(value: f32, prev_value: f32, alpha: f32) -> f32 {
 /// Computes the Intersection-over-Union of two axis-aligned bounding boxes.
 ///
 /// # Parameters
-/// - `a` — First box `(x1, y1, x2, y2)` in pixel coordinates.
-/// - `b` — Second box `(x1, y1, x2, y2)` in pixel coordinates.
+/// - `a`, First box `(x1, y1, x2, y2)` in pixel coordinates.
+/// - `b`, Second box `(x1, y1, x2, y2)` in pixel coordinates.
 ///
 /// # Returns
 /// IoU in `[0.0, 1.0]`:
@@ -168,10 +168,10 @@ pub fn compute_iou(
 /// This format is used internally by the Kalman filter state vector.
 ///
 /// # Parameters
-/// - `x1` — Left edge (pixels).
-/// - `y1` — Top edge (pixels).
-/// - `x2` — Right edge (pixels).
-/// - `y2` — Bottom edge (pixels).
+/// - `x1`, Left edge (pixels).
+/// - `y1`, Top edge (pixels).
+/// - `x2`, Right edge (pixels).
+/// - `y2`, Bottom edge (pixels).
 ///
 /// # Returns
 /// A tuple `(cx, cy, w, h)`.

@@ -26,13 +26,13 @@ Thank you for helping make every mile a socially aware mile! 🚗
 Read the full standards document: [CODING_STANDARDS.md](CODING_STANDARDS.md)
 
 Key rules at a glance:
-- **Idiomatic Rust** — enums, match, iterators, traits
-- **No unsafe without `// SAFETY:`** — every unsafe block needs justification
-- **No dead code** — commented-out code gets rejected
+- **Idiomatic Rust**, enums, match, iterators, traits
+- **No unsafe without `// SAFETY:`**, every unsafe block needs justification
+- **No dead code**, commented-out code gets rejected
 - **Property-based tests** for all critical math/geometry
-- **Zero allocations on the hot path** — pre-allocate at startup
-- **Latency budget** — stay under 40ms total pipeline latency
-- **Panic-free public API** — use `Result`, not `unwrap()`
+- **Zero allocations on the hot path**, pre-allocate at startup
+- **Latency budget**, stay under 40ms total pipeline latency
+- **Panic-free public API**, use `Result`, not `unwrap()`
 
 ---
 

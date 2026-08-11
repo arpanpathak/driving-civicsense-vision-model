@@ -12,7 +12,7 @@ For YOLOv8/v11 training, a **single RTX 3090 (24GB)** is more than enough. You d
 
 | Provider | GPU | VRAM | Hourly Cost | Best For | Catch |
 |----------|-----|------|-------------|----------|-------|
-| **Vast.ai** 🥇 | RTX 3090 | 24GB | **~$0.15–0.22/hr** | Absolute cheapest | Peer-to-peer — check reviews before renting |
+| **Vast.ai** 🥇 | RTX 3090 | 24GB | **~$0.15–0.22/hr** | Absolute cheapest | Peer-to-peer, check reviews before renting |
 | **RunPod** 🥇 | RTX 3090 | 24GB | **~$0.19/hr** | Best price + reliability combo | Community Cloud tier (not dedicated) |
 | **RunPod** | RTX 4090 | 24GB | ~$0.34/hr | Faster training | Worth it if you train frequently |
 | **AutoDL** | RTX 3090 | 24GB | ~¥1.50/hr (~$0.20) | Cheapest in Asia | Chinese UI, Alipay required |
@@ -39,7 +39,7 @@ A full YOLOv8n fine-tuning run costs **less than a coffee**.
 
 1. Go to [runpod.io](https://runpod.io)
 2. Sign up (GitHub account works)
-3. Add $10 in credits — this will last you many training runs
+3. Add $10 in credits, this will last you many training runs
 
 ### Step 2: Launch a GPU Instance
 
@@ -91,7 +91,7 @@ tar -czf trained-model.tar.gz runs/train/exp/weights/
 
 ## ⚡ Alternative: Vast.ai (Cheapest)
 
-Vast.ai is a peer-to-peer marketplace — cheaper but less consistent.
+Vast.ai is a peer-to-peer marketplace, cheaper but less consistent.
 
 ```bash
 # 1. Browse: https://vast.ai/ → search "RTX 3090"
@@ -103,10 +103,10 @@ Vast.ai is a peer-to-peer marketplace — cheaper but less consistent.
 
 ### ⚠️ Vast.ai Pro Tips
 
-- **Check "Verified" hosts only** — avoids bad actors
-- **Look for "Docker: pytorch/pytorch"** — saves setup time
-- **Download speed matters** — pick instances with ≥ 500 Mbps
-- **Use `tmux`** — so your training doesn't die if SSH disconnects
+- **Check "Verified" hosts only**, avoids bad actors
+- **Look for "Docker: pytorch/pytorch"**, saves setup time
+- **Download speed matters**, pick instances with ≥ 500 Mbps
+- **Use `tmux`**, so your training doesn't die if SSH disconnects
 
 ```bash
 tmux new-session -s training
@@ -139,13 +139,13 @@ Best for prototyping, not serious training runs.
 
 ## 📦 What About the Safeguard Vision Project?
 
-Safeguard Vision's GPU needs are different — it uses **CUDA-Oxide (Rust → PTX)** for GPU kernels, not PyTorch training.
+Safeguard Vision's GPU needs are different, it uses **CUDA-Oxide (Rust → PTX)** for GPU kernels, not PyTorch training.
 
 | Need | Cloud Approach |
 |------|---------------|
 | **CUDA-Oxide kernel development** | Use **RunPod** with a template that has NVIDIA drivers + CUDA toolkit. Install Rust via `rustup` and compile with `cargo oxide build`. |
-| **Mistral 7B fine-tuning** | **Vast.ai** RTX 4090 ($0.30/hr) — 24GB VRAM is enough for 7B parameter LoRA fine-tuning. |
-| **Whisper model fine-tuning** | **Lambda Labs** RTX 4090 ($0.35/hr) — or Google Colab Pro+ A100. |
+| **Mistral 7B fine-tuning** | **Vast.ai** RTX 4090 ($0.30/hr), 24GB VRAM is enough for 7B parameter LoRA fine-tuning. |
+| **Whisper model fine-tuning** | **Lambda Labs** RTX 4090 ($0.35/hr), or Google Colab Pro+ A100. |
 
 For Safeguard Vision kernel work:
 ```bash
@@ -166,17 +166,17 @@ cargo build
 | Tip | Saves |
 |-----|-------|
 | Use **spot/community** instances, not on-demand | 60–70% |
-| **Stop instances when idle** — set auto-stop timers | 100% of idle cost |
-| **Mount network storage** (S3, Dropbox) — keep data between sessions | No re-upload costs |
-| **Use `tmux`** — detach without killing training | Prevents wasted runs |
-| **Monitor with `nvidia-smi`** — if GPU < 80% utilized, increase batch size | Better $/epoch |
+| **Stop instances when idle**, set auto-stop timers | 100% of idle cost |
+| **Mount network storage** (S3, Dropbox), keep data between sessions | No re-upload costs |
+| **Use `tmux`**, detach without killing training | Prevents wasted runs |
+| **Monitor with `nvidia-smi`**, if GPU < 80% utilized, increase batch size | Better $/epoch |
 
 ### Avoid Pitfalls
 
-- **Don't pick instances with < 50GB disk** — YOLO datasets + weights fill up fast
-- **Don't train on spot instances without checkpointing** — they can terminate anytime
-- **Don't use A100 for YOLOv8n** — it's overkill. RTX 3090 is the sweet spot
-- **Do set `project` and `name` in YOLO config** — so you don't overwrite previous runs
+- **Don't pick instances with < 50GB disk**, YOLO datasets + weights fill up fast
+- **Don't train on spot instances without checkpointing**, they can terminate anytime
+- **Don't use A100 for YOLOv8n**, it's overkill. RTX 3090 is the sweet spot
+- **Do set `project` and `name` in YOLO config**, so you don't overwrite previous runs
 
 ### Session Persistence (RunPod)
 

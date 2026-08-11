@@ -49,7 +49,7 @@ pub struct ModelConfig {
     ///
     /// Default: `"weights/best-int8.onnx"`.
     /// If the file does not exist at construction time the detector logs a
-    /// warning and returns empty results — this allows data-collection /
+    /// warning and returns empty results, this allows data-collection /
     /// pipeline development before a custom model is trained.
     pub path: String,
 
@@ -296,7 +296,7 @@ impl Config {
     /// Reads and parses a YAML configuration file from `path`.
     ///
     /// # Parameters
-    /// - `path` — Filesystem path to a `.yaml` or `.yml` file whose
+    /// - `path`, Filesystem path to a `.yaml` or `.yml` file whose
     ///   structure matches the [`Config`] struct.  Unknown keys are silently
     ///   ignored by serde; missing keys use their `Default` values.
     ///
@@ -320,10 +320,10 @@ impl Config {
     /// pipeline can start even without a config file present.
     ///
     /// # Parameters
-    /// - `path` — Filesystem path to the YAML config file.
+    /// - `path`, Filesystem path to the YAML config file.
     ///
     /// # Returns
-    /// A fully populated `Config` — either from the file or from defaults.
+    /// A fully populated `Config`, either from the file or from defaults.
     ///
     /// # Panics
     /// Never panics.

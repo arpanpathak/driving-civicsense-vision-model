@@ -19,22 +19,22 @@ use crate::detection::yolo::Detection;
 //  Colour palette
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Red — used for stop signs (class 0).
+/// Red, used for stop signs (class 0).
 const STOP_SIGN_COLOR: (u8, u8, u8) = (255, 0, 0);
 
-/// Yellow — used for traffic lights and crosswalks (classes 1, 2).
+/// Yellow, used for traffic lights and crosswalks (classes 1, 2).
 const TRAFFIC_LIGHT_COLOR: (u8, u8, u8) = (255, 255, 0);
 
-/// Green — used for vehicles (classes 3, 4, 5).
+/// Green, used for vehicles (classes 3, 4, 5).
 const VEHICLE_COLOR: (u8, u8, u8) = (0, 255, 0);
 
-/// Gray — fallback for unknown classes.
+/// Gray, fallback for unknown classes.
 const DEFAULT_COLOR: (u8, u8, u8) = (128, 128, 128);
 
 /// Returns the display colour for a given class ID.
 ///
 /// # Parameters
-/// - `class_id` — YOLO class index (0 = stop_sign, 1-2 = traffic stuff,
+/// - `class_id`, YOLO class index (0 = stop_sign, 1-2 = traffic stuff,
 ///   3-5 = vehicles, etc.).
 ///
 /// # Returns
@@ -55,12 +55,12 @@ fn class_color(class_id: u32) -> (u8, u8, u8) {
 /// Sets a single pixel in a flattened RGB8 buffer.
 ///
 /// # Parameters
-/// - `frame` — Mutable RGB8 pixel buffer `(H × W × 3)`.
-/// - `x` — Column (0-based, clamped to `[0, width)`).
-/// - `y` — Row (0-based, clamped to `[0, height)`).
-/// - `width` — Frame width in pixels.
-/// - `height` — Frame height in pixels.
-/// - `color` — `(R, G, B)` tuple.  Values are written as-is (no clamping).
+/// - `frame`, Mutable RGB8 pixel buffer `(H × W × 3)`.
+/// - `x`, Column (0-based, clamped to `[0, width)`).
+/// - `y`, Row (0-based, clamped to `[0, height)`).
+/// - `width`, Frame width in pixels.
+/// - `height`, Frame height in pixels.
+/// - `color`, `(R, G, B)` tuple.  Values are written as-is (no clamping).
 ///
 /// # Safety
 /// Bounds-checked: silently returns if `(x, y)` is out of range or the
@@ -80,12 +80,12 @@ fn set_pixel(frame: &mut [u8], x: u32, y: u32, width: u32, height: u32, color: (
 /// Draws a rectangular outline on the frame buffer.
 ///
 /// # Parameters
-/// - `frame` — Mutable RGB8 buffer.
-/// - `x1`, `y1` — Top-left corner (clamped to frame bounds).
-/// - `x2`, `y2` — Bottom-right corner (clamped to frame bounds).
-/// - `width`, `height` — Frame dimensions.
-/// - `color` — `(R, G, B)` colour.
-/// - `thickness` — Line thickness in pixels (≥ 1).
+/// - `frame`, Mutable RGB8 buffer.
+/// - `x1`, `y1`, Top-left corner (clamped to frame bounds).
+/// - `x2`, `y2`, Bottom-right corner (clamped to frame bounds).
+/// - `width`, `height`, Frame dimensions.
+/// - `color`, `(R, G, B)` colour.
+/// - `thickness`, Line thickness in pixels (≥ 1).
 fn draw_rect(
     frame: &mut [u8],
     x1: u32,
@@ -116,11 +116,11 @@ fn draw_rect(
 /// Used to draw the alert banner at the top of the frame.
 ///
 /// # Parameters
-/// - `frame` — Mutable RGB8 buffer.
-/// - `y_start` — First row to fill (inclusive).
-/// - `y_end` — Last row to fill (exclusive, clamped to `height`).
-/// - `width`, `height` — Frame dimensions.
-/// - `color` — `(R, G, B)` fill colour.
+/// - `frame`, Mutable RGB8 buffer.
+/// - `y_start`, First row to fill (inclusive).
+/// - `y_end`, Last row to fill (exclusive, clamped to `height`).
+/// - `width`, `height`, Frame dimensions.
+/// - `color`, `(R, G, B)` fill colour.
 fn fill_strip(
     frame: &mut [u8],
     y_start: u32,
@@ -148,11 +148,11 @@ fn fill_strip(
 ///   spanning up to 80 px wide.
 ///
 /// # Parameters
-/// - `frame` — Mutable RGB8 frame buffer `(H × W × 3)`.  Modified in place.
-/// - `width` — Frame width in pixels.
-/// - `height` — Frame height in pixels.
-/// - `detections` — Slice of [`Detection`] objects to render.
-/// - `class_names` — Class-name lookup table (index → display name).
+/// - `frame`, Mutable RGB8 frame buffer `(H × W × 3)`.  Modified in place.
+/// - `width`, Frame width in pixels.
+/// - `height`, Frame height in pixels.
+/// - `detections`, Slice of [`Detection`] objects to render.
+/// - `class_names`, Class-name lookup table (index → display name).
 ///   Only used for debug logging; text is not drawn on the buffer.
 ///
 /// # Panics
@@ -205,10 +205,10 @@ pub fn draw_detections(
 /// | (anything else)     | Yellow       | Default   |
 ///
 /// # Parameters
-/// - `frame` — Mutable RGB8 buffer.  The top 20 rows are overwritten.
-/// - `width` — Frame width in pixels.
-/// - `height` — Frame height in pixels.
-/// - `text` — Alert description.  Used for colour selection and logging.
+/// - `frame`, Mutable RGB8 buffer.  The top 20 rows are overwritten.
+/// - `width`, Frame width in pixels.
+/// - `height`, Frame height in pixels.
+/// - `text`, Alert description.  Used for colour selection and logging.
 ///
 /// # Panics
 /// Never panics.

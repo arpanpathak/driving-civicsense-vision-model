@@ -71,10 +71,10 @@ impl KalmanFilter {
     /// Initialises the filter from a bounding-box measurement.
     ///
     /// # Parameters
-    /// - `x1` — Left edge of the bounding box (pixels).
-    /// - `y1` — Top edge of the bounding box (pixels).
-    /// - `x2` — Right edge of the bounding box (pixels).
-    /// - `y2` — Bottom edge of the bounding box (pixels).
+    /// - `x1`, Left edge of the bounding box (pixels).
+    /// - `y1`, Top edge of the bounding box (pixels).
+    /// - `x2`, Right edge of the bounding box (pixels).
+    /// - `y2`, Bottom edge of the bounding box (pixels).
     ///
     /// Velocity components are initialised to `0.0` with high covariance.
     ///
@@ -118,7 +118,7 @@ impl KalmanFilter {
     /// Corrects the state with a new measurement (update).
     ///
     /// # Parameters
-    /// - `x1`, `y1`, `x2`, `y2` — The new bounding box measurement (pixels).
+    /// - `x1`, `y1`, `x2`, `y2`, The new bounding box measurement (pixels).
     ///
     /// The innovation is computed as `z - H·x` where `H = [I₄ | 0₄]`.
     /// A scalar-gain approximation is used instead of a full Kalman gain
@@ -200,8 +200,8 @@ impl Track {
     /// Creates a new track from an initial detection.
     ///
     /// # Parameters
-    /// - `track_id` — Unique ID assigned by the parent tracker.
-    /// - `detection` — The first detection that seeds this track.
+    /// - `track_id`, Unique ID assigned by the parent tracker.
+    /// - `detection`, The first detection that seeds this track.
     ///
     /// # Returns
     /// A `Track` initialised with the detection's bounding box and the
@@ -234,7 +234,7 @@ impl Track {
     /// Performs the Kalman **update** step with a matching detection.
     ///
     /// # Parameters
-    /// - `detection` — The matched detection from the current frame.
+    /// - `detection`, The matched detection from the current frame.
     ///
     /// Resets `time_since_update` to `0` and increments `hits`.
     pub fn update(&mut self, detection: &Detection) {
@@ -271,12 +271,12 @@ impl Track {
 ///
 /// ## Lifecycle
 ///
-/// 1. **Predict** — every active track advances its Kalman state.
-/// 2. **Match** — detections are paired with tracks via greedy IoU matching
+/// 1. **Predict**, every active track advances its Kalman state.
+/// 2. **Match**, detections are paired with tracks via greedy IoU matching
 ///    (IoU > 0.3 gate).  Matched tracks are updated.
-/// 3. **Birth** — unmatched detections spawn new tentative tracks.
-/// 4. **Confirm** — tracks with ≥ `n_init` hits are marked `is_confirmed`.
-/// 5. **Death** — tracks whose `time_since_update > max_age` are removed.
+/// 3. **Birth**, unmatched detections spawn new tentative tracks.
+/// 4. **Confirm**, tracks with ≥ `n_init` hits are marked `is_confirmed`.
+/// 5. **Death**, tracks whose `time_since_update > max_age` are removed.
 pub struct MultiObjectTracker {
     /// All currently active tracks (both confirmed and tentative).
     tracks: Vec<Track>,
@@ -298,11 +298,11 @@ impl MultiObjectTracker {
     /// Creates a new empty tracker.
     ///
     /// # Parameters
-    /// - `max_age` — Tracks unmatched for this many consecutive frames are
+    /// - `max_age`, Tracks unmatched for this many consecutive frames are
     ///   removed.  Recommended: `30` (~1 s at 30 fps).
-    /// - `n_init` — Number of matched frames before a track is promoted to
+    /// - `n_init`, Number of matched frames before a track is promoted to
     ///   confirmed.  Recommended: `3`.
-    /// - `max_cosine_distance` — _(reserved)_ Future appearance-gating
+    /// - `max_cosine_distance`, _(reserved)_ Future appearance-gating
     ///   threshold.  Pass `0.2` for now.
     ///
     /// # Returns
@@ -323,7 +323,7 @@ impl MultiObjectTracker {
     /// the YOLO detector.
     ///
     /// # Parameters
-    /// - `detections` — All detections from the current frame.  Pass an
+    /// - `detections`, All detections from the current frame.  Pass an
     ///   empty slice `&[]` when nothing is detected.
     ///
     /// # Returns

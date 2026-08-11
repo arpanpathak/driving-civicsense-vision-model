@@ -12,7 +12,7 @@
 SHELL := /bin/bash
 CARGO  := cargo
 
-# Local (macOS) ————————————————————————————————————————————
+# Local (macOS) --------------------------------------------
 
 .PHONY: all build test clean lint doc release
 
@@ -51,7 +51,7 @@ clean:
 	$(CARGO) clean
 	rm -rf output/
 
-# Cross-compilation (Mac → Linux x86_64 for cloud GPU) ————
+# Cross-compilation (Mac → Linux x86_64 for cloud GPU) ----
 
 ## Install cross-compilation toolchain (one-time setup)
 cross-setup:
@@ -69,7 +69,7 @@ cross-setup:
 build-linux-x86_64:
 	./scripts/cross_compile.sh build
 
-# Training (all Rust CLI, no Python scripts) —————————————
+# Training (all Rust CLI, no Python scripts) -------------
 
 ## Validate / split a labelled dataset and write YAML config
 train-prepare:
@@ -83,32 +83,32 @@ train-run:
 train-validate:
 	$(CARGO) run --release -- train validate
 
-# Data Collection —————————————————————————————————————————
+# Data Collection -----------------------------------------
 
 ## Capture frames from a camera for training data
 collect:
 	$(CARGO) run --release -- collect --source 0 --output data/raw --rate 2
 
-# Pipeline —————————————————————————————————————————————————
+# Pipeline -------------------------------------------------
 
 ## Run the full perception pipeline on a test video
 run:
 	$(CARGO) run --release -- run --source test_video.mp4 --visualize
 
-# Help ————————————————————————————————————————————————————
+# Help ----------------------------------------------------
 
 help:
 	@echo "Targets:"
-	@echo "  build               — debug build (macOS)"
-	@echo "  release             — release build (macOS)"
-	@echo "  test                — run all Rust tests"
-	@echo "  lint                — clippy"
-	@echo "  fmt                 — cargo fmt"
-	@echo "  doc                 — documentation"
-	@echo "  cross-setup         — install Linux x86_64 toolchain"
-	@echo "  build-linux-x86_64  — cross-compile for cloud GPU"
-	@echo "  train-prepare       — validate/split dataset"
-	@echo "  train-run           — train YOLO on GPU"
-	@echo "  train-validate      — verify ONNX model"
-	@echo "  collect             — capture training frames"
-	@echo "  run                 — run perception pipeline"
+	@echo "  build              , debug build (macOS)"
+	@echo "  release            , release build (macOS)"
+	@echo "  test               , run all Rust tests"
+	@echo "  lint               , clippy"
+	@echo "  fmt                , cargo fmt"
+	@echo "  doc                , documentation"
+	@echo "  cross-setup        , install Linux x86_64 toolchain"
+	@echo "  build-linux-x86_64 , cross-compile for cloud GPU"
+	@echo "  train-prepare      , validate/split dataset"
+	@echo "  train-run          , train YOLO on GPU"
+	@echo "  train-validate     , verify ONNX model"
+	@echo "  collect            , capture training frames"
+	@echo "  run                , run perception pipeline"

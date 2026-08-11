@@ -1,6 +1,6 @@
 # ── Driving-CivicSense-Vision-Model Default Config ────
 # TODO: Tune these values after real-world validation.
-# (Mirrors src/config.rs struct — keep in sync)
+# (Mirrors src/config.rs struct, keep in sync)
 
 model:
   path: "weights/best-int8.onnx"

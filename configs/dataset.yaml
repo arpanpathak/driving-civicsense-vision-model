@@ -1,4 +1,4 @@
-# ── Driving-CivicSense — YOLO Dataset Configuration ────
+# ── Driving-CivicSense, YOLO Dataset Configuration ────
 # Paths are relative to the training script or absolute.
 # Copy this file, edit the paths, and pass to `yolo train data=...`
 

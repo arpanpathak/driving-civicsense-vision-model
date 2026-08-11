@@ -2,15 +2,15 @@
 //!
 //! Manages the full YOLO training lifecycle entirely from Rust.
 //! The only Python dependency is `ultralytics` called via subprocess
-//! on the cloud GPU VM — no Python scripts in this repo.
+//! on the cloud GPU VM, no Python scripts in this repo.
 //!
 //! ## Workflow
 //!
-//! 1. **`civicsense collect`** — capture frames from camera/video
-//! 2. Label the images (any YOLO-format labeler — CVAT, labelImg, etc.)
-//! 3. **`civicsense train prepare`** — validate structure, split train/val, generate YAML
-//! 4. **`civicsense train run`** — install ultralytics (if needed), train on GPU, export ONNX
-//! 5. **`civicsense train validate`** — load the exported ONNX with `ort` and verify it works
+//! 1. **`civicsense collect`**, capture frames from camera/video
+//! 2. Label the images (any YOLO-format labeler, CVAT, labelImg, etc.)
+//! 3. **`civicsense train prepare`**, validate structure, split train/val, generate YAML
+//! 4. **`civicsense train run`**, install ultralytics (if needed), train on GPU, export ONNX
+//! 5. **`civicsense train validate`**, load the exported ONNX with `ort` and verify it works
 //!
 //! Cross-compile the binary on your Mac for the cloud VM (`x86_64-unknown-linux-gnu`),
 //! scp it up, and run `civicsense train run` on the GPU instance.
@@ -174,7 +174,7 @@ impl Dataset {
             if label_path.exists() {
                 pairs.push((path, label_path));
             } else {
-                log::warn!("Skipping '{:?}' — no matching label file", path);
+                log::warn!("Skipping '{:?}', no matching label file", path);
             }
         }
 
@@ -438,7 +438,7 @@ fn count_images(dir: &Path) -> Result<usize, String> {
     Ok(count)
 }
 
-/// Spot-check label files in a directory — each line must parse as 5 floats.
+/// Spot-check label files in a directory, each line must parse as 5 floats.
 fn validate_labels(dir: &Path) -> Result<(), String> {
     for entry in std::fs::read_dir(dir).map_err(|e| format!("Cannot read '{:?}': {e}", dir))? {
         let entry = entry.map_err(|e| format!("Read entry: {e}"))?;

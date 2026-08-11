@@ -70,7 +70,7 @@ fn classify_source(source: &str) -> SourceKind {
         return SourceKind::V4l2Device(dev_path);
     }
 
-    SourceKind::Video // unrecognised — caller will error
+    SourceKind::Video // unrecognised, caller will error
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ fn classify_source(source: &str) -> SourceKind {
 ///
 /// | Pattern | Behaviour |
 /// |---------|-----------|
-/// | `"video.mp4"` (or .avi/.mov/…) | Extracts a single frame (thumbnail) — full video decoding requires ffmpeg |
+/// | `"video.mp4"` (or .avi/.mov/…) | Extracts a single frame (thumbnail), full video decoding requires ffmpeg |
 /// | `"image.jpg"` | Single image → one frame |
 /// | `"/path/to/dir/"` | Sorted directory of images → frame per file |
 /// | `"camera"` or `"0"` | Live camera via libcamera-still / raspistill |
@@ -232,8 +232,8 @@ fn capture_frame_via(tool: &str, args: &[&str], capture_path: &Path) -> Option<V
 /// Live camera frame iterator.
 ///
 /// Backend detection order:
-/// 1. `libcamera-still` — modern Raspberry Pi OS
-/// 2. `raspistill` — legacy Raspberry Pi OS
+/// 1. `libcamera-still`, modern Raspberry Pi OS
+/// 2. `raspistill`, legacy Raspberry Pi OS
 /// 3. If neither is found, logs setup instructions and returns a single dummy frame.
 fn open_camera(
     default_width: u32,

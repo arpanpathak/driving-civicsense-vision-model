@@ -6,12 +6,12 @@
 //!
 //! ## Algorithm
 //!
-//! 1. **Lane assignment** — Each track's centroid x-coordinate is compared
+//! 1. **Lane assignment**, Each track's centroid x-coordinate is compared
 //!    against three equal vertical strips (left / ego / right).
-//! 2. **Distance estimation** — Pinhole model `Z = (f × W) / w`.
-//! 3. **Relative velocity** — `dZ/dt` from the previous frame's distance.
-//! 4. **Low-pass filter** — First-order IIR (`alpha = 0.3`) to reduce jitter.
-//! 5. **Hysteresis** — The speed differential must persist for at least
+//! 2. **Distance estimation**, Pinhole model `Z = (f × W) / w`.
+//! 3. **Relative velocity**, `dZ/dt` from the previous frame's distance.
+//! 4. **Low-pass filter**, First-order IIR (`alpha = 0.3`) to reduce jitter.
+//! 5. **Hysteresis**, The speed differential must persist for at least
 //!    `hysteresis_seconds` before an alert fires.
 //!
 //! ## Status
@@ -52,7 +52,7 @@ struct LaneState {
     /// Average (raw) speed of vehicles in this lane (mph) for the current frame.
     avg_speed: f32,
 
-    /// Low-pass-filtered speed (mph) — used for the actual alert decision.
+    /// Low-pass-filtered speed (mph), used for the actual alert decision.
     smoothed_speed: f32,
 
     /// Accumulated time (seconds) that this lane has been exceeding the
@@ -95,7 +95,7 @@ impl LaneSpeedAnalyzer {
     /// Constructs a new lane-speed analyzer.
     ///
     /// # Parameters
-    /// - `config` — Top-level pipeline config; uses `config.camera` for
+    /// - `config`, Top-level pipeline config; uses `config.camera` for
     ///   intrinsics and `config.lane_speed` for thresholds.
     ///
     /// # Returns
@@ -119,7 +119,7 @@ impl LaneSpeedAnalyzer {
     /// - otherwise → right lane (index 2)
     ///
     /// # Parameters
-    /// - `bbox` — Bounding box `(x1, y1, x2, y2)` in pixels.
+    /// - `bbox`, Bounding box `(x1, y1, x2, y2)` in pixels.
     ///
     /// # Returns
     /// Lane index: `0` (left), `1` (ego), or `2` (right).
@@ -138,11 +138,11 @@ impl LaneSpeedAnalyzer {
     /// Analyzes tracked vehicles for lane-speed compliance.
     ///
     /// # Parameters
-    /// - `tracks` — Active tracked objects from the
+    /// - `tracks`, Active tracked objects from the
     ///   [`MultiObjectTracker`](crate::tracking::deep_sort::MultiObjectTracker).
-    /// - `ego_speed` — Ego-vehicle speed in **mph** (fallback when no
+    /// - `ego_speed`, Ego-vehicle speed in **mph** (fallback when no
     ///   vehicles are detected in the ego lane).
-    /// - `dt_secs` — Time since the last frame (seconds).
+    /// - `dt_secs`, Time since the last frame (seconds).
     ///
     /// # Returns
     /// A `Vec<LaneSpeedAlert>`.  Empty means no courtesy reminder is needed.

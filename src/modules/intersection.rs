@@ -5,16 +5,16 @@
 //!
 //! ## Features
 //!
-//! - **Stop sign detection** — estimates distance via pinhole model and
+//! - **Stop sign detection**, estimates distance via pinhole model and
 //!   raises a violation alert if ego speed is too high at close range.
-//! - **Blocked intersection** — measures how much of the forward view is
+//! - **Blocked intersection**, measures how much of the forward view is
 //!   occupied by vehicles; fires an alert if occupancy exceeds 30% while
 //!   the ego vehicle is moving fast enough to enter the box.
 //!
 //! ## Status
 //!
 //! Core logic is functional.  The BEV occupancy grid and deceleration
-//! profiling are placeholders — calibration with real camera extrinsics
+//! profiling are placeholders, calibration with real camera extrinsics
 //! will improve accuracy.
 
 use crate::config::IntersectionConfig;
@@ -91,7 +91,7 @@ impl IntersectionAnalyzer {
     /// Constructs a new intersection analyzer.
     ///
     /// # Parameters
-    /// - `config` — The top-level pipeline config; only the
+    /// - `config`, The top-level pipeline config; only the
     ///   `config.intersection` subset is used.
     ///
     /// # Returns
@@ -109,14 +109,14 @@ impl IntersectionAnalyzer {
     /// Analyzes the current frame for intersection-related alerts.
     ///
     /// # Parameters
-    /// - `detections` — Raw detections from the YOLO detector for the
+    /// - `detections`, Raw detections from the YOLO detector for the
     ///   current frame.
-    /// - `ego_speed` — Ego-vehicle speed in **miles per hour**.
-    /// - `dt_secs` — Time elapsed since the previous frame (seconds).
+    /// - `ego_speed`, Ego-vehicle speed in **miles per hour**.
+    /// - `dt_secs`, Time elapsed since the previous frame (seconds).
     ///   Currently reserved for future temporal filtering.
     ///
     /// # Returns
-    /// A `Vec<IntersectionAlert>` — empty if no violation conditions are met.
+    /// A `Vec<IntersectionAlert>`, empty if no violation conditions are met.
     ///
     /// # Alert logic (stop sign)
     /// 1. Filter detections for class_id == 0 (stop_sign).

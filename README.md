@@ -6,7 +6,7 @@
 
 > *Aftermarket AI vision for your windshield. Voice-guided, edge-native, socially aware.*
 
-**Edge AI perception for intersection discipline, lane courtesy, road hazard alerts, and cooperative safety — running on 3D-printed smart glasses or dashcam hardware.**
+**Edge AI perception for intersection discipline, lane courtesy, road hazard alerts, and cooperative safety, running on 3D-printed smart glasses or dashcam hardware.**
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/Rust-1.85+-orange.svg)](https://www.rust-lang.org)
@@ -25,28 +25,28 @@
 
 ## The Vision
 
-CivicSense is an aftermarket edge-AI accessory that clips onto glasses or mounts on a dashcam. It watches the road, understands traffic behavior, detects hazards, and talks to you — politely but firmly.
+CivicSense is an aftermarket edge-AI accessory that clips onto glasses or mounts on a dashcam. It watches the road, understands traffic behavior, detects hazards, and talks to you, politely but firmly.
 
-It's not a self-driving system. It's a **co-pilot that cares about traffic civility** — a civic sense teacher on your dashboard.
+It's not a self-driving system. It's a **co-pilot that cares about traffic civility**, a civic sense teacher on your dashboard.
 
 ### The engineering vision
 
-- **Privacy-first** — 100% on-device inference. No video ever leaves the device.
-- **Ultra-fast & low latency** — a perception pipeline that must react in real time, from frame to voice in a blink.
-- **Low power-hungry** — squeezing serious computer vision onto watts, not kilowatts.
-- **Distributed edge pipeline** — don't cram YOLO into 512 MB; a Pico triggers, a Pi Zero streams, and a Pi 5 / desktop GPU runs the heavy inference.
-- **3D-printed hardware accessories** — open, printable frames and dashcam pucks, not black-box gadgets.
-- **Copilot as civic sense teacher** — alerts that correct, teach, and nudge good road citizenship.
+- **Privacy-first**, 100% on-device inference. No video ever leaves the device.
+- **Ultra-fast & low latency**, a perception pipeline that must react in real time, from frame to voice in a blink.
+- **Low power-hungry**, squeezing serious computer vision onto watts, not kilowatts.
+- **Distributed edge pipeline**, don't cram YOLO into 512 MB; a Pico triggers, a Pi Zero streams, and a Pi 5 / desktop GPU runs the heavy inference.
+- **3D-printed hardware accessories**, open, printable frames and dashcam pucks, not black-box gadgets.
+- **Copilot as civic sense teacher**, alerts that correct, teach, and nudge good road citizenship.
 
 ### What it says to you
 
 | Situation | Voice Alert |
 |-----------|-------------|
 | Someone merging slowly ahead | *"Move to the middle lane, someone slow is merging."* |
-| You're crawling in the left lane | *"Speed up — too slow! You're holding up traffic."* |
+| You're crawling in the left lane | *"Speed up, too slow! You're holding up traffic."* |
 | Someone passing on the right | *"You're getting passed from the right. Maybe choose the correct lane."* |
 | Stop sign ahead, you're not slowing | *"Stop sign in 200 feet. You need to brake."* |
-| Green light, but the box is still full | *"Green light — but the intersection's still blocked. Hold back, don't block the box."* |
+| Green light, but the box is still full | *"Green light, but the intersection's still blocked. Hold back, don't block the box."* |
 | Bear or deer on the road | *"Large animal ahead. Slow down."* |
 | Fallen tree or debris | *"Obstruction in the road ahead. Stop or take evasive action."* |
 | Emergency vehicle approaching | *"Emergency vehicle behind you. Pull right."* |
@@ -58,14 +58,14 @@ It's not a self-driving system. It's a **co-pilot that cares about traffic civil
 
 Beyond just alerting you, CivicSense broadcasts to the mesh:
 
-- **Hazard beacons** — Detects fallen trees, animals, debris, crashes and broadcasts their GPS coordinates to nearby vehicles via short-range radio (or cellular fallback).  
+- **Hazard beacons**, Detects fallen trees, animals, debris, crashes and broadcasts their GPS coordinates to nearby vehicles via short-range radio (or cellular fallback).  
   *"Fallen tree reported 500m ahead on Highway 1. Approach with caution."*
 
-- **Officer notification** — When a serious road hazard, blocked intersection, or erratic driving is detected, CivicSense can relay an anonymous report to the nearest patrol unit. Not a dashcam upload — just a data beacon: *"Intersection blocked at Main & 5th. High likelihood of gridlock."*
+- **Officer notification**, When a serious road hazard, blocked intersection, or erratic driving is detected, CivicSense can relay an anonymous report to the nearest patrol unit. Not a dashcam upload, just a data beacon: *"Intersection blocked at Main & 5th. High likelihood of gridlock."*
 
-- **Cooperative awareness** — If three CivicSense units detect the same hazard independently, the system auto-escalates to a verified road condition alert.
+- **Cooperative awareness**, If three CivicSense units detect the same hazard independently, the system auto-escalates to a verified road condition alert.
 
-This turns every unit from a personal assistant into a **distributed sensor node** — making roads safer for everyone, not just the person wearing them.
+This turns every unit from a personal assistant into a **distributed sensor node**, making roads safer for everyone, not just the person wearing them.
 
 ---
 
@@ -84,11 +84,11 @@ The paper formalises the intersection "dilemma zone" with five theorems (each pr
 
 ## The Book: *Seeing Machines*
 
-> **["Seeing Machines: Deep Learning & Computer Vision from Python to Bare Metal"](https://arpanpathak.github.io/seeing-machines-book/foreword.html)** — the companion book to this project, written by the same author.
+> **["Seeing Machines: Deep Learning & Computer Vision from Python to Bare Metal"](https://arpanpathak.github.io/seeing-machines-book/foreword.html)**, the companion book to this project, written by the same author.
 
 This repo is the capstone project behind the book, and the book is the engineer's diary behind the repo: every line of code written after a mistake, every equation derived after a model failed to converge, a tracker lost its target, or a pipeline got squeezed onto a tiny edge device.
 
-Together they tell one story — **how to take computer vision from cloud to bare metal**: from Python prototypes to an ultra-fast, privacy-first, low-power Rust pipeline, plus a [Kotlin Multiplatform companion app](https://github.com/arpanpathak/civicsense-companion) on Android and iOS.
+Together they tell one story, **how to take computer vision from cloud to bare metal**: from Python prototypes to an ultra-fast, privacy-first, low-power Rust pipeline, plus a [Kotlin Multiplatform companion app](https://github.com/arpanpathak/civicsense-companion) on Android and iOS.
 
 **Read the foreword → [arpanpathak.github.io/seeing-machines-book/foreword.html](https://arpanpathak.github.io/seeing-machines-book/foreword.html)**
 
@@ -138,7 +138,7 @@ All variants process **100% on-device**. No cloud upload. No subscription.
 
 ## The Full Pipeline: Distributed Edge Vision
 
-Squeezing a YOLO model into 512 MB of RAM on a Pi Zero is a losing game — you trade accuracy for 2 FPS and watch it thermal-throttle. **Don't embed — distribute.** Each node does the job it's best at, and the heaviest brain in the room runs the real inference:
+Squeezing a YOLO model into 512 MB of RAM on a Pi Zero is a losing game, you trade accuracy for 2 FPS and watch it thermal-throttle. **Don't embed, distribute.** Each node does the job it's best at, and the heaviest brain in the room runs the real inference:
 
 <p align="center">
   <img src="assets/pipeline.svg" alt="CivicSense distributed edge pipeline: Pico triggers, Pi Zero streams, the brain infers, KMP app alerts" width="860"/>
@@ -160,10 +160,10 @@ Both are dependency-free-of-Python and intentionally kept permissive (MIT), unli
 
 **Why this wins over one-board-everything:**
 
-- **The Pico's PIO** handles triggers with zero CPU cost — the camera only wakes when there's something to see.
+- **The Pico's PIO** handles triggers with zero CPU cost, the camera only wakes when there's something to see.
 - **The Pi Zero** stays a dumb, low-power camera node: capture, encode, stream. No model to squeeze, no RAM anxiety, no thermal throttling.
-- **The brain** (Pi 5 or your desktop GPU) runs the full-fat model — you never trade accuracy to fit in 512 MB.
-- **Every hop stays on your network** — frames leave the Pi Zero, but they never leave the car.
+- **The brain** (Pi 5 or your desktop GPU) runs the full-fat model, you never trade accuracy to fit in 512 MB.
+- **Every hop stays on your network**, frames leave the Pi Zero, but they never leave the car.
 
 ```text
 [ Pi Pico ] --GPIO trigger--> [ Pi Zero ] --UDP frames--> [ Brain: Pi 5 / GPU ]
@@ -187,7 +187,7 @@ Get real-time alerts from the Rust pipeline right on your phone. The companion a
 | Android | Jetpack Compose + Material 3 | gRPC + OkHttp |
 | iOS | SwiftUI | Ktor HTTP (gRPC-web) |
 
-**Shared layer:** Domain models, service interface, and ViewModel live in `frontend/shared/` — one Kotlin codebase, two native UIs.
+**Shared layer:** Domain models, service interface, and ViewModel live in `frontend/shared/`, one Kotlin codebase, two native UIs.
 
 ```bash
 # Clone everything (pipeline + companion) in one shot
@@ -206,7 +206,7 @@ git submodule update --init --recursive
 ### 1. The Intersection Crisis
 - **~40%** of all crashes occur at intersections (NHTSA).
 - "Blocking the box" causes T-bone impacts.
-- **Misjudged green lights** — drivers see green, misjudge the gap, roll in, and trap themselves when the light flips. The worst kind of "blocking the box."
+- **Misjudged green lights**, drivers see green, misjudge the gap, roll in, and trap themselves when the light flips. The worst kind of "blocking the box."
 - Current ADAS detects vehicles but **fails** to semantically interpret intersection occupancy.
 
 ### 2. Left-Lane Camping
@@ -215,24 +215,24 @@ git submodule update --init --recursive
 - GPS doesn't provide real-time lane-level speed awareness.
 
 ### 3. Turn Signal? None. I Turn Now.
-- The Family Guy maneuver is real — *"How much turn signal? ... good luck everybody!"* — drivers cut across multiple lanes with zero warning.
+- The Family Guy maneuver is real, *"How much turn signal? ... good luck everybody!"*, drivers cut across multiple lanes with zero warning.
 
 <p align="center">
   <a href="https://www.youtube.com/watch?v=yCdGeElhCK4">
-    <img src="assets/family-guy-meme.svg" alt="Family Guy driving meme — I turn now. Good luck everybody else!" width="560"/>
+    <img src="assets/family-guy-meme.svg" alt="Family Guy driving meme, I turn now. Good luck everybody else!" width="560"/>
   </a>
   <br/>
-  <em>The Family Guy maneuver, in the wild — <a href="https://www.youtube.com/watch?v=yCdGeElhCK4">watch the scene</a></em>
+  <em>The Family Guy maneuver, in the wild, <a href="https://www.youtube.com/watch?v=yCdGeElhCK4">watch the scene</a></em>
 </p>
 - **Missing or late turn signals** cause 25% of lane-change crashes (NHTSA).
 - CivicSense detects amber turn-signal lights, tracks lateral vehicle motion, and flags unsignaled lane changes before they become collisions.
 - Three specific violations:
-  - **No signal** — lane change with zero blinker activation.
-  - **Late signal** — blinker comes on after the vehicle is already moving laterally.
-  - **Multi-lane cut** — vehicle crosses two or more lanes in a single continuous path.
+  - **No signal**, lane change with zero blinker activation.
+  - **Late signal**, blinker comes on after the vehicle is already moving laterally.
+  - **Multi-lane cut**, vehicle crosses two or more lanes in a single continuous path.
 
 ### 4. Road Hazards Go Unreported
-- Fallen trees, debris, wildlife, crashes — often no one reports them until it's too late.
+- Fallen trees, debris, wildlife, crashes, often no one reports them until it's too late.
 - CivicSense turns every unit into a distributed hazard sensor network.
 
 ---
@@ -243,7 +243,7 @@ git submodule update --init --recursive
 |-------|---------|--------|
 | **Stop Sign Warning** | Stop sign detected, ego > 10 mph, distance < 50 ft | *"Stop sign ahead. Brake now."* |
 | **Blocked Intersection** | Occupancy > 70%, ego > 15 mph, distance < 30 ft | *"Intersection blocked. Don't enter."* |
-| **Blocked Box on Green** | Green light + intersection still occupied, no room to clear (misjudged the gap) | *"Green light — but the box is still full. Hold back, don't block the box."* |
+| **Blocked Box on Green** | Green light + intersection still occupied, no room to clear (misjudged the gap) | *"Green light, but the box is still full. Hold back, don't block the box."* |
 | **Merge Right Reminder** | Right lane +5 mph faster for > 3 seconds | *"You're being passed on the right. Move over."* |
 | **Slow Traffic Ahead** | Lead vehicle speed < threshold for > 5 seconds | *"Someone slow ahead. Prepare to merge."* |
 | **Lane Change No Signal** | Vehicle moves laterally, no amber blinker detected | *"Turn signal? Or do you expect everyone to read your mind?"* |
@@ -251,7 +251,7 @@ git submodule update --init --recursive
 | **Late Signal** | Blinker activates after lateral movement begins | *"Signal first, then merge. That's the deal."* |
 | **Road Hazard** | Detected debris / animal / obstruction | Voice + broadcast beacon to mesh |
 | **Emergency Vehicle** | Flashing lights detected (future) | *"Emergency vehicle behind. Pull right."* |
-| **Speed Feedback** | Ego significantly below traffic flow | *"Speed up — you're holding up traffic."* |
+| **Speed Feedback** | Ego significantly below traffic flow | *"Speed up, you're holding up traffic."* |
 
 ---
 
@@ -280,37 +280,37 @@ git submodule update --init --recursive
 |--------|---------------|-------|----------|
 | Qualcomm Snapdragon AR1 | ~22 ms | < 500 mW | AR Glasses |
 | Google Coral Dev Board | ~15 ms | 2 W | Dashcam |
-| Raspberry Pi 5 + Hailo-8L | ~18 ms | 8 W | **The brain** — DIY Kit |
+| Raspberry Pi 5 + Hailo-8L | ~18 ms | 8 W | **The brain**, DIY Kit |
 | Desktop GPU (training) | full-fat YOLO | 200–350 W | Model training & heavy inference |
-| **Raspberry Pi Zero 2 W** | capture + stream (MJPEG/H.264) | ~1 W | Camera node — feeds the brain |
+| **Raspberry Pi Zero 2 W** | capture + stream (MJPEG/H.264) | ~1 W | Camera node, feeds the brain |
 | **Raspberry Pi Pico** | trigger plane: PIO sensors, power states | < 0.5 W | Always-on trigger co-processor |
 
-> **Squeeze mission:** Pi Zero + Pi Pico on my desk. The goal is *not* to cram YOLO into 512 MB of RAM — it's to **distribute the pipeline**: the Pico triggers, the Pi Zero streams, and the strongest brain in the room runs inference. Performance-per-watt-per-dollar is not a toy metric.
+> **Squeeze mission:** Pi Zero + Pi Pico on my desk. The goal is *not* to cram YOLO into 512 MB of RAM, it's to **distribute the pipeline**: the Pico triggers, the Pi Zero streams, and the strongest brain in the room runs inference. Performance-per-watt-per-dollar is not a toy metric.
 
 ---
 
 ## Privacy
 
-- **100% on-device** — no video leaves the device.
-- **Hazard beacons are anonymous** — they contain only GPS coordinates and hazard type, no video, no identifier.
-- **Officer notifications are data-only** — structured reports, not surveillance footage.
-- **No cloud dependency** — everything runs locally.
+- **100% on-device**, no video leaves the device.
+- **Hazard beacons are anonymous**, they contain only GPS coordinates and hazard type, no video, no identifier.
+- **Officer notifications are data-only**, structured reports, not surveillance footage.
+- **No cloud dependency**, everything runs locally.
 
 ---
 
-## Performance per Watt per Dollar — Civic Sense STONKS 📈
+## Performance per Watt per Dollar, Civic Sense STONKS 📈
 
 Edge AI is a three-way squeeze: **fast enough, cheap enough, low-power enough**. Cloud ADAS vendors monetize you with subscriptions and siphon your video to a server. CivicSense flips the graph:
 
 | Metric | Cloud ADAS | CivicSense (edge) |
 |--------|-----------|-------------------|
-| **Dollar** | $10–30/mo subscription, forever | ~$0 — one-time hardware, no subscription |
+| **Dollar** | $10–30/mo subscription, forever | ~$0, one-time hardware, no subscription |
 | **Watt** | server rack somewhere + 4G upload | < 8 W on-device, no uplink |
 | **Performance** | network RTT + cloud queue | frame-to-voice in real time, on the device |
 | **Privacy** | your video leaves the car | 100% on-device, nothing leaves |
 
 <p align="center">
-  <img src="assets/stonks.svg" alt="Civic Sense STONKS — performance per watt per dollar goes up" width="640"/>
+  <img src="assets/stonks.svg" alt="Civic Sense STONKS, performance per watt per dollar goes up" width="640"/>
 </p>
 
 The whole point of squeezing onto a Pi Zero / Pi Pico is this: if you can do civic sense on **watts and one-time dollars**, it stops being a luxury feature and becomes a civic right.
@@ -357,9 +357,9 @@ Don't have an NVIDIA GPU for training YOLO models?
 
 ## License
 
-**GNU AGPL v3** — protecting against proprietary appropriation.
+**GNU AGPL v3**, protecting against proprietary appropriation.
 
-- You can use, fork, modify, and distribute — even commercially.
+- You can use, fork, modify, and distribute, even commercially.
 - You can deploy it as a service.
 - You cannot incorporate it into a closed-source proprietary product without releasing your source code.
 
@@ -368,12 +368,12 @@ Don't have an NVIDIA GPU for training YOLO models?
 ## Contributing
 
 We need:
-- **Rust engineers** — implement detection, tracking, voice output, mesh networking
-- **Kotlin / Android engineers** — Jetpack Compose UI, gRPC integration
-- **iOS engineers** — SwiftUI views, KMP framework integration
-- **Hardware designers** — 3D-printable glasses clip, dashcam enclosure
-- **Data labelers** — annotate intersection blocking, wildlife, road debris
-- **Testers** — run on your commute and report real-world performance
+- **Rust engineers**, implement detection, tracking, voice output, mesh networking
+- **Kotlin / Android engineers**, Jetpack Compose UI, gRPC integration
+- **iOS engineers**, SwiftUI views, KMP framework integration
+- **Hardware designers**, 3D-printable glasses clip, dashcam enclosure
+- **Data labelers**, annotate intersection blocking, wildlife, road debris
+- **Testers**, run on your commute and report real-world performance
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 

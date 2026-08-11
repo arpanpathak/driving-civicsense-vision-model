@@ -2,7 +2,7 @@
 
 > *"Reducing the distance between userspace and kernel space through great systems programming abstractions that don't leak."*
 
-Every line of code in this project carries a responsibility — to the drivers whose safety depends on real-time inference, to the contributors who build upon it, and to the open-source ethos that protects it from proprietary appropriation.
+Every line of code in this project carries a responsibility, to the drivers whose safety depends on real-time inference, to the contributors who build upon it, and to the open-source ethos that protects it from proprietary appropriation.
 
 **PRs that do not adhere to these standards will be rejected.** Full stop.
 
@@ -12,19 +12,19 @@ Every line of code in this project carries a responsibility — to the drivers w
 
 ### Userspace ↔ Kernel Space Continuum
 
-As systems programmers, our job is to **build abstractions that don't leak**. Every layer — from the YOLO ONNX session to the haptic alert driver — should be:
+As systems programmers, our job is to **build abstractions that don't leak**. Every layer, from the YOLO ONNX session to the haptic alert driver, should be:
 
-- **Correct** — formally verifiable where possible
-- **Performant** — zero-cost unless explicitly traded off
-- **Transparent** — the abstraction hides complexity, not behavior
+- **Correct**, formally verifiable where possible
+- **Performant**, zero-cost unless explicitly traded off
+- **Transparent**, the abstraction hides complexity, not behavior
 
 > *"A great abstraction lets you forget what's underneath. A leaking abstraction forces you to remember everything."*
 
 ### Safety First
 
-- **No `unsafe` without `// SAFETY:`** — every unsafe block must have a justification that a reviewer can independently verify
-- **No undefined behavior** — run Miri (`cargo miri test`) on any code that touches raw pointers, FFI, or unions
-- **No silent panics** — use `Result` for fallible operations; document `unwrap()` calls with a reason
+- **No `unsafe` without `// SAFETY:`**, every unsafe block must have a justification that a reviewer can independently verify
+- **No undefined behavior**, run Miri (`cargo miri test`) on any code that touches raw pointers, FFI, or unions
+- **No silent panics**, use `Result` for fallible operations; document `unwrap()` calls with a reason
 
 ---
 
@@ -148,7 +148,7 @@ fn evaluate_alerts(tracks: &[Track], ego_speed: f32) -> Vec<Alert> { /* ... */ }
 
 - Every `pub` item must have a use
 - No commented-out code (that's what git history is for)
-- No `#[allow(dead_code)]` without a reason — use it only for stubs during active development, remove before PR
+- No `#[allow(dead_code)]` without a reason, use it only for stubs during active development, remove before PR
 
 ---
 
@@ -172,9 +172,9 @@ fn process(frame: &[u8]) {
 
 The inference loop runs at 30 fps. Every millisecond counts:
 
-- **No allocations in the hot path** — pre-allocate buffers at startup
-- **No I/O in the hot path** — log asynchronously or batch
-- **No syscalls in the hot path** — pin threads, lock memory
+- **No allocations in the hot path**, pre-allocate buffers at startup
+- **No I/O in the hot path**, log asynchronously or batch
+- **No syscalls in the hot path**, pin threads, lock memory
 
 ### Profile Before Optimizing
 
@@ -298,7 +298,7 @@ Before opening a PR, verify:
 - [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/)
 - [Clean Code (Martin)](https://www.oreilly.com/library/view/clean-code/9780136083238/)
 - [Rust Performance Book](https://nnethercote.github.io/perf-book/)
-- [Rustonomicon — Unsafe Code Guidelines](https://doc.rust-lang.org/nomicon/)
+- [Rustonomicon, Unsafe Code Guidelines](https://doc.rust-lang.org/nomicon/)
 
 ---
 
