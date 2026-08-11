@@ -9,16 +9,12 @@
 \usepackage{booktabs}
 \usepackage{siunitx}
 \usepackage{microtype}
+\usepackage{fontawesome5}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning, calc, fit, backgrounds, decorations.pathreplacing}
 
 % Warning triangle icon used in the vulnerabilities discussion.
-\DeclareRobustCommand{\warnicon}{%
-  \tikz[baseline=(current bounding box.center), scale=0.22]{%
-    \draw[fill=yellow!85, draw=black, very thick, line join=round]
-      (0,0) -- (0.9,1.5) -- (1.8,0) -- cycle;
-    \draw[very thick] (0.9,1.05) -- (0.9,0.45);
-    \fill (0.9,0.16) circle (0.09);}}
+\DeclareRobustCommand{\warnicon}{\faExclamationTriangle\ }
 
 % ------------------------------------------------------------------
 % Rust syntax highlighting
@@ -1279,35 +1275,35 @@ warning is annoying; a missed blockage can be fatal.
 \end{tabular}
 \end{table*}
 
-\paragraph{\warnicon~Known vulnerabilities and operational boundaries.}
+\paragraph{\warnicon~Known Vulnerabilities and Operational Boundaries.}
 Peer review of an earlier draft surfaced six concerns that we state explicitly
 rather than hide; Table~\ref{tab:vuln} lists each vulnerability, the stage it
 affects, and its explicit operational bound.
-\textbf{1) Signal timing.} Without V2I or a SPaT (signal phase and
-timing) feed, a vision-only system cannot know when a stale green turns
-yellow; Remark~\ref{rem:worstcase} applies, and the ``stale'' aspect of the
-warning reduces to pure geometry.
-\textbf{2) Perception uncertainty.} Neural network outputs are
-point estimates, and a confidence score is not a formal bound. A
-bounding-box jitter of $\pm 1.5$~m at $14$~m/s shifts the arrival-time
-estimate by roughly $100$~ms, which can flip a safe decision into a blocked
-one. The formal results therefore hold for the given inputs, not for the
-unobserved ground truth.
-\textbf{3) Lead-vehicle motion.}
-Theorem~\ref{thm:follow} is conditional on a bounded leader deceleration
-(Remark~\ref{rem:leadbound}); the operational envelope is defined by that
-bound.
-\textbf{4) HMI trust.} Frequent false positives erode driver trust
-and can cause the system to be ignored, turning the next missed warning into
-a fatal outcome. The threshold policy is therefore recall-first, minimizing
-false negatives, and future work targets a dynamic threshold adapted to the
-driver's reaction time, with warning intensity modulated by confidence.
-\textbf{5) Occlusion.} A large vehicle can hide the stop line or
-the lead vehicle entirely; such detection gaps lie outside the formal scope.
-\textbf{6) Road friction.}
-Assumption~\ref{asm:braking} fixes grip at $4.0$~\si{m/s^2}; wet or icy
-surfaces reduce it, and the stopping envelope must be re-tuned for the
-local condition.
+\begin{enumerate}
+\item \textbf{Signal timing.} Without V2I or a SPaT (signal phase and
+  timing) feed, a vision-only system cannot know when a stale green turns
+  yellow; Remark~\ref{rem:worstcase} applies, and the ``stale'' aspect of the
+  warning reduces to pure geometry.
+\item \textbf{Perception uncertainty.} Neural network outputs are point
+  estimates, and a confidence score is not a formal bound. A bounding-box
+  jitter of $\pm 1.5$~m at $14$~m/s shifts the arrival-time estimate by
+  roughly $100$~ms, which can flip a safe decision into a blocked one. The
+  formal results therefore hold for the given inputs, not for the unobserved
+  ground truth.
+\item \textbf{Lead-vehicle motion.} Theorem~\ref{thm:follow} is conditional
+  on a bounded leader deceleration (Remark~\ref{rem:leadbound}); the
+  operational envelope is defined by that bound.
+\item \textbf{HMI trust.} Frequent false positives erode driver trust and can
+  cause the system to be ignored, turning the next missed warning into a
+  fatal outcome. The threshold policy is therefore recall-first, minimizing
+  false negatives, and future work targets a dynamic threshold adapted to the
+  driver's reaction time, with warning intensity modulated by confidence.
+\item \textbf{Occlusion.} A large vehicle can hide the stop line or the lead
+  vehicle entirely; such detection gaps lie outside the formal scope.
+\item \textbf{Road friction.} Assumption~\ref{asm:braking} fixes grip at
+  $4.0$~\si{m/s^2}; wet or icy surfaces reduce it, and the stopping envelope
+  must be re-tuned for the local condition.
+\end{enumerate}
 
 \paragraph{Scope of the formal results.} The proofs establish properties of
 the decision logic given exact inputs. They do not bound perception error,
