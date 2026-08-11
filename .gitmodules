@@ -1,3 +1,9 @@
 [submodule "frontend"]
 	path = frontend
 	url = https://github.com/arpanpathak/civicsense-companion
+[submodule "pi_stream"]
+	path = pi_stream
+	url = https://github.com/arpanpathak/civicsense-pi-stream
+[submodule "pistream_client"]
+	path = pistream_client
+	url = https://github.com/arpanpathak/civicsense-stream-client

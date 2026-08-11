@@ -14,6 +14,8 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Cloud GPU](https://img.shields.io/badge/Cloud%20GPU%20Guide-8A2BE2)](CLOUD_TRAINING.md)
 [![KMP Companion](https://img.shields.io/badge/KMP-Companion-purple)](https://github.com/arpanpathak/civicsense-companion)
+[![Pi Stream](https://img.shields.io/badge/Pi%20Stream-Rust%20MJPEG-FF6B6B)](https://github.com/arpanpathak/civicsense-pi-stream)
+[![Stream Client](https://img.shields.io/badge/Stream%20Client-Candle%20YOLO-D97757)](https://github.com/arpanpathak/civicsense-stream-client)
 [![Book: Seeing Machines](https://img.shields.io/badge/Book-Seeing%20Machines-FF6B6B)](https://arpanpathak.github.io/seeing-machines-book/foreword.html)
 [![Paper: Intersection Blockage](https://img.shields.io/badge/Paper-Intersection%20Blockage-8A2BE2)](https://arpanpathak.github.io/driving-civicsense-vision-model/)
 
@@ -148,6 +150,13 @@ Squeezing a YOLO model into 512 MB of RAM on a Pi Zero is a losing game — you 
 | **2 · Capture & Stream** | Raspberry Pi Zero | CSI camera capture, MJPEG/H.264 encode, low-latency streaming | libcamera, Rust/Go stream daemon |
 | **3 · Brain** | Pi 5 + Hailo-8L / desktop GPU | Heavy inference: YOLO ONNX (INT8), NMS, Deep SORT + Kalman, alert engine | ONNX Runtime, Rust |
 | **4 · Companion** | Phone (KMP) | Live alerts, violations, map view | Kotlin Multiplatform, gRPC |
+
+**Streaming stack (included as submodules, MIT licensed):**
+
+- [**civicsense-pi-stream**](https://github.com/arpanpathak/civicsense-pi-stream) (`pi_stream/`): Tier 2. A pure-Rust MJPEG streaming server for the Pi Zero 2 W + Arducam IMX335, ~50 MB RAM, with a full headless setup guide.
+- [**civicsense-stream-client**](https://github.com/arpanpathak/civicsense-stream-client) (`pistream_client/`): Tier 3. A Rust client that runs YOLOv8n on every frame with Candle (pure-Rust ML), draws boxes, and saves annotations. No Python, no ONNX Runtime.
+
+Both are dependency-free-of-Python and intentionally kept permissive (MIT), unlike the core repo's AGPL-3.0, so the streaming plumbing can be reused anywhere.
 
 **Why this wins over one-board-everything:**
 
