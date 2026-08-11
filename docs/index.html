@@ -968,14 +968,25 @@ edition = &quot;<span class="num">2021</span>&quot;
     false negatives, which is the correct direction for a warning system: a spurious
     warning is annoying; a missed blockage can be fatal.</p>
 
-    <figure>
-      <img src="assets/fig-vulnerabilities.svg" alt="Known vulnerabilities mapped onto the pipeline">
-      <figcaption><b>Fig. 5.</b> Known vulnerabilities mapped onto the pipeline stages they affect. Markers: 1 signal timing, 2 perception uncertainty, 3 lead-vehicle motion, 4 HMI trust erosion, 5 occlusion, 6 road friction.</figcaption>
-    </figure>
+    <div class="table-wrap">
+    <table>
+      <caption><b>Table III.</b> Known vulnerabilities and operational boundaries.</caption>
+      <thead><tr><th>#</th><th>Stage</th><th>Vulnerability</th><th>Operational bound</th></tr></thead>
+      <tbody>
+        <tr><td>&#9888;&#65039; 1</td><td><span class="tag warning">Decision</span></td><td>Signal timing</td><td>V2I/SPaT; otherwise worst-case geometry (remark in Section&nbsp;III)</td></tr>
+        <tr><td>&#9888;&#65039; 2</td><td><span class="tag warning">Perception</span></td><td>Bounding-box jitter</td><td>&#177;1.5&nbsp;m &#8776; 100&nbsp;ms; a confidence score is not a formal bound</td></tr>
+        <tr><td>&#9888;&#65039; 3</td><td><span class="tag warning">Decision</span></td><td>Lead-vehicle motion</td><td>leader deceleration &#8804; 0.4g (remark in Section&nbsp;IV-E)</td></tr>
+        <tr><td>&#9888;&#65039; 4</td><td><span class="tag warning">HMI</span></td><td>Trust erosion</td><td>false positives get ignored; dynamic threshold by reaction time</td></tr>
+        <tr><td>&#9888;&#65039; 5</td><td><span class="tag warning">Perception</span></td><td>Occlusion</td><td>stop line hidden; outside the formal scope</td></tr>
+        <tr><td>&#9888;&#65039; 6</td><td><span class="tag warning">Decision</span></td><td>Road friction</td><td>grip fixed at 4.0&nbsp;m/s&#178;</td></tr>
+      </tbody>
+    </table>
+    </div>
 
         <p><b>&#9888;&#65039; Known vulnerabilities and operational boundaries.</b>
     Peer review of an earlier draft surfaced six concerns that we state explicitly
-    rather than hide; Fig. 5 maps each onto the pipeline stage where it enters.</p>
+    rather than hide; Table&nbsp;III lists each vulnerability, the stage it affects, and its
+    explicit operational bound.</p>
 
     <div class="vuln">
       <div class="thm remark vuln-item">

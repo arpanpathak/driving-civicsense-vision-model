@@ -1256,53 +1256,29 @@ $\epsilon$ margin) bias the system toward false positives rather than false
 negatives, which is the correct direction for a warning system: a spurious
 warning is annoying; a missed blockage can be fatal.
 
-\begin{figure*}[t]
+\begin{table*}[t]
+\caption{Known vulnerabilities and operational boundaries.}
+\label{tab:vuln}
 \centering
-\begin{tikzpicture}[
-  font=\scriptsize,
-  >=Stealth,
-  pbox/.style={draw=gray!70, thick, rounded corners=2pt, align=center,
-               inner sep=4pt, text width=2.2cm},
-]
-  % warning markers above the affected stages
-  \node at (2.0, 1.05) {\warnicon~2};
-  \node at (3.1, 1.05) {\warnicon~5};
-  \node at (6.7, 1.05) {\warnicon~1};
-  \node at (7.6, 1.05) {\warnicon~3};
-  \node at (8.5, 1.05) {\warnicon~6};
-  \node at (10.0, 1.05) {\warnicon~4};
-  % pipeline stages
-  \node[pbox] (p1) at (0.0, 0) {Video\\window};
-  \node[pbox] (p2) at (2.5, 0) {Perception\\YOLO (NN)};
-  \node[pbox] (p3) at (5.0, 0) {Feature\\extraction};
-  \node[pbox] (p4) at (7.5, 0) {Decision\\engine};
-  \node[pbox] (p5) at (10.0, 0) {HMI};
-  \draw[->, thick] (p1) -- (p2);
-  \draw[->, thick] (p2) -- (p3);
-  \draw[->, thick] (p3) -- (p4);
-  \draw[->, thick] (p4) -- (p5);
-  % legend, two columns
-  \node[align=left, anchor=west, font=\scriptsize] at (-0.3, -1.6) {
-    \warnicon~1 Signal timing (V2I / SPaT)\\
-    \warnicon~2 Perception uncertainty ($\pm 1.5$~m $\approx 100$~ms)\\
-    \warnicon~3 Lead-vehicle motion ($\leq 0.4g$)};
-  \node[align=left, anchor=west, font=\scriptsize] at (5.2, -1.6) {
-    \warnicon~4 Trust erosion (false positives)\\
-    \warnicon~5 Occlusion (stop line hidden)\\
-    \warnicon~6 Road friction ($4$~m/s$^2$)};
-\end{tikzpicture}
-\caption{Known vulnerabilities mapped onto the pipeline stages they affect.
-Markers: 1 signal timing, 2 perception uncertainty, 3 lead-vehicle motion,
-4 HMI trust erosion, 5 occlusion, 6 road friction. Each marker denotes an
-explicit operational boundary of the formal guarantees
-(Section~\ref{sec:discussion}).}
-\label{fig:vuln}
-\end{figure*}
+\footnotesize
+\begin{tabular}{@{}clll@{}}
+\toprule
+\# & Stage & Vulnerability & Operational bound \\
+\midrule
+\warnicon~1 & Decision & Signal timing & V2I / SPaT; otherwise worst-case geometry (Remark~\ref{rem:worstcase}) \\
+\warnicon~2 & Perception & Bounding-box jitter & $\pm 1.5$~m $\approx 100$~ms; a confidence score is not a formal bound \\
+\warnicon~3 & Decision & Lead-vehicle motion & leader deceleration $\leq 0.4g$ (Remark~\ref{rem:leadbound}) \\
+\warnicon~4 & HMI & Trust erosion & false positives get ignored; dynamic threshold by reaction time \\
+\warnicon~5 & Perception & Occlusion & stop line hidden; outside the formal scope \\
+\warnicon~6 & Decision & Road friction & grip fixed at $4.0$~\si{m/s^2} \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
 \paragraph{\warnicon~Known vulnerabilities and operational boundaries.}
 Peer review of an earlier draft surfaced six concerns that we state explicitly
-rather than hide; Figure~\ref{fig:vuln} maps each onto the pipeline stage
-where it enters.
+rather than hide; Table~\ref{tab:vuln} lists each vulnerability, the stage it
+affects, and its explicit operational bound.
 \warnicon~\textbf{1) Signal timing.} Without V2I or a SPaT (signal phase and
 timing) feed, a vision-only system cannot know when a stale green turns
 yellow; Remark~\ref{rem:worstcase} applies, and the ``stale'' aspect of the
