@@ -305,6 +305,20 @@ deceleration of $\ab = 4.0~\si{m/s^2}$, corresponding to a comfortable
 emergency brake.
 \end{assumption}
 
+\begin{remark}[Vision-only worst-case interpretation]
+\label{rem:worstcase}
+Assumption~\ref{asm:signal} requires $\tred$ to be observable. If signal
+timing is not available (no V2I, no SPaT feed, no countdown detector), the
+framework is applied under a worst-case interpretation: every green phase is
+treated as potentially ending at the current frame, so $\tred$ is set to the
+frame duration. Clearance then becomes infeasible in almost every state, and
+the dilemma-zone test of Theorem~\ref{thm:dilemma} reduces to the purely
+geometric question of whether a safe stop remains possible. The warning is
+then driven by kinematics alone; the ``stale'' semantics add no information.
+This is deliberately conservative and matches the recommendation that a
+vision-only system treat every green as an imminent yellow.
+\end{remark}
+
 The decision must be produced before the vehicle crosses the stop line; the
 dilemma zone is precisely the set of states for which a warning is
 unavoidable regardless of driver action.
@@ -711,6 +725,19 @@ second condition $\dl < \dreq(\ve)$ rules out aborting: the ego cannot stop
 behind the leader, because the gap is smaller than its stopping distance.
 Hence blockage is unavoidable.
 \end{proof}
+
+\begin{remark}[Lead-vehicle operational boundary]
+\label{rem:leadbound}
+The guarantee of Theorem~\ref{thm:follow} is conditional on the leader's
+motion: it holds provided the leader does not decelerate beyond a worst-case
+bound. Under Assumption~\ref{asm:cv} this bound is effectively zero, since the
+leader maintains constant velocity. For deployment we recommend a conservative
+bound of $a_{\mathrm{lead}} = 0.4\,g \approx 3.9$~\si{m/s^2}, so that the
+effective clearance time becomes
+$\teff = (\dl + \Li)\,/\,\max\bigl(0.1,\; \vl - a_{\mathrm{lead}}\,(\tred - \epsilon)\bigr)$.
+Within this defined operational envelope the warning remains sound; outside it,
+the system degrades gracefully rather than claiming certainty.
+\end{remark}
 
 \subsection{Lane-Changing Constraint}
 \label{subsec:cutin}
@@ -1221,18 +1248,66 @@ $\epsilon$ margin) bias the system toward false positives rather than false
 negatives, which is the correct direction for a warning system: a spurious
 warning is annoying; a missed blockage can be fatal.
 
+\paragraph{Known vulnerabilities and operational boundaries.}
+Peer review of an earlier draft surfaced six concerns that we state explicitly
+rather than hide.
+\textbf{(1) Signal timing.} Without V2I or a SPaT (signal phase and timing)
+feed, a vision-only system cannot know when a stale green turns yellow;
+Remark~\ref{rem:worstcase} applies, and the ``stale'' aspect of the warning
+reduces to pure geometry.
+\textbf{(2) Perception uncertainty.} Neural network outputs are point
+estimates, and a confidence score is not a formal bound. A bounding-box
+jitter of $\pm 1.5$~m at $14$~m/s shifts the arrival-time estimate by roughly
+$100$~ms, which can flip a safe decision into a blocked one. The formal
+results therefore hold for the given inputs, not for the unobserved ground
+truth.
+\textbf{(3) Lead-vehicle motion.} Theorem~\ref{thm:follow} is conditional on
+a bounded leader deceleration (Remark~\ref{rem:leadbound}); the operational
+envelope is defined by that bound.
+\textbf{(4) HMI trust.} Frequent false positives erode driver trust and can
+cause the system to be ignored, turning the next missed warning into a fatal
+outcome. The threshold policy is therefore recall-first, minimizing false
+negatives, and future work targets a dynamic threshold adapted to the
+driver's reaction time, with warning intensity modulated by confidence.
+\textbf{(5) Occlusion.} A large vehicle can hide the stop line or the lead
+vehicle entirely; such detection gaps lie outside the formal scope.
+\textbf{(6) Road friction.} Assumption~\ref{asm:braking} fixes grip at
+$4.0$~\si{m/s^2}; wet or icy surfaces reduce it, and the stopping envelope
+must be re-tuned for the local condition.
+
+\paragraph{Scope of the formal results.} The proofs establish properties of
+the decision logic given exact inputs. They do not bound perception error,
+signal-timing uncertainty, or actuator performance. Each theorem is a
+conditional statement: if the inputs satisfy the assumptions, the output is
+correct. Guaranteeing the inputs themselves (object detection, tracking,
+signal timing) is a perception problem, and the deterministic engine is
+deliberately agnostic to how the inputs are obtained. Moving the physical
+bounds into the type system (e.g., constructors that reject impossible
+speeds or distances) is planned future work and would push a further part of
+this verification into the compiler.
+
+\paragraph{Pedagogical use case.} Because the engine is white box, the HMI
+can display the violated constraint directly, for example ``you are braking
+at $0.3\,g$, you need $0.5\,g$ to stop before the line''. This turns a
+warning into an explanation, which is valuable for student drivers and
+differentiates the system from OEM ADAS that treat the driver as a passive
+monitor.
+
 \paragraph{Limitations.} The framework inherits the limitations of its
 assumptions. Assumption~\ref{asm:cv} ignores acceleration and deceleration
 by surrounding vehicles; Assumption~\ref{asm:signal} requires signal-timing
 observability; and Assumption~\ref{asm:braking} assumes nominal friction.
 Sensor noise in the perception layer propagates into the physical estimates,
 and although the decision logic is deterministic, the measurements feeding
-it are not. These limitations motivate two lines of future work: (i)~probabilistic
-propagation of measurement uncertainty through the kinematic equations to
-produce calibrated confidence levels for each warning, and (ii)~extension of
-the rule set to vulnerable road users and multi-lane crossing scenes. The
-deterministic core is the correct foundation for both, since probabilistic
-extensions can be layered on top without changing the underlying kinematics.
+it are not. These limitations motivate several lines of future work:
+(i)~probabilistic propagation of measurement uncertainty, via Kalman-filter
+covariances or interval arithmetic, through the kinematic equations to
+produce calibrated confidence levels for each warning; (ii)~dynamic warning
+thresholds adapted to the driver's reaction time; (iii)~extension of the
+rule set to vulnerable road users and multi-lane crossing scenes; and
+(iv)~type-level enforcement of physical bounds. The deterministic core is
+the correct foundation for all of these, since probabilistic extensions can
+be layered on top without changing the underlying kinematics.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -1240,7 +1315,8 @@ A deterministic, mathematically proven system for intersection blockage
 prediction has been presented. The method requires no labelled data and
 provides interpretable warnings based on violated kinematic constraints,
 formalised in five theorems with complete proofs
-(Appendix~\ref{app:proofs}). The Rust implementation is modular,
+(Appendix~\ref{app:proofs}), valid within an explicitly defined operational
+envelope (Section~\ref{sec:discussion}). The Rust implementation is modular,
 SOLID-compliant, dependency-free, and severity-ordered, with $O(n)$ per-frame
 cost and exhaustive handling of sensor states. Source listings, this paper,
 and the proofs appendix are available online.
@@ -1267,6 +1343,14 @@ metres, speeds in \si{m/s}, and accelerations in \si{m/s^2}. We assume the
 kinematic model of Assumptions~\ref{asm:cv}--\ref{asm:braking}: longitudinal
 motion is governed by $\ddot{x} = a(t)$ with $|a(t)| \leq \ab$ and an
 actuation delay $\tr$ during which $a(t) = 0$.
+
+\paragraph{Scope of the proofs.}
+Every result below is a conditional statement: given exact inputs that
+satisfy the stated assumptions, the conclusion follows. The proofs do not
+bound perception error, signal-timing uncertainty, or actuator performance,
+and they do not assert that the measured inputs equal the ground truth. The
+formal guarantee therefore covers the decision logic itself, not the
+perception chain that feeds it.
 
 \subsection{Supporting Lemmas}
 

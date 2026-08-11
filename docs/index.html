@@ -266,6 +266,20 @@ window.MathJaxFallback = true;
       emergency brake.</p>
     </div>
 
+    <div class="thm remark">
+      <span class="head">Remark (Vision-only worst-case interpretation).</span>
+      <p>Assumption&nbsp;2 requires $t_y$ to be observable. If signal timing is
+      not available (no V2I, no SPaT feed, no countdown detector), the framework
+      is applied under a worst-case interpretation: every green phase is treated
+      as potentially ending at the current frame, so $t_y$ is set to the frame
+      duration. Clearance then becomes infeasible in almost every state, and the
+      dilemma-zone test of Theorem&nbsp;4 reduces to the purely geometric question
+      of whether a safe stop remains possible. The warning is then driven by
+      kinematics alone; the &ldquo;stale&rdquo; semantics add no information. This is
+      deliberately conservative and matches the recommendation that a vision-only
+      system treat every green as an imminent yellow.</p>
+    </div>
+
     <p>The decision must be produced before the vehicle crosses the stop line; the
     dilemma zone is precisely the set of states for which a warning is unavoidable
     regardless of driver action.</p>
@@ -487,6 +501,19 @@ window.MathJaxFallback = true;
       leader, because the gap is smaller than its stopping distance. Hence blockage is
       unavoidable.</p>
       <span class="qed">&#9633;</span>
+    </div>
+
+    <div class="thm remark">
+      <span class="head">Remark (Lead-vehicle operational boundary).</span>
+      <p>The guarantee of Theorem&nbsp;5 is conditional on the leader's motion: it
+      holds provided the leader does not decelerate beyond a worst-case bound. Under
+      Assumption&nbsp;1 this bound is effectively zero, since the leader maintains
+      constant velocity. For deployment we recommend a conservative bound of
+      $a_{\mathrm{lead}} = 0.4\,g \approx 3.9$&nbsp;m/s$^2$, so that the effective
+      clearance time becomes
+      $t_c^{\mathrm{eff}} = (d_l + L_i)\,/\,\max\bigl(0.1,\; v_l - a_{\mathrm{lead}}\,(t_y - \epsilon)\bigr)$.
+      Within this defined operational envelope the warning remains sound; outside it,
+      the system degrades gracefully rather than claiming certainty.</p>
     </div>
 
     <h3 class="sub" id="s46">F. Lane-Changing Constraint</h3>
@@ -941,18 +968,60 @@ edition = &quot;<span class="num">2021</span>&quot;
     false negatives, which is the correct direction for a warning system: a spurious
     warning is annoying; a missed blockage can be fatal.</p>
 
+    <p><b>Known vulnerabilities and operational boundaries.</b> Peer review of an
+    earlier draft surfaced six concerns that we state explicitly rather than hide.
+    <b>(1) Signal timing.</b> Without V2I or a SPaT (signal phase and timing) feed, a
+    vision-only system cannot know when a stale green turns yellow; the
+    worst-case remark in Section&nbsp;III applies, and the &ldquo;stale&rdquo; aspect of the
+    warning reduces to pure geometry. <b>(2) Perception uncertainty.</b> Neural
+    network outputs are point estimates, and a confidence score is not a formal
+    bound. A bounding-box jitter of $\pm 1.5$&nbsp;m at $14$&nbsp;m/s shifts the
+    arrival-time estimate by roughly $100$&nbsp;ms, which can flip a safe decision
+    into a blocked one. The formal results therefore hold for the given inputs,
+    not for the unobserved ground truth. <b>(3) Lead-vehicle motion.</b>
+    Theorem&nbsp;5 is conditional on a bounded leader deceleration (see the remark
+    in Section&nbsp;IV-E); the operational envelope is defined by that bound.
+    <b>(4) HMI trust.</b> Frequent false positives erode driver trust and can cause
+    the system to be ignored, turning the next missed warning into a fatal outcome.
+    The threshold policy is therefore recall-first, minimizing false negatives, and
+    future work targets a dynamic threshold adapted to the driver's reaction time,
+    with warning intensity modulated by confidence. <b>(5) Occlusion.</b> A large
+    vehicle can hide the stop line or the lead vehicle entirely; such detection
+    gaps lie outside the formal scope. <b>(6) Road friction.</b> Assumption&nbsp;3
+    fixes grip at $4.0$&nbsp;m/s$^2$; wet or icy surfaces reduce it, and the
+    stopping envelope must be re-tuned for the local condition.</p>
+
+    <p><b>Scope of the formal results.</b> The proofs establish properties of the
+    decision logic given exact inputs. They do not bound perception error,
+    signal-timing uncertainty, or actuator performance. Each theorem is a
+    conditional statement: if the inputs satisfy the assumptions, the output is
+    correct. Guaranteeing the inputs themselves (object detection, tracking,
+    signal timing) is a perception problem, and the deterministic engine is
+    deliberately agnostic to how the inputs are obtained. Moving the physical
+    bounds into the type system (e.g., constructors that reject impossible speeds
+    or distances) is planned future work and would push a further part of this
+    verification into the compiler.</p>
+
+    <p><b>Pedagogical use case.</b> Because the engine is white box, the HMI can
+    display the violated constraint directly, for example &ldquo;you are braking at
+    $0.3\,g$, you need $0.5\,g$ to stop before the line&rdquo;. This turns a warning
+    into an explanation, which is valuable for student drivers and differentiates
+    the system from OEM ADAS that treat the driver as a passive monitor.</p>
+
     <p><b>Limitations.</b> The framework inherits the limitations of its assumptions.
     Assumption&nbsp;1 ignores acceleration and deceleration by surrounding vehicles;
     Assumption&nbsp;2 requires signal-timing observability; and Assumption&nbsp;3
     assumes nominal friction. Sensor noise in the perception layer propagates into the
     physical estimates, and although the decision logic is deterministic, the
-    measurements feeding it are not. These limitations motivate two lines of future
-    work: (i)&nbsp;probabilistic propagation of measurement uncertainty through the
-    kinematic equations to produce calibrated confidence levels for each warning, and
-    (ii)&nbsp;extension of the rule set to vulnerable road users and multi-lane
-    crossing scenes. The deterministic core is the correct foundation for both, since
-    probabilistic extensions can be layered on top without changing the underlying
-    kinematics.</p>
+    measurements feeding it are not. These limitations motivate several lines of
+    future work: (i)&nbsp;probabilistic propagation of measurement uncertainty, via
+    Kalman-filter covariances or interval arithmetic, through the kinematic equations
+    to produce calibrated confidence levels for each warning; (ii)&nbsp;dynamic
+    warning thresholds adapted to the driver's reaction time; (iii)&nbsp;extension of
+    the rule set to vulnerable road users and multi-lane crossing scenes; and
+    (iv)&nbsp;type-level enforcement of physical bounds. The deterministic core is
+    the correct foundation for all of these, since probabilistic extensions can be
+    layered on top without changing the underlying kinematics.</p>
   </section>
 
   <!-- ================= VIII. CONCLUSION ================= -->
@@ -961,7 +1030,7 @@ edition = &quot;<span class="num">2021</span>&quot;
     <p>A deterministic, mathematically proven system for intersection blockage
     prediction has been presented. The method requires no labelled data and provides
     interpretable warnings based on violated kinematic constraints, formalised in five
-    theorems with complete proofs (<a href="appendix.html">Appendix&nbsp;A</a>). The
+    theorems with complete proofs (<a href="appendix.html">Appendix&nbsp;A</a>), valid within an explicitly defined operational envelope (Section&nbsp;VII). The
     Rust implementation is modular, SOLID-compliant, dependency-free, and
     severity-ordered, with $O(n)$ per-frame cost and exhaustive handling of sensor
     states. Source listings, this paper, and the proofs appendix are available

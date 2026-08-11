@@ -61,6 +61,12 @@ window.MathJaxFallback = true;
     Assumptions&nbsp;1&ndash;3: longitudinal motion is governed by
     $\ddot{x} = a(t)$ with $|a(t)| \leq a_b$ and an actuation delay $t_r$ during which
     $a(t) = 0$.</p>
+    <p><b>Scope of the proofs.</b> Every result below is a conditional statement:
+    given exact inputs that satisfy the stated assumptions, the conclusion follows.
+    The proofs do not bound perception error, signal-timing uncertainty, or actuator
+    performance, and they do not assert that the measured inputs equal the ground
+    truth. The formal guarantee therefore covers the decision logic itself, not the
+    perception chain that feeds it.</p>
   </div>
 
   <nav class="toc">
