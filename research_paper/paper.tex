@@ -1269,12 +1269,12 @@ warning is annoying; a missed blockage can be fatal.
 \toprule
 \# & Stage & Vulnerability & Operational bound \\
 \midrule
-\warnicon~1 & Decision & Signal timing & V2I / SPaT; otherwise worst-case geometry (Remark~\ref{rem:worstcase}) \\
-\warnicon~2 & Perception & Bounding-box jitter & $\pm 1.5$~m $\approx 100$~ms; a confidence score is not a formal bound \\
-\warnicon~3 & Decision & Lead-vehicle motion & leader deceleration $\leq 0.4g$ (Remark~\ref{rem:leadbound}) \\
-\warnicon~4 & HMI & Trust erosion & false positives get ignored; dynamic threshold by reaction time \\
-\warnicon~5 & Perception & Occlusion & stop line hidden; outside the formal scope \\
-\warnicon~6 & Decision & Road friction & grip fixed at $4.0$~\si{m/s^2} \\
+1 & Decision & Signal timing & V2I / SPaT; otherwise worst-case geometry (Remark~\ref{rem:worstcase}) \\
+2 & Perception & Bounding-box jitter & $\pm 1.5$~m $\approx 100$~ms; a confidence score is not a formal bound \\
+3 & Decision & Lead-vehicle motion & leader deceleration $\leq 0.4g$ (Remark~\ref{rem:leadbound}) \\
+4 & HMI & Trust erosion & false positives get ignored; dynamic threshold by reaction time \\
+5 & Perception & Occlusion & stop line hidden; outside the formal scope \\
+6 & Decision & Road friction & grip fixed at $4.0$~\si{m/s^2} \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1283,28 +1283,28 @@ warning is annoying; a missed blockage can be fatal.
 Peer review of an earlier draft surfaced six concerns that we state explicitly
 rather than hide; Table~\ref{tab:vuln} lists each vulnerability, the stage it
 affects, and its explicit operational bound.
-\warnicon~\textbf{1) Signal timing.} Without V2I or a SPaT (signal phase and
+\textbf{1) Signal timing.} Without V2I or a SPaT (signal phase and
 timing) feed, a vision-only system cannot know when a stale green turns
 yellow; Remark~\ref{rem:worstcase} applies, and the ``stale'' aspect of the
 warning reduces to pure geometry.
-\warnicon~\textbf{2) Perception uncertainty.} Neural network outputs are
+\textbf{2) Perception uncertainty.} Neural network outputs are
 point estimates, and a confidence score is not a formal bound. A
 bounding-box jitter of $\pm 1.5$~m at $14$~m/s shifts the arrival-time
 estimate by roughly $100$~ms, which can flip a safe decision into a blocked
 one. The formal results therefore hold for the given inputs, not for the
 unobserved ground truth.
-\warnicon~\textbf{3) Lead-vehicle motion.}
+\textbf{3) Lead-vehicle motion.}
 Theorem~\ref{thm:follow} is conditional on a bounded leader deceleration
 (Remark~\ref{rem:leadbound}); the operational envelope is defined by that
 bound.
-\warnicon~\textbf{4) HMI trust.} Frequent false positives erode driver trust
+\textbf{4) HMI trust.} Frequent false positives erode driver trust
 and can cause the system to be ignored, turning the next missed warning into
 a fatal outcome. The threshold policy is therefore recall-first, minimizing
 false negatives, and future work targets a dynamic threshold adapted to the
 driver's reaction time, with warning intensity modulated by confidence.
-\warnicon~\textbf{5) Occlusion.} A large vehicle can hide the stop line or
+\textbf{5) Occlusion.} A large vehicle can hide the stop line or
 the lead vehicle entirely; such detection gaps lie outside the formal scope.
-\warnicon~\textbf{6) Road friction.}
+\textbf{6) Road friction.}
 Assumption~\ref{asm:braking} fixes grip at $4.0$~\si{m/s^2}; wet or icy
 surfaces reduce it, and the stopping envelope must be re-tuned for the
 local condition.
