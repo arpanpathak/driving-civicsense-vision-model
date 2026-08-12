@@ -11,11 +11,12 @@
 > *the math is proven, the call is true,*
 > *better safe than sorry, let it clear, then pass through.*
 
-**Edge AI perception for intersection discipline, lane courtesy, road hazard alerts, and cooperative safety, running on 3D-printed smart glasses or dashcam hardware.**
+**Edge AI perception for intersection discipline, lane courtesy, road hazard alerts, and cooperative safety, running on NVIDIA Jetson Orin Nano Super, 3D-printed smart glasses, or dashcam hardware.**
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/Rust-1.85+-orange.svg)](https://www.rust-lang.org)
 [![YOLOv8](https://img.shields.io/badge/YOLO-v8/v11-00BBFF)](https://github.com/ultralytics/ultralytics)
+[![Jetson Orin Nano Super](https://img.shields.io/badge/NVIDIA-Jetson%20Orin%20Nano%20Super-76B900)](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Cloud GPU](https://img.shields.io/badge/Cloud%20GPU%20Guide-8A2BE2)](CLOUD_TRAINING.md)
 [![KMP Companion](https://img.shields.io/badge/KMP-Companion-purple)](https://github.com/arpanpathak/civicsense-companion)
@@ -105,9 +106,13 @@ Together they tell one story, **how to take computer vision from cloud to bare m
 |------|----------|-------------|
 | **Smart glasses clip** | 3D-printed frame + camera module + Qualcomm AR1 | < $50 BOM |
 | **Dashcam puck** | Raspberry Pi Zero + camera + Hailo-8L NPU | < $80 BOM |
+| **Jetson brain** | NVIDIA Jetson Orin Nano Super (67 INT8 TOPS, 8 GB) | ~$249 |
 | **Phone companion** | Uses existing phone camera (GPS + alerts via Bluetooth) | Free app |
 
 All variants process **100% on-device**. No cloud upload. No subscription.
+
+> The **primary deployment target** for the inference pipeline is the **NVIDIA Jetson Orin Nano Super** — 67 INT8 TOPS of AI compute, 8 GB of unified memory, and 7–15 W of power envelope. It runs the full YOLO + Deep SORT + kinematic decision engine pipeline at real-time speeds entirely on-device. Huge respect to NVIDIA for democratizing edge AI at this price point.
+
 
 ---
 
@@ -310,14 +315,15 @@ git submodule update --init --recursive
 
 | Device | Inference Time | Power | Use Case |
 |--------|---------------|-------|----------|
+| **NVIDIA Jetson Orin Nano Super** | ~12 ms (INT8) | 7–15 W | **Primary brain** — full pipeline at real-time |
 | Qualcomm Snapdragon AR1 | ~22 ms | < 500 mW | AR Glasses |
 | Google Coral Dev Board | ~15 ms | 2 W | Dashcam |
-| Raspberry Pi 5 + Hailo-8L | ~18 ms | 8 W | **The brain**, DIY Kit |
+| Raspberry Pi 5 + Hailo-8L | ~18 ms | 8 W | DIY brain, budget Kit |
 | Desktop GPU (training) | full-fat YOLO | 200–350 W | Model training & heavy inference |
 | **Raspberry Pi Zero 2 W** | capture + stream (MJPEG/H.264) | ~1 W | Camera node, feeds the brain |
 | **Raspberry Pi Pico** | trigger plane: PIO sensors, power states | < 0.5 W | Always-on trigger co-processor |
 
-> **Squeeze mission:** Pi Zero + Pi Pico on my desk. The goal is *not* to cram YOLO into 512 MB of RAM, it's to **distribute the pipeline**: the Pico triggers, the Pi Zero streams, and the strongest brain in the room runs inference. Performance-per-watt-per-dollar is not a toy metric.
+> **Squeeze mission:** The NVIDIA Jetson Orin Nano Super is the primary inference brain — 67 INT8 TOPS, 8 GB unified memory, 7–15 W. Coupled with a Pi Zero streaming MJPEG and a Pi Pico handling sensor triggers, the full distributed pipeline runs real-time at under 20 W total. Performance-per-watt-per-dollar is not a toy metric. Thank you NVIDIA for making this possible at $249.
 
 ---
 

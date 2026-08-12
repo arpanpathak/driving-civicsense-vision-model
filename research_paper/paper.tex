@@ -1054,6 +1054,17 @@ first match (or \textsc{Safe} if none fires).}
 \label{fig:arch}
 \end{figure*}
 
+\paragraph{Deployment target.} The primary deployment platform is the
+NVIDIA Jetson Orin Nano Super (67 INT8 TOPS, 8~GB unified memory,
+7--15~W power envelope). The full pipeline---YOLOv8n ONNX inference,
+Deep SORT tracking, kinematic decision engine, and gRPC alert
+dispatch---executes entirely on-device with a target latency of
+$\leq 40$~ms per frame. The Jetson's INT8-optimised tensor cores and
+ONNX Runtime integration enable the YOLO backbone to run at real-time
+rates without external accelerators, and the deterministic Rust core
+(co-located on the same SoC) consumes negligible CPU relative to the
+perception stage.
+
 \subsection{Perception pipeline}
 \label{sub:perception}
 The decision engine consumes physical estimates, not raw pixels. The
@@ -1862,7 +1873,15 @@ better safe than sorry, let it clear, then pass through.
 \end{quote}
 
 \section*{Acknowledgment}
-The author thanks the CivicSense community for field data and feedback.
+The author thanks the CivicSense community for field data and feedback,
+and gratefully acknowledges NVIDIA for the Jetson Orin Nano Super
+platform (67 INT8 TOPS, 8 GB unified memory, 7--15 W), which serves as
+the primary deployment target for the inference pipeline described in
+this work. The Jetson ecosystem's support for ONNX Runtime, INT8
+quantisation, and low-power edge deployment made the real-time
+distributed pipeline architecture (Pico $\rightarrow$ Pi Zero
+$\rightarrow$ Jetson $\rightarrow$ KMP companion) feasible at a price
+point that makes civic AI accessible.
 Source code, this paper (PDF and \LaTeX{}), and the HTML proofs appendix are
 available at
 \url{https://github.com/arpanpathak/driving-civicsense-vision-model/tree/main/research_paper}
