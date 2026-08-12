@@ -1512,164 +1512,165 @@ verification suite.
 
 
 \section{Implementation Pseudocode}
+\algrenewcommand\algorithmiccomment[1]{\hfill $\triangleright$ #1}
 
 This section presents the system architecture in language-agnostic pseudocode.
 The Rust implementation (58 tests, zero dependencies for core logic) is at
 \url{https://github.com/arpanpathak/driving-civicsense-vision-model}.
 
-\begin{algorithm}[h]
+\begin{algorithm}[t]
 \caption{Core data types (\texttt{src/models.rs}). All types are immutable.}
 \begin{algorithmic}[1]
 \State \textbf{Enums} (exhaustive, compile-time checked):
-\State \quad $\ell \in \{\textsc{Red}, \textsc{Yellow}, \textsc{Green}, \textsc{Unknown}\}$ \Comment{Traffic-light phase}
-\State \quad $\lambda \in \{\textsf{same}, \textsf{left}, \textsf{right}, \textsf{unknown}\}$ \Comment{Lane position}
-\State \quad $w \in \{\textsc{Safe}, \textsc{Caution}, \textsc{Warning}, \textsc{Critical}\}$
-\State \qquad \Comment{Severity order: $\textsc{Safe} < \textsc{Caution} < \textsc{Warning} < \textsc{Critical}$}
+\State \quad $\ell \in \{Red, Yellow, Green, Unknown\}$ \Comment{Traffic-light phase}
+\State \quad $\lambda \in \{same, left, right, unknown\}$ \Comment{Lane position}
+\State \quad $w \in \{Safe, Caution, Warning, Critical\}$
+\State \qquad \Comment{Severity order: $Safe < Caution < Warning < Critical$}
 \State
-\State \textbf{Record} \textsc{Detection}: \Comment{Tracked object from perception pipeline}
-\State \quad $\textit{bbox} \in \mathbb{R}^4$ \Comment{Bounding box $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ in px}
+\State \textbf{Record} Detection: \Comment{Tracked object from perception pipeline}
+\State \quad $\textit{bbox} \in \mathbf{R}^4$ \Comment{Bounding box $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ in px}
 \State \quad $\textit{class} \in \{2,3,5,7\}$ \Comment{COCO: car, motorcycle, bus, truck}
-\State \quad $v, v_{\text{lat}} \in \mathbb{R}_{\ge 0}$ \Comment{Longitudinal / lateral speed (m/s)}
-\State \quad $d \in \mathbb{R}_{>0}$ \Comment{Distance from ego front bumper (m)}
+\State \quad $v, v_{\text{lat}} \in \mathbf{R}_{\ge 0}$ \Comment{Longitudinal / lateral speed (m/s)}
+\State \quad $d \in \mathbf{R}_{>0}$ \Comment{Distance from ego front bumper (m)}
 \State \quad $\textit{lane} \in \lambda$ \Comment{Assigned lane}
-\State \quad $\textit{signal} \in \{\textsf{true}, \textsf{false}\}$ \Comment{Turn-signal detected?}
-\State \quad $\textit{age} \in \mathbb{N}$ \Comment{Consecutive frames; gates cut-in rule ($\ge k_{\min}$)}
+\State \quad $\textit{signal} \in \{true, false\}$ \Comment{Turn-signal detected?}
+\State \quad $\textit{age} \in \mathbf{N}$ \Comment{Consecutive frames; gates cut-in rule ($\ge k_{\min}$)}
 \State
-\State \textbf{Record} \textsc{EgoState}: \Comment{Instantaneous ego snapshot}
-\State \quad $v_e \in \mathbb{R}_{\ge 0}$ \Comment{Speed (m/s), from OBD-II / GNSS / vision}
-\State \quad $d_s \in \mathbb{R}_{>0}$ \Comment{Distance to stop line (m)}
+\State \textbf{Record} EgoState: \Comment{Instantaneous ego snapshot}
+\State \quad $v_e \in \mathbf{R}_{\ge 0}$ \Comment{Speed (m/s), from OBD-II / GNSS / vision}
+\State \quad $d_s \in \mathbf{R}_{>0}$ \Comment{Distance to stop line (m)}
 \State
-\State \textbf{Record} \textsc{LeadVehicle}: \Comment{Closest same-lane leader}
-\State \quad $d_l, v_l \in \mathbb{R}_{\ge 0}$ \Comment{Distance (m), speed (m/s)}
-\State \quad $\textit{in\_box} \in \{\textsf{true}, \textsf{false}\}$ \Comment{$d_l < L_i$?}
+\State \textbf{Record} LeadVehicle: \Comment{Closest same-lane leader}
+\State \quad $d_l, v_l \in \mathbf{R}_{\ge 0}$ \Comment{Distance (m), speed (m/s)}
+\State \quad $\textit{in\_box} \in \{true, false\}$ \Comment{$d_l < L_i$?}
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[h]
+\begin{algorithm}[t]
 \caption{Kinematic functions (\texttt{src/algebra.rs}). All pure, stateless, deterministic.}
 \begin{algorithmic}[1]
 \State \textbf{Constants}: $a_b = 4.0$~m/s$^2$, $t_r = 1.0$~s, $L_i = 16$~m, $\epsilon = 0.8$~s, $W_l = 3.5$~m
 \State \qquad $v_{\max} = 30$~m/s, $L = t_r + v_{\max}/a_b = 8.5$~s \Comment{Lipschitz constant (Theorem~7)}
 \State
 \Function{StoppingDistance}{$v_e$}
-\State \Return $v_e \cdot t_r + v_e^2 / (2 \cdot a_b)$ \Comment{Eq.~(1)}
+\State $\mathbf{R}$eturn $v_e \cdot t_r + v_e^2 / (2 \cdot a_b)$ \Comment{Eq.~(1)}
 \EndFunction
 \State
 \Function{ClearanceTime}{$d_s, v$}
-\State \Return $(d_s + L_i) / (v + \delta)$ \qquad $(\delta = 0.1)$ \Comment{Eq.~(2)}
+\State $\mathbf{R}$eturn $(d_s + L_i) / (v + \delta)$ \qquad $(\delta = 0.1)$ \Comment{Eq.~(2)}
 \EndFunction
 \State
 \Function{IntrusionTime}{$v_{\text{lat}}$}
-\State \Return $W_l / (|v_{\text{lat}}| + \delta)$ \Comment{Eq.~(4)}
+\State $\mathbf{R}$eturn $W_l / (|v_{\text{lat}}| + \delta)$ \Comment{Eq.~(4)}
 \EndFunction
 \State
 \Function{LipschitzBound}{$\Delta v$}
-\State \Return $L \cdot \Delta v$ \Comment{Max shift of stopping boundary under sensor noise}
+\State $\mathbf{R}$eturn $L \cdot \Delta v$ \Comment{Max shift of stopping boundary under sensor noise}
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[h]
-\caption{Decision rules (\texttt{src/rules.rs}). Each returns a warning level or \textsc{nil}.}
+\begin{algorithm}[t]
+\caption{Decision rules (\texttt{src/rules.rs}). Each returns a warning level or nil.}
 \begin{algorithmic}[1]
 \Function{RuleRed}{$\ell$}
-\If{$\ell = \textsc{Red}$} \Return $\textsc{Critical}$ \EndIf
-\State \Return $\textsc{nil}$
+\If{$\ell = Red$} $\mathbf{R}$eturn $Critical$ \EndIf
+\State $\mathbf{R}$eturn $nil$
 \EndFunction
 \State
 \Function{RuleDilemma}{$v_e, d_s, t_y$}
-\State $d_{\text{req}} \gets \textsc{StoppingDistance}(v_e)$
-\State $t_c \gets \textsc{ClearanceTime}(d_s, v_e)$
+\State $d_{\text{req}} \gets StoppingDistance(v_e)$
+\State $t_c \gets ClearanceTime(d_s, v_e)$
 \State $\textit{no\_stop} \gets (d_s \le d_{\text{req}})$
 \State $\textit{no\_clear} \gets (t_c \ge t_y - \epsilon)$
-\If{$\textit{no\_stop} \land \textit{no\_clear}$} \Return $\textsc{Critical}$ \EndIf
-\State \Return $\textsc{nil}$
+\If{$\textit{no\_stop} \land \textit{no\_clear}$} $\mathbf{R}$eturn $Critical$ \EndIf
+\State $\mathbf{R}$eturn $nil$
 \EndFunction
 \State
 \Function{RuleLead}{$v_e, d_l, v_l, \textit{in\_box}, t_y$}
-\State $d_{\text{req}} \gets \textsc{StoppingDistance}(v_e)$
+\State $d_{\text{req}} \gets StoppingDistance(v_e)$
 \If{$v_l < 1.0 \land d_l < d_{\text{req}} \land \textit{in\_box}$}
-\State \Return $\textsc{Critical}$ \Comment{3a: leader stopped inside box}
+\State $\mathbf{R}$eturn $Critical$ \Comment{3a: leader stopped inside box}
 \EndIf
-\State $t_{\text{eff}} \gets \textsc{ClearanceTime}(d_l, v_l)$
+\State $t_{\text{eff}} \gets ClearanceTime(d_l, v_l)$
 \If{$t_{\text{eff}} \ge t_y - \epsilon \land d_l < d_{\text{req}}$}
-\State \Return $\textsc{Warning}$ \Comment{3b: clearance failure behind leader}
+\State $\mathbf{R}$eturn $Warning$ \Comment{3b: clearance failure behind leader}
 \EndIf
-\State \Return $\textsc{nil}$
+\State $\mathbf{R}$eturn $nil$
 \EndFunction
 \State
 \Function{RuleCutin}{$D, v_e, t_y$}
-\State $d_{\text{req}} \gets \textsc{StoppingDistance}(v_e)$
+\State $d_{\text{req}} \gets StoppingDistance(v_e)$
 \ForAll{$o \in D$ \textbf{where} $o.\textit{class} \in \{2,3,5,7\}$}
-\If{$o.\textit{signal} \land o.\textit{lane} \ne \textsf{same}$}
+\If{$o.\textit{signal} \land o.\textit{lane} \ne same$}
 \If{$o.\textit{age} \ge 3 \land |o.v_{\text{lat}}| \le 4.0$}
-\State $t_i \gets \textsc{IntrusionTime}(o.v_{\text{lat}})$
-\If{$t_i < t_y \land o.d < d_{\text{req}}$} \Return $\textsc{Warning}$ \EndIf
+\State $t_i \gets IntrusionTime(o.v_{\text{lat}})$
+\If{$t_i < t_y \land o.d < d_{\text{req}}$} $\mathbf{R}$eturn $Warning$ \EndIf
 \EndIf
 \EndIf
 \EndFor
-\State \Return $\textsc{nil}$
+\State $\mathbf{R}$eturn $nil$
 \EndFunction
 \State
 \Function{RuleYellow}{$\ell, t_y$}
-\If{$\ell = \textsc{Yellow} \land t_y < 2.5$} \Return $\textsc{Caution}$ \EndIf
-\State \Return $\textsc{nil}$
+\If{$\ell = Yellow \land t_y < 2.5$} $\mathbf{R}$eturn $Caution$ \EndIf
+\State $\mathbf{R}$eturn $nil$
 \EndFunction
 \State
 \Function{RuleStale}{$\ell, v_e, d_s$}
-\If{$\ell = \textsc{Green} \land d_s > \textsc{StoppingDistance}(v_e)$}
-\State \Return $\textsc{Caution}$ \Comment{Worst-case: green may end at any frame}
+\If{$\ell = Green \land d_s > StoppingDistance(v_e)$}
+\State $\mathbf{R}$eturn $Caution$ \Comment{Worst-case: green may end at any frame}
 \EndIf
-\State \Return $\textsc{nil}$
+\State $\mathbf{R}$eturn $nil$
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[h]
+\begin{algorithm}[t]
 \caption{Decision pipeline (\texttt{src/decision.rs}). Composes rules in descending severity.}
 \begin{algorithmic}[1]
 \Function{EvaluateSafety}{$v_e, d_s, D, \ell, t_y$}
-\State $l \gets$ first $o \in D$ with $o.\textit{lane} = \textsf{same}$, $o.\textit{class} \in \{2,3,5,7\}$
-\If{$l \ne \textsc{nil}$}
+\State $l \gets$ first $o \in D$ with $o.\textit{lane} = same$, $o.\textit{class} \in \{2,3,5,7\}$
+\If{$l \ne nil$}
 \State $d_l \gets l.d,\; v_l \gets l.v,\; \textit{in\_box} \gets (l.d < L_i)$
 \EndIf
 \State
-\State $R \gets [\; \textsc{RuleRed}(\ell),$
-\State \qquad\; $\textsc{RuleDilemma}(v_e, d_s, t_y),$
-\State \qquad\; $\textsc{RuleLead}(v_e, d_l, v_l, \textit{in\_box}, t_y),$
-\State \qquad\; $\textsc{RuleCutin}(D, v_e, t_y),$
-\State \qquad\; $\textsc{RuleYellow}(\ell, t_y),$
-\State \qquad\; $\textsc{RuleStale}(\ell, v_e, d_s) \;]$
+\State $R \gets [\; RuleRed(\ell),$
+\State \qquad\; $RuleDilemma(v_e, d_s, t_y),$
+\State \qquad\; $RuleLead(v_e, d_l, v_l, \textit{in\_box}, t_y),$
+\State \qquad\; $RuleCutin(D, v_e, t_y),$
+\State \qquad\; $RuleYellow(\ell, t_y),$
+\State \qquad\; $RuleStale(\ell, v_e, d_s) \;]$
 \ForAll{$r \in R$} \Comment{Evaluated in severity order; first match wins}
 \State $w \gets r()$
-\If{$w \ne \textsc{nil}$} \Return $w$ \EndIf
+\If{$w \ne nil$} $\mathbf{R}$eturn $w$ \EndIf
 \EndFor
-\State \Return $\textsc{Safe}$
+\State $\mathbf{R}$eturn $Safe$
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[h]
+\begin{algorithm}[t]
 \caption{Binary entry point (\texttt{src/main.rs}).}
 \begin{algorithmic}[1]
-\State \textbf{Subcommand} $\textsc{run}(\textit{source})$:
-\State \quad $F \gets \textsc{CameraCapture}(\textit{source})$ \Comment{CSI camera or video file}
+\State \textbf{Subcommand} $run(\textit{source})$:
+\State \quad $F \gets CameraCapture(\textit{source})$ \Comment{CSI camera or video file}
 \State \quad \ForAll{$f \in F$}
-\State \qquad $D \gets \textsc{YOLODetect}(f)$ \Comment{ONNX Runtime, INT8 quantised}
-\State \qquad $T \gets \textsc{DeepSORT}(D)$ \Comment{Kalman filter + Hungarian association}
-\State \qquad $w \gets \textsc{EvaluateSafety}(v_e, d_s, T, \ell, t_y)$
-\State \qquad \If{$w \ne \textsc{Safe}$} $\textsc{DispatchAlert}(w)$ \EndIf
+\State \qquad $D \gets YOLODetect(f)$ \Comment{ONNX Runtime, INT8 quantised}
+\State \qquad $T \gets DeepSORT(D)$ \Comment{Kalman filter + Hungarian association}
+\State \qquad $w \gets EvaluateSafety(v_e, d_s, T, \ell, t_y)$
+\State \qquad \If{$w \ne Safe$} $DispatchAlert(w)$ \EndIf
 \State \quad \EndFor
 \State
-\State \textbf{Subcommand} $\textsc{collect}(\textit{source}, \textit{rate})$:
+\State \textbf{Subcommand} $collect(\textit{source}, \textit{rate})$:
 \State \quad Save frames at \textit{rate}~Hz as JPEGs for YOLO training
 \State
-\State \textbf{Subcommand} $\textsc{train}$:
+\State \textbf{Subcommand} $train$:
 \State \quad Prepare dataset $\to$ GPU training $\to$ ONNX export $\to$ validate
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[h]
+\begin{algorithm}[t]
 \caption{Project structure (\texttt{Cargo.toml}). Zero external dependencies for core logic.}
 \begin{algorithmic}[1]
 \State \textbf{Package}: \texttt{driving-civicsense-vision-model} v0.1.0
