@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="430" height="280" viewBox="0 0 430 280" font-family="Georgia,serif">
+<defs><marker id="vt-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#212121"/></marker></defs>
+<line x1="45" y1="235" x2="405" y2="235" stroke="#212121" stroke-width="1.4" marker-end="url(#vt-arr)"/>
+<line x1="45" y1="235" x2="45" y2="20" stroke="#212121" stroke-width="1.4"/>
+<rect x="45" y="40" width="118" height="195" fill="#dbe9f7"/>
+<polygon points="163,40 163,235 340,235" fill="#fde8d8"/>
+<polyline points="45,40 163,40 340,235" fill="none" stroke="#1565c0" stroke-width="3"/>
+<line x1="163" y1="235" x2="163" y2="40" stroke="#9e9e9e" stroke-dasharray="4,3"/>
+<text x="405" y="254" font-size="13" fill="#212121" text-anchor="end">t (s)</text>
+<text x="30" y="26" font-size="13" fill="#212121">v (m/s)</text>
+<text x="163" y="254" font-size="12" fill="#212121" text-anchor="middle">t<tspan baseline-shift="sub" font-size="0.7em">r</tspan></text>
+<text x="340" y="254" font-size="12" fill="#212121" text-anchor="middle">t<tspan baseline-shift="sub" font-size="0.7em">r</tspan> + v<tspan baseline-shift="sub" font-size="0.7em">e</tspan>/a<tspan baseline-shift="sub" font-size="0.7em">b</tspan></text>
+<text x="34" y="45" font-size="12" fill="#212121" text-anchor="end">v<tspan baseline-shift="sub" font-size="0.7em">e</tspan></text>
+<text x="104" y="145" font-size="15" fill="#0d47a1" text-anchor="middle">v<tspan baseline-shift="sub" font-size="0.7em">e</tspan> t<tspan baseline-shift="sub" font-size="0.7em">r</tspan></text>
+<text x="250" y="165" font-size="15" fill="#e65100" text-anchor="middle">v<tspan baseline-shift="sub" font-size="0.7em">e</tspan>&#178;/(2a<tspan baseline-shift="sub" font-size="0.7em">b</tspan>)</text>
+<text x="104" y="60" font-size="11" fill="#0d47a1" text-anchor="middle">reaction</text>
+<text x="262" y="98" font-size="11" fill="#e65100" text-anchor="middle">braking</text>
+</svg>

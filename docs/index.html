@@ -346,7 +346,17 @@ window.MathJaxFallback = true;
     <p><b>Intuition.</b> Equation&nbsp;(1) consists of two additive terms: $v_e t_r$ is
     the distance travelled during the driver's reaction time, during which no braking
     is applied; $v_e^2/(2a_b)$ is the pure braking distance, derived from the
-    work&ndash;energy principle.</p>
+    work&ndash;energy principle. Figure&nbsp;2 makes the identity visible: the area
+    under the velocity&ndash;time curve is exactly the sum of the two terms.</p>
+
+    <figure>
+      <img src="assets/fig-vt.svg" alt="Velocity-time profile under maximum braking">
+      <figcaption><b>Fig. 2.</b> Velocity&ndash;time profile under maximum braking
+      (Theorem&nbsp;1). The rectangle of height $v_e$ and width $t_r$ contributes the
+      reaction distance $v_e t_r$; the triangle of height $v_e$ and base $v_e/a_b$
+      contributes the braking distance $v_e^2/(2a_b)$. The total area is
+      $d_{req}(v_e)$.</figcaption>
+    </figure>
 
     <div class="thm theorem">
       <span class="head">Theorem 1 (Stopping distance formula).</span>
@@ -424,6 +434,13 @@ window.MathJaxFallback = true;
       <span class="qed">&#9633;</span>
     </div>
 
+    <figure>
+      <img src="assets/fig-timeline.svg" alt="Clearance timeline">
+      <figcaption><b>Fig. 3.</b> Clearance timeline (Theorem&nbsp;3). The ego exits
+      the box at $t_c$ before the phase onset $t_y - \epsilon$, with margin
+      $\epsilon$ to $t_y$.</figcaption>
+    </figure>
+
     <div class="thm remark">
       <span class="head">Remark.</span>
       <p>Under Assumption&nbsp;1 the constant-velocity policy is the only admissible
@@ -469,12 +486,12 @@ window.MathJaxFallback = true;
       non-empty for every speed $v_e \in (0, \infty)$, because
       $d_{\mathrm{req}}(v_e) > v_e(t_y - \epsilon) - L_i$ for all $v_e$ (the quadratic
       $v_e^2/8 - 1.7v_e + 16$ has negative discriminant). Consequently, at least one
-      warning-relevant state exists for every approach speed; see Figure&nbsp;2.</p>
+      warning-relevant state exists for every approach speed; see Figure&nbsp;4.</p>
     </div>
 
     <figure>
       <img src="assets/fig-dilemma.svg" alt="Dilemma zone phase diagram">
-      <figcaption><b>Fig. 2.</b> State-space phase diagram of the dilemma zone. The
+      <figcaption><b>Fig. 4.</b> State-space phase diagram of the dilemma zone. The
       black curve is the stopping boundary $d_s = d_{\mathrm{req}}(v_e)$; the blue line
       is the clearance boundary $d_s = v_e(t_y-\epsilon) - L_i$. (a) With a short
       yellow ($t_y = 3.5$&nbsp;s) the stopping boundary lies everywhere above the
@@ -487,7 +504,7 @@ window.MathJaxFallback = true;
     </figure>
 
     <h3 class="sub" id="s44">D. Illustrative Trajectories</h3>
-    <p>Figure&nbsp;3 shows the three canonical outcomes for an ego vehicle at
+    <p>Figure&nbsp;5 shows the three canonical outcomes for an ego vehicle at
     $v_e = 12$&nbsp;m/s. When the stop line is far ($d_s = 50$&nbsp;m), braking halts
     the vehicle before the line; when it is close ($d_s = 10$&nbsp;m), constant speed
     clears the box before the red phase; when it is intermediate
@@ -497,7 +514,7 @@ window.MathJaxFallback = true;
 
     <figure>
       <img src="assets/fig-trajectories.svg" alt="Canonical trajectories">
-      <figcaption><b>Fig. 3.</b> Canonical trajectories at $v_e = 12$&nbsp;m/s with
+      <figcaption><b>Fig. 5.</b> Canonical trajectories at $v_e = 12$&nbsp;m/s with
       $t_y = 4$&nbsp;s, $\epsilon = 0.8$&nbsp;s (box shaded). (a) With $d_s = 50$&nbsp;m,
       braking stops the vehicle before the stop line (safe stop). (b) With
       $d_s = 10$&nbsp;m, constant speed clears the far side at $t = 2.17$&nbsp;s,
@@ -615,11 +632,11 @@ window.MathJaxFallback = true;
     <p>The implementation is structured into four modules, each adhering to the Single
     Responsibility Principle (SRP). The decision engine is a functional pipeline that
     composes five independent checkers in descending severity order
-    (Figure&nbsp;4).</p>
+    (Figure&nbsp;6).</p>
 
     <figure>
       <img src="assets/fig-architecture.svg" alt="System architecture">
-      <figcaption><b>Fig. 4.</b> System architecture. Raw frames are processed by the
+      <figcaption><b>Fig. 6.</b> System architecture. Raw frames are processed by the
       perception layer into physical quantities; the decision engine evaluates five
       single-responsibility rules in descending severity order and returns the first
       match (or <b>SAFE</b> if none fires).</figcaption>
@@ -876,7 +893,7 @@ window.MathJaxFallback = true;
 
     <h3 class="sub">Module: <code>decision.rs</code></h3>
     <p>The orchestrator composes the rules using a functional pipeline
-    (Figure&nbsp;4). The pipeline is deliberately ordered by descending severity so
+    (Figure&nbsp;6). The pipeline is deliberately ordered by descending severity so
     that the first matching rule is always the most urgent one.</p>
     <div class="code-cap"><b>Listing 4.</b> src/decision.rs</div>
     <pre class="code"><span class="cmt">//! Decision engine pipeline. Composes five rules.</span>
@@ -1220,7 +1237,7 @@ edition = &quot;<span class="num">2021</span>&quot;
 
     <p><b>Comparison with threshold baselines.</b> A naive rule that warns whenever
     speed exceeds a constant or distance falls below a constant cannot represent the
-    coupled feasibility region of Fig.&nbsp;2: the feasibility condition is a
+    coupled feasibility region of Fig.&nbsp;4: the feasibility condition is a
     conjunction, $d_s \leq d_{req}(v_e)$ (stop) or $d_s \geq v_e(t_r-\epsilon)-L_i$
     (clear), monotone in both variables. Any fixed threshold either fires on feasible
     approaches (false positives that erode trust) or stays silent on infeasible ones
