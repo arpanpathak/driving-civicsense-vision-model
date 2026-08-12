@@ -15,6 +15,7 @@ use civicsense::algebra::constants::*;
 use civicsense::algebra::{clearance_time, intrusion_time, stopping_distance};
 use civicsense::decision::evaluate_safety;
 use civicsense::models::*;
+use civicsense::rules::{rule_cutin, rule_dilemma, rule_lead, rule_red, rule_stale, rule_yellow};
 
 /// Deterministic xorshift64 RNG, so the simulation is reproducible.
 struct Rng(u64);
@@ -166,4 +167,173 @@ fn monte_carlo_10000_scenes_match_theorem_ground_truth() {
         mismatches.len(),
         mismatches.first()
     );
+}
+
+/// Ablation: the contribution of each rule is measured by removing it from
+/// the pipeline and counting, over the same 10,000 random scenes, how many
+/// decisions change level. Also reports which rule fires first per scene.
+/// This is a baseline comparison of the design choices themselves: a rule
+/// with a large first-fire share carries the decision burden; a rule whose
+/// removal flips many scenes is load-bearing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum RuleIdx {
+    Red,
+    Dilemma,
+    Lead,
+    Cutin,
+    Yellow,
+    Stale,
+}
+
+fn first_rule(ego: &EgoState, dets: &[Detection], light: LightState, ttr: f32) -> Option<RuleIdx> {
+    let lead_opt = dets
+        .iter()
+        .find(|d| d.is_vehicle() && d.lane == LanePosition::Same)
+        .map(|d| LeadVehicle {
+            distance: d.distance_to_ego,
+            speed: d.speed,
+            is_in_intersection: d.distance_to_ego < INTERSECTION_LENGTH,
+        });
+    if rule_red(light).is_some() {
+        return Some(RuleIdx::Red);
+    }
+    if rule_dilemma(ego, ttr).is_some() {
+        return Some(RuleIdx::Dilemma);
+    }
+    if lead_opt
+        .and_then(|l| rule_lead(ego.speed, &l, ttr))
+        .is_some()
+    {
+        return Some(RuleIdx::Lead);
+    }
+    if rule_cutin(dets, ego.speed, ttr).is_some() {
+        return Some(RuleIdx::Cutin);
+    }
+    if rule_yellow(light, ttr).is_some() {
+        return Some(RuleIdx::Yellow);
+    }
+    if rule_stale(light, ego).is_some() {
+        return Some(RuleIdx::Stale);
+    }
+    None
+}
+
+/// Runs the severity-ordered pipeline with one rule optionally removed.
+fn evaluate_skip(
+    ego: &EgoState,
+    dets: &[Detection],
+    light: LightState,
+    ttr: f32,
+    skip: Option<RuleIdx>,
+) -> WarningLevel {
+    let lead_opt = dets
+        .iter()
+        .find(|d| d.is_vehicle() && d.lane == LanePosition::Same)
+        .map(|d| LeadVehicle {
+            distance: d.distance_to_ego,
+            speed: d.speed,
+            is_in_intersection: d.distance_to_ego < INTERSECTION_LENGTH,
+        });
+    let none_or = |rule: RuleIdx, level: Option<WarningLevel>| {
+        if Some(rule) == skip { None } else { level }
+    };
+    // Build the same order as the engine; the first Some wins.
+    let red = none_or(RuleIdx::Red, rule_red(light));
+    let dilemma = none_or(RuleIdx::Dilemma, rule_dilemma(ego, ttr));
+    let lead = none_or(
+        RuleIdx::Lead,
+        lead_opt.and_then(|l| rule_lead(ego.speed, &l, ttr)),
+    );
+    let cutin = none_or(RuleIdx::Cutin, rule_cutin(dets, ego.speed, ttr));
+    let yellow = none_or(RuleIdx::Yellow, rule_yellow(light, ttr));
+    let stale = none_or(RuleIdx::Stale, rule_stale(light, ego));
+
+    red.or(dilemma)
+        .or(lead)
+        .or(cutin)
+        .or(yellow)
+        .or(stale)
+        .unwrap_or(WarningLevel::Safe)
+}
+
+#[test]
+fn rule_contribution_ablation() {
+    let mut rng = Rng(0x9E3779B97F4A7C15);
+    let lights = [
+        LightState::Red,
+        LightState::Yellow,
+        LightState::Green,
+        LightState::Unknown,
+    ];
+    let mut first = [0u64; 7]; // Red..Stale + Safe
+    let mut changed = [0u64; 6]; // per removed rule: scenes whose level flips
+    const N: u64 = 10_000;
+
+    for _ in 0..N {
+        let light = rng.pick(&lights);
+        let time_to_red = rng.f(1.0, 12.0);
+        let ego = EgoState {
+            speed: rng.f(0.0, 25.0),
+            distance_to_stop_line: rng.f(0.0, 80.0),
+        };
+        let dets = random_detections(&mut rng);
+
+        let full = evaluate_safety(&ego, &dets, light, time_to_red);
+        match first_rule(&ego, &dets, light, time_to_red) {
+            Some(r) => first[r as usize] += 1,
+            None => first[6] += 1,
+        }
+
+        let skips = [
+            RuleIdx::Red,
+            RuleIdx::Dilemma,
+            RuleIdx::Lead,
+            RuleIdx::Cutin,
+            RuleIdx::Yellow,
+            RuleIdx::Stale,
+        ];
+        for (i, s) in skips.iter().enumerate() {
+            if evaluate_skip(&ego, &dets, light, time_to_red, Some(*s)) != full {
+                changed[i] += 1;
+            }
+        }
+    }
+
+    let names = [
+        "rule_red",
+        "rule_dilemma",
+        "rule_lead",
+        "rule_cutin",
+        "rule_yellow",
+        "rule_stale",
+    ];
+    println!("first rule to fire over {N} scenes:");
+    for (i, n) in names.iter().enumerate() {
+        println!("  {n:>14}: {:5.2}%", 100.0 * first[i] as f64 / N as f64);
+    }
+    println!(
+        "  {:>14}: {:5.2}%",
+        "safe",
+        100.0 * first[6] as f64 / N as f64
+    );
+    println!("scenes whose level changes when a rule is removed:");
+    for (i, n) in names.iter().enumerate() {
+        println!(
+            "  remove {n:>14}: {:5.2}%",
+            100.0 * changed[i] as f64 / N as f64
+        );
+    }
+
+    // Sanity: the fire counts partition the scene space.
+    let total: u64 = first.iter().sum();
+    assert_eq!(total, N);
+    // Every rule is load-bearing somewhere.
+    for (i, n) in names.iter().enumerate() {
+        assert!(
+            first[i] > 0 && changed[i] > 0,
+            "{n} fires {} times, flips {} scenes",
+            first[i],
+            changed[i]
+        );
+    }
 }

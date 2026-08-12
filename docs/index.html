@@ -77,7 +77,10 @@ window.MathJaxFallback = true;
     decision pipeline is a severity-ordered composition of single-responsibility
     rules evaluated in $O(n)$ time per frame. The system operates in real
     time, is fully interpretable, and is suitable for deployment in
-    ISO&nbsp;26262-compliant automotive systems.</p>
+    ISO&nbsp;26262-compliant automotive systems. The implementation is verified
+    by exhaustive enumeration over 15,840 bounded states and a Monte Carlo
+    simulation of 10,000 random intersection approaches with perfect agreement
+    against the theorem conditions.</p>
   </div>
 
   <p class="keywords"><b>Index terms&nbsp;:</b> intersection blockage, dilemma zone, kinematic safety,
@@ -1099,6 +1102,15 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
     pipeline agrees with the theorem oracle on every scene, over a distribution of
     41.9% safe, 13.5% caution, 12.0% warning, and 32.6% critical states.</p>
 
+    <p>An ablation over the same 10,000 scenes measures each rule's contribution:
+    <code>rule_red</code> is the first to fire on 25.0% of approaches, the dilemma
+    rule on 7.5%, the lead rule on 5.6%, the cut-in rule on 6.6%, the short-yellow
+    advisory on 1.6%, and the stale-green heuristic on 11.9%; 41.9% of scenes are
+    safe. Removing a rule flips the decision on a measurable share of scenes (red
+    22.4%, dilemma 7.4%, lead 4.6%, cut-in 6.6%, yellow 1.6%, stale 11.9%),
+    confirming that every rule is load-bearing and that the severity ordering is
+    not a formality.</p>
+
     <p><b>Sensitivity to braking capability.</b> The stopping boundary
     $d_s = d_{req}(v_e) = v_e^2/(2a_b)$ scales with the inverse of the assumed
     deceleration $a_b$. The table below lists the required stopping distance for
@@ -1277,7 +1289,23 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
     input vector as a synchronized snapshot: estimates are assumed to refer to
     the same instant, and a residual staleness of one frame period (about
     33&nbsp;ms at 30&nbsp;fps) is absorbed by the &plusmn;1.5&nbsp;m operating
-    bound. Moving the physical
+    bound.</p>
+
+    <div class="thm remark">
+      <span class="head">Remark (Error propagation).</span>
+      <p>By Corollary&nbsp;1, the stopping boundary has sensitivity
+      $\partial d_{req}/\partial v_e = t_r + v_e/a_b$ to a speed-estimation error
+      $\delta v_e$; with the constants of Table&nbsp;I this factor is 4.5&nbsp;s at
+      $v_e = 14$&nbsp;m/s, so $\delta d_{req} \approx 4.5\,\delta v_e$. A
+      distance error $\delta d_s$ enters additively, leaving the effective stop
+      margin $m - (t_r + v_e/a_b)\delta v_e - \delta d_s$, where
+      $m = d_s - d_{req}(v_e)$ is the exact-input margin of Theorem&nbsp;2. The
+      &plusmn;1.5&nbsp;m operating bound of Table&nbsp;VII is intended to cover this
+      combined shift; the engine itself treats inputs as exact, and the bound
+      reserves the slack.</p>
+    </div>
+
+    <p>Moving the physical
     bounds into the type system (e.g., constructors that reject impossible speeds
     or distances) is planned future work and would push a further part of this
     verification into the compiler.</p>

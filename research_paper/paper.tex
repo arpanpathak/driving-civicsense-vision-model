@@ -109,7 +109,10 @@ pattern matching, and requiring zero external dependencies for its core
 logic. The decision pipeline is a severity-ordered composition of
 single-responsibility rules evaluated in $O(n)$ time per frame. The
 system operates in real time, is fully interpretable, and is suitable for
-deployment in ISO~26262-compliant automotive systems.
+deployment in ISO~26262-compliant automotive systems. The implementation
+is verified by exhaustive enumeration over $15{,}840$ bounded states and a
+Monte Carlo simulation of $10{,}000$ random intersection approaches with
+perfect agreement against the theorem conditions.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -1428,6 +1431,16 @@ The resulting confusion matrix is perfectly diagonal: the pipeline agrees
 with the theorem oracle on every scene, over a distribution of $41.9\%$ safe,
 $13.5\%$ caution, $12.0\%$ warning, and $32.6\%$ critical states.
 
+An ablation over the same $10{,}000$ scenes measures each rule's
+contribution: \texttt{rule\_red} is the first to fire on $25.0\%$ of
+approaches, the dilemma rule on $7.5\%$, the lead rule on $5.6\%$, the
+cut-in rule on $6.6\%$, the short-yellow advisory on $1.6\%$, and the
+stale-green heuristic on $11.9\%$; $41.9\%$ of scenes are safe. Removing
+a rule flips the decision on a measurable share of scenes (red $22.4\%$,
+dilemma $7.4\%$, lead $4.6\%$, cut-in $6.6\%$, yellow $1.6\%$, stale
+$11.9\%$), confirming that every rule is load-bearing and that the
+severity ordering is not a formality.
+
 \paragraph{Sensitivity to braking capability.} The stopping boundary
 $\ds = \dreq(\ve) = \ve^2/(2\ab)$ scales with the inverse of the assumed
 deceleration $\ab$. Table~\ref{tab:sens} lists the required stopping
@@ -1605,7 +1618,20 @@ in certainty degrades gracefully to the worst-case bound of
 Remark~\ref{rem:worstcase}. The engine treats the input vector as a
 synchronized snapshot: estimates are assumed to refer to the same instant,
 and a residual staleness of one frame period (about $33$~ms at 30~fps) is
-absorbed by the $\pm 1.5$~m operating bound. Moving the physical
+absorbed by the $\pm 1.5$~m operating bound.
+
+\begin{remark}[Error propagation]
+By Corollary~\ref{cor:mono}, the stopping boundary has sensitivity
+$\partial \dreq / \partial \ve = \tr + \ve/\ab$ to a speed-estimation
+error $\delta\ve$; with the constants of Table~\ref{tab:notation} this
+factor is $4.5$~s at $\ve = 14$~m/s, so $\delta \dreq \approx 4.5\,
+\delta\ve$. A distance error $\delta\ds$ enters additively, leaving the
+effective stop margin $m - (\tr + \ve/\ab)\delta\ve - \delta\ds$,
+where $m = \ds - \dreq(\ve)$ is the exact-input margin of
+Theorem~\ref{thm:stopfeas}. The $\pm 1.5$~m operating bound of
+Table~\ref{tab:vuln} is intended to cover this combined shift; the engine
+itself treats inputs as exact, and the bound reserves the slack.
+\end{remark} Moving the physical
 bounds into the type system (e.g., constructors that reject impossible
 speeds or distances) is planned future work and would push a further part of
 this verification into the compiler.

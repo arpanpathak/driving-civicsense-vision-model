@@ -363,6 +363,27 @@ cd driving-civicsense-vision-model
 cargo run -- run --source test_video.mp4 --visualize
 ```
 
+### Decision engine (standalone, no camera required)
+
+The formal decision engine is a dependency-free library. Use it directly:
+
+```rust
+use civicsense::decision::evaluate_safety;
+use civicsense::models::{EgoState, LightState};
+
+// Dilemma zone: 14 m/s, 25 m to the line, yellow with 3.5 s left.
+let ego = EgoState { speed: 14.0, distance_to_stop_line: 25.0 };
+let level = evaluate_safety(&ego, &[], LightState::Yellow, 3.5);
+println!("{level:?}"); // Critical
+```
+
+Run the full verification suite (50 tests, including the 10,000-scene Monte
+Carlo simulation and the 15,840-state exhaustive enumeration):
+
+```bash
+cargo test
+```
+
 ### Companion App (Android)
 
 ```bash
