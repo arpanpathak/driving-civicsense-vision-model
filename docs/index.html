@@ -985,6 +985,44 @@ edition = &quot;<span class="num">2021</span>&quot;
       </tbody>
     </table>
     </div>
+
+    <h3 class="sub">Field evaluation data</h3>
+    <p>The verification suite (Table&nbsp;II) is deterministic and executable, but a
+    field campaign is the natural next step, and the conditional form of every theorem
+    dictates its requirements: the sensor suite must make the assumptions true. The
+    table below lists recommended modalities, their typical accuracy, and their role.
+    Three requirements follow. Synchronization: all modalities must share a common
+    clock, via GPS time or a hardware PPS, because the engine treats inputs as a
+    synchronized snapshot. Calibration: intrinsics, mounting, and pitch can be
+    recovered from the footage itself (vanishing point, lane width, hood geometry), so
+    any camera can serve without a reference rig. Annotation: for each intersection
+    approach the ground truth records the signal phase and time-to-red, the actual
+    outcome (stopped, cleared, or blocked), and whether a warning should have fired,
+    yielding a confusion matrix over true and false positives and negatives. With
+    OBD-II or GNSS speed and V2I timing, the field inputs satisfy the theorem
+    preconditions and the guarantees transfer to the deployment vehicle; with
+    camera-only footage, ego speed and signal timing must be estimated or annotated,
+    and the operating bounds of Section&nbsp;VII apply instead.</p>
+
+    <div class="table-wrap">
+    <table>
+      <caption><b>Table V.</b> Recommended sensor suite for field evaluation. Each
+      modality either supplies an input to the decision engine or a ground-truth
+      reference for validation.</caption>
+      <thead><tr><th>Modality</th><th>Quantities</th><th>Typical accuracy</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>GNSS (RTK-capable)</td><td>position, speed, heading, UTC time</td><td>0.02-2&nbsp;m</td><td>ego ground truth, sync clock</td></tr>
+        <tr><td>OBD-II / CAN bus</td><td>ego speed, brake, steering</td><td>0.1&nbsp;m/s</td><td>ego speed, acceleration</td></tr>
+        <tr><td>IMU</td><td>acceleration, angular rate</td><td>0.01&nbsp;g</td><td>ego dynamics, pitch/roll</td></tr>
+        <tr><td>Camera (calibrated)</td><td>RGB at 30-60 fps</td><td>1&nbsp;px jitter</td><td>perception input</td></tr>
+        <tr><td>Radar</td><td>range, range rate, azimuth</td><td>0.1&nbsp;m, 0.1&nbsp;m/s</td><td>lead-vehicle fusion</td></tr>
+        <tr><td>LiDAR</td><td>3D point cloud</td><td>2-3&nbsp;cm</td><td>metric distance reference</td></tr>
+        <tr><td>V2I / SPaT</td><td>phase, time-to-red</td><td>0.1&nbsp;s</td><td>signal-timing reference</td></tr>
+        <tr><td>Friction cues</td><td>rain, temperature, tyre slip</td><td>qualitative</td><td>operating-bound selection</td></tr>
+        <tr><td>Manual labels</td><td>signal phases, outcomes</td><td>human</td><td>evaluation ground truth</td></tr>
+      </tbody>
+    </table>
+    </div>
   </section>
 
   <!-- ================= VII. DISCUSSION ================= -->

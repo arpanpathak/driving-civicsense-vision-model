@@ -1302,6 +1302,51 @@ $\ve$ (m/s) & $\ab = 4.0$ & $\ab = 3.0$ & $\ab = 2.0$ \\
 \end{tabular}
 \end{table}
 
+\subsection{Field evaluation data}
+The verification suite (Table~\ref{tab:scenarios}) is deterministic and
+executable, but a field campaign is the natural next step, and the
+conditional form of every theorem dictates its requirements: the sensor
+suite must make the assumptions true. Table~\ref{tab:sensors} lists
+recommended modalities, their typical accuracy, and their role. Three
+requirements follow. Synchronization: all modalities must share a common
+clock, via GPS time or a hardware PPS, because the engine treats inputs as
+a synchronized snapshot (Section~\ref{sec:discussion}). Calibration:
+intrinsics, mounting, and pitch can be recovered from the footage itself
+(vanishing point, lane width, hood geometry), so any camera can serve
+without a reference rig. Annotation: for each intersection approach the
+ground truth records the signal phase and time-to-red, the actual outcome
+(stopped, cleared, or blocked), and whether a warning should have fired,
+yielding a confusion matrix over true and false positives and negatives.
+With OBD-II or GNSS speed and V2I timing, the field inputs satisfy the
+theorem preconditions and the guarantees transfer to the deployment
+vehicle; with camera-only footage, ego speed and signal timing must be
+estimated or annotated, and the operating bounds of
+Section~\ref{sec:discussion} apply instead.
+
+\begin{table*}[t]
+\caption{Recommended sensor suite for field evaluation. Each modality
+either supplies an input to the decision engine or a ground-truth reference
+for validation.}
+\label{tab:sensors}
+\centering
+\footnotesize
+\begin{tabular}{@{}llll@{}}
+\toprule
+Modality & Quantities & Typical accuracy & Role \\
+\midrule
+GNSS (RTK-capable) & position, speed, heading, UTC time & 0.02--2~m & ego ground truth, sync clock \\
+OBD-II / CAN bus & ego speed, brake, steering & 0.1~m/s & ego speed, acceleration \\
+IMU & acceleration, angular rate & 0.01~g & ego dynamics, pitch/roll \\
+Camera (calibrated) & RGB at 30--60 fps & 1~px jitter & perception input \\
+Radar & range, range rate, azimuth & 0.1~m, 0.1~m/s & lead-vehicle fusion \\
+LiDAR & 3D point cloud & 2--3~cm & metric distance reference \\
+V2I / SPaT & phase, time-to-red & 0.1~s & signal-timing reference \\
+Friction cues & rain, temperature, tyre slip & qualitative & operating-bound selection \\
+Manual labels & signal phases, outcomes & human & evaluation ground truth \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
 \section{Discussion}
 \label{sec:discussion}
 
@@ -1460,10 +1505,11 @@ arithmetic, or conformal prediction bounds on detector
 outputs~\cite{vovk2005}; (ii)~dynamic warning thresholds adapted to the
 driver's reaction time and to estimated road friction from rain or
 temperature sensors; (iii)~extension of the rule set to vulnerable road
-users and multi-lane crossing scenes; and (iv)~a simulation-based evaluation
-campaign in SUMO or CARLA~\cite{lopez2018,dosovitskiy2017} with randomised
-intersection approaches and baseline comparison, complementing the
-exhaustive verification suite.
+users and multi-lane crossing scenes; and (iv)~an evaluation campaign on real driving data using the sensor suite of
+Table~\ref{tab:sensors}, together with simulation in SUMO or
+CARLA~\cite{lopez2018,dosovitskiy2017}, with randomised intersection
+approaches and baseline comparison, complementing the exhaustive
+verification suite.
 
 \section{Conclusion}
 \label{sec:conclusion}

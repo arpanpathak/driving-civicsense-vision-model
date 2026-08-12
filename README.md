@@ -175,6 +175,33 @@ Both are dependency-free-of-Python and intentionally kept permissive (MIT), unli
 
 ---
 
+## Data Collection for Evaluation
+
+The decision engine is zero-training, but validating it needs real data: field inputs must satisfy the theorem assumptions (accurate speed, distance, signal timing), and ground truth must say what actually happened. The sensor suite below is what makes the formal guarantees transfer to a real vehicle. Dashcam footage alone is a starting point, but speed and signal timing then have to be estimated or annotated by hand, which limits the conclusions.
+
+| Modality | Quantities | Typical accuracy | Role |
+|---|---|---|---|
+| GNSS (RTK-capable) | position, speed, heading, UTC time | 0.02-2 m | ego ground truth, sync clock |
+| OBD-II / CAN bus | ego speed, brake, steering | 0.1 m/s | ego speed, acceleration |
+| IMU | acceleration, angular rate | 0.01 g | ego dynamics, pitch/roll |
+| Camera (calibrated) | RGB at 30-60 fps | 1 px jitter | perception input |
+| Radar | range, range rate, azimuth | 0.1 m, 0.1 m/s | lead-vehicle fusion |
+| LiDAR | 3D point cloud | 2-3 cm | metric distance reference |
+| V2I / SPaT | phase, time-to-red | 0.1 s | signal-timing reference |
+| Friction cues | rain, temperature, tyre slip | qualitative | operating-bound selection |
+| Manual labels | signal phases, outcomes | human | evaluation ground truth |
+
+**Methodology:**
+
+1. **Synchronize.** All modalities share one clock (GPS time or hardware PPS). The engine treats inputs as a synchronized snapshot, so timestamp alignment is a precondition, not a nicety.
+2. **Calibrate from the footage.** Intrinsics, mounting, and pitch can be recovered from lane lines, the vanishing point, and known hood or lane geometry. Any camera can serve without a reference rig.
+3. **Annotate ground truth.** For each intersection approach record: signal phase and time-to-red, the actual outcome (stopped, cleared, or blocked), and whether a warning should have fired. This yields a confusion matrix over true and false positives and negatives.
+4. **Compute metrics.** Precision, recall, and latency, plus a comparison against naive threshold baselines on the same data.
+
+The methodology is documented in the research paper (Section VI, "Field evaluation data", Table V) and on the GitHub Pages site. See `research_paper/reviews/` for the review rounds that drove this requirement.
+
+---
+
 ## Companion App (Kotlin Multiplatform)
 
 Get real-time alerts from the Rust pipeline right on your phone. The companion app connects over gRPC to display intersection violations, lane warnings, hazards, and more.
