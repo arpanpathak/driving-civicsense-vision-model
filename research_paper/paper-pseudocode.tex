@@ -9,8 +9,6 @@
 \usepackage{booktabs}
 \usepackage{siunitx}
 \usepackage{microtype}
-\usepackage[ruled,linesnumbered]{algorithm2e}
-\usepackage{placeins}
 \usepackage{fontawesome5}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning, calc, fit, backgrounds, decorations.pathreplacing}
@@ -1519,158 +1517,106 @@ matching the notation of Table~I.  The Rust implementation (58~tests,
 zero dependencies for core logic) is at
 \url{https://github.com/arpanpathak/driving-civicsense-vision-model}.
 
-\DontPrintSemicolon
+% ── A. Data Types ─────────────────────────────────────────────────
+\subsection*{A. Core Data Types --- \texttt{src/models.rs}}
 
-\begin{algorithm}[ht]
-\caption{CoreDataTypes (src/models.rs)}
-\label{alg:types}
-\KwData{perception pipeline output}
-\KwResult{typed scene state for the decision engine}
-\Begin{
-  \textbf{enum} $\ell \gets \{Red, Yellow, Green, Unknown\}$ \tcp*{traffic-light phase}
-  \textbf{enum} $\lambda \gets \{same, left, right, unknown\}$ \tcp*{lane position}
-  \textbf{enum} $w \gets \{Safe, Caution, Warning, Critical\}$ \tcp*{severity ordering}
-  \BlankLine
-  \textbf{record} \emph{Detection}: \tcp*{tracked object from YOLO + Deep SORT}
-  \Indp
-    $bbox \in \mathbb{R}^4$ \tcp*{$(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ in px}
-    $cls \in \{2,3,5,7\}$ \tcp*{COCO: car, motorcycle, bus, truck}
-    $v,\ v_{lat} \in \mathbb{R}_{\ge 0}$ \tcp*{longitudinal / lateral speed, m/s}
-    $d \in \mathbb{R}_{> 0}$ \tcp*{distance from ego front bumper, m}
-    $lane \in \lambda$, $signal \in \{true, false\}$ \tcp*{lane; turn indicator?}
-    $age \in \mathbb{N}$ \tcp*{consecutive frames; gates cut-in rule}
-  \Indm
-  \BlankLine
-  \textbf{record} \emph{EgoState}: $v_e \in \mathbb{R}_{\ge 0}$, $d_s \in \mathbb{R}_{> 0}$ \tcp*{speed; distance to stop line}
-  \textbf{record} \emph{LeadVehicle}: $d_l,\ v_l \in \mathbb{R}_{\ge 0}$, $in\_box \in \{true, false\}$ \tcp*{$d_l < L_i$?}
-}
-\end{algorithm}
+\begin{center}\scriptsize
+\begin{tabular}{@{}r@{\hspace{0.7em}}p{3.0in}@{}}
+1 & \textbf{enum} $\ell \in \{Red, Yellow, Green, Unknown\}$ \quad (traffic-light phase)\\
+2 & \textbf{enum} $\lambda \in \{same, left, right, unknown\}$ \quad (lane position)\\
+3 & \textbf{enum} $w \in \{Safe, Caution, Warning, Critical\}$ \quad ($Safe < Caution < Warning < Critical$)\\
+4 & \textbf{record} $Detection$ \quad (tracked object from YOLO + Deep SORT)\\
+5 & \qquad $bbox \in \mathbb{R}^4$ \quad $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ in px\\
+6 & \qquad $cls \in \{2,3,5,7\}$ \quad (COCO: car, motorcycle, bus, truck)\\
+7 & \qquad $v,\ v_{lat} \in \mathbb{R}_{\ge 0}$ \quad (longitudinal / lateral speed, m/s)\\
+8 & \qquad $d \in \mathbb{R}_{> 0}$ \quad (distance from ego front bumper, m)\\
+9 & \qquad $lane \in \lambda$;\; $signal \in \{true, false\}$\\
+10 & \qquad $age \in \mathbb{N}$ \quad (consecutive frames; gates cut-in rule)\\
+11 & \textbf{record} $EgoState$: $v_e \in \mathbb{R}_{\ge 0}$;\; $d_s \in \mathbb{R}_{> 0}$ \quad (speed; dist. to line)\\
+12 & \textbf{record} $LeadVehicle$: $d_l, v_l \in \mathbb{R}_{\ge 0}$;\; $in\_box \in \{true, false\}$ \quad ($d_l < L_i$?)
+\end{tabular}\end{center}
 
-\begin{algorithm}[ht]
-\caption{KinematicFunctions (src/algebra.rs)}
-\label{alg:kinematics}
-\KwData{$v_e$ (ego speed), $d_s$ (distance to line), $v_{lat}$ (lateral speed), in m/s and m}
-\KwResult{stopping distance, clearance time, intrusion time}
-\Begin{
-  \textbf{constants:}\ $a_b = 4.0$, $t_r = 1.0$, $L_i = 16$, $\epsilon = 0.8$, $W_l = 3.5$, $k_{\min} = 3$ \tcp*{Table I}
-  \BlankLine
-  \textbf{function} \textsc{StoppingDistance}$(v_e)$\;
-  \Indp
-    \Return $v_e \cdot t_r + v_e^2 / (2 a_b)$ \tcp*{Eq.~(1)}
-  \Indm
-  \BlankLine
-  \textbf{function} \textsc{ClearanceTime}$(d_s, v)$\;
-  \Indp
-    \Return $(d_s + L_i) / (v + 0.1)$ \tcp*{Eq.~(2)}
-  \Indm
-  \BlankLine
-  \textbf{function} \textsc{IntrusionTime}$(v_{lat})$\;
-  \Indp
-    \Return $W_l / (|v_{lat}| + 0.1)$ \tcp*{Eq.~(4)}
-  \Indm
-}
-\end{algorithm}
+% ── B. Kinematics ─────────────────────────────────────────────────
+\subsection*{B. Kinematic Functions --- \texttt{src/algebra.rs}}
 
-\begin{algorithm}[ht]
-\caption{DecisionRules (src/rules.rs)}
-\label{alg:rules}
-\KwData{$\ell$ (phase), $v_e$, $d_s$, $t_y$ (time-to-red), detections $D$}
-\KwResult{warning level $w$ or $\bot$ (no warning)}
-\Begin{
-  \textbf{procedure} \textsc{RuleRed}$(\ell)$\;
-  \Indp
-    \eIf{$\ell = Red$}{\Return $Critical$}{\Return $\bot$}
-  \Indm
-  \BlankLine
-  \textbf{procedure} \textsc{RuleDilemma}$(v_e, d_s, t_y)$\;
-  \Indp
-    $d_{req} \gets \textsc{StoppingDistance}(v_e)$;\;
-    $t_c \gets \textsc{ClearanceTime}(d_s, v_e)$;\;
-    \eIf{$d_s \le d_{req}$ \textbf{and} $t_c \ge t_y - \epsilon$}
-        {\Return $Critical$}
-        {\Return $\bot$}
-  \Indm
-  \BlankLine
-  \textbf{procedure} \textsc{RuleLead}$(v_e, d_l, v_l, in\_box, t_y)$\;
-  \Indp
-    $d_{req} \gets \textsc{StoppingDistance}(v_e)$;\;
-    \eIf{$v_l < 1.0$ \textbf{and} $d_l < d_{req}$ \textbf{and} $in\_box$}
-        {\Return $Critical$ \tcp*{leader stopped in box}}
-        {\eIf{$t_c^{eff} \ge t_y - \epsilon$ \textbf{and} $d_l < d_{req}$}
-            {\Return $Warning$}
-            {\Return $\bot$}}
-  \Indm
-  \BlankLine
-  \textbf{procedure} \textsc{RuleCutin}$(D, v_e, t_y)$\;
-  \Indp
-    $d_{req} \gets \textsc{StoppingDistance}(v_e)$;\;
-    \For{each $o \in D$ with $o.cls \in \{2,3,5,7\}$}{
-      \If{$o.signal$ \textbf{and} $o.lane \neq same$ \textbf{and} $o.age \ge k_{\min}$ \textbf{and} $|o.v_{lat}| \le 4.0$}{
-        \If{$\textsc{IntrusionTime}(o.v_{lat}) < t_y$ \textbf{and} $o.d < d_{req}$}
-           {\Return $Warning$}
-      }
-    }
-    \Return $\bot$
-  \Indm
-  \BlankLine
-  \textbf{procedure} \textsc{RuleYellow}$(\ell, t_y)$\;
-  \Indp
-    \eIf{$\ell = Yellow$ \textbf{and} $t_y < 2.5$}{\Return $Caution$}{\Return $\bot$}
-  \Indm
-  \BlankLine
-  \textbf{procedure} \textsc{RuleStale}$(\ell, v_e, d_s)$\;
-  \Indp
-    \eIf{$\ell = Green$ \textbf{and} $d_s > \textsc{StoppingDistance}(v_e)$}
-        {\Return $Caution$ \tcp*{green may end at any frame}}
-        {\Return $\bot$}
-  \Indm
-}
-\end{algorithm}
+\begin{center}\scriptsize
+\begin{tabular}{@{}r@{\hspace{0.7em}}p{3.0in}@{}}
+1 & \textbf{constants} $a_b = 4.0$,\; $t_r = 1.0$,\; $L_i = 16$,\; $\epsilon = 0.8$,\; $W_l = 3.5$,\; $k_{\min} = 3$ \quad (Table I)\\
+2 &\\
+3 & $\textsc{StoppingDistance}(v_e)$:\\
+4 & \qquad \textbf{return} $v_e \cdot t_r + v_e^2 / (2 a_b)$ \quad (Eq.~1)\\
+5 &\\
+6 & $\textsc{ClearanceTime}(d_s, v)$:\\
+7 & \qquad \textbf{return} $(d_s + L_i) / (v + 0.1)$ \quad (Eq.~2)\\
+8 &\\
+9 & $\textsc{IntrusionTime}(v_{lat})$:\\
+10 & \qquad \textbf{return} $W_l / (|v_{lat}| + 0.1)$ \quad (Eq.~4)
+\end{tabular}\end{center}
 
-\begin{algorithm}[ht]
-\caption{EvaluateSafety (src/decision.rs)}
-\small
-\label{alg:pipeline}
-\KwData{$v_e$, $d_s$, $D$, $\ell$, $t_y$}
-\KwResult{highest-severity warning level}
-\Begin{
-  $l \gets$ first $o \in D$ with $o.lane = same$ and $o.cls \in \{2,3,5,7\}$\;
-  \eIf{$l \neq \bot$}{$d_l \gets l.d$;\; $v_l \gets l.v$;\; $in\_box \gets (l.d < L_i)$}{}
-  \BlankLine
-  $R \gets [\textsc{RuleRed}(\ell),\ \textsc{RuleDilemma}(v_e, d_s, t_y),$\;
-  $\phantom{R \gets [}\textsc{RuleLead}(v_e, d_l, v_l, in\_box, t_y),$\;
-  $\phantom{R \gets [}\textsc{RuleCutin}(D, v_e, t_y),\ \textsc{RuleYellow}(\ell, t_y),$\;
-  $\phantom{R \gets [}\textsc{RuleStale}(\ell, v_e, d_s)]$\;
-  \For{$r \in R$}{
-    $w \gets r()$\;
-    \If{$w \neq \bot$}{\Return $w$} \tcp*{most severe first}
-  }
-  \Return $Safe$
-}
-\end{algorithm}
+% ── C. Rules ──────────────────────────────────────────────────────
+\subsection*{C. Decision Rules --- \texttt{src/rules.rs}}
 
-\begin{algorithm}[ht]
-\caption{Main (src/main.rs)}
-\label{alg:main}
-\KwData{$\mathit{source}$ (CSI camera or video file)}
-\KwResult{real-time alert stream}
-\Begin{
-  \textbf{subcommand} $\mathit{run}(\mathit{source})$:
-  \Indp
-    \For{each frame $f$ from $\mathit{CameraCapture}(\mathit{source})$}{
-      $D \gets \mathit{YOLODetect}(f)$ \tcp*{ONNX, INT8}
-      $T \gets \mathit{DeepSORT}(D)$ \tcp*{Kalman + Hungarian}
-      $w \gets \textsc{EvaluateSafety}(v_e, d_s, T, \ell, t_y)$\;
-      \If{$w \neq Safe$}{$\mathit{DispatchAlert}(w)$}
-    }
-  \Indm
-  \BlankLine
-  \textbf{subcommand} $\mathit{collect}(\mathit{source}, \mathit{rate})$: save frames at $\mathit{rate}$ Hz for training\;
-  \textbf{subcommand} $\mathit{train}$: build dataset $\to$ GPU train $\to$ export ONNX $\to$ validate\;
-}
-\end{algorithm}
+\begin{center}\scriptsize
+\begin{tabular}{@{}r@{\hspace{0.7em}}p{3.0in}@{}}
+1 & $\textsc{RuleRed}(\ell)$:\\
+2 & \qquad \textbf{if} $\ell = Red$ \textbf{then return} $Critical$ \textbf{else return} $\bot$\\
+3 &\\
+4 & $\textsc{RuleDilemma}(v_e, d_s, t_y)$:\\
+5 & \qquad $d_{req} \gets \textsc{StoppingDistance}(v_e)$;\; $t_c \gets \textsc{ClearanceTime}(d_s, v_e)$\\
+6 & \qquad \textbf{if} $d_s \le d_{req}$ \textbf{and} $t_c \ge t_y - \epsilon$ \textbf{then return} $Critical$ \textbf{else return} $\bot$\\
+7 &\\
+8 & $\textsc{RuleLead}(v_e, d_l, v_l, in\_box, t_y)$:\\
+9 & \qquad $d_{req} \gets \textsc{StoppingDistance}(v_e)$\\
+10 & \qquad \textbf{if} $v_l < 1.0$ \textbf{and} $d_l < d_{req}$ \textbf{and} $in\_box$ \textbf{then return} $Critical$ \quad (stopped in box)\\
+11 & \qquad \textbf{if} $t_c^{eff} \ge t_y - \epsilon$ \textbf{and} $d_l < d_{req}$ \textbf{then return} $Warning$ \quad (clearance failure)\\
+12 & \qquad \textbf{return} $\bot$\\
+13 &\\
+14 & $\textsc{RuleCutin}(D, v_e, t_y)$:\\
+15 & \qquad $d_{req} \gets \textsc{StoppingDistance}(v_e)$\\
+16 & \qquad \textbf{for} $o \in D$ \textbf{with} $o.cls \in \{2,3,5,7\}$:\\
+17 & \qquad\quad \textbf{if} $o.signal$ \textbf{and} $o.lane \neq same$ \textbf{and} $o.age \ge k_{\min}$ \textbf{and} $|o.v_{lat}| \le 4.0$:\\
+18 & \qquad\quad\quad \textbf{if} $\textsc{IntrusionTime}(o.v_{lat}) < t_y$ \textbf{and} $o.d < d_{req}$ \textbf{then return} $Warning$\\
+19 & \qquad \textbf{return} $\bot$\\
+20 &\\
+21 & $\textsc{RuleYellow}(\ell, t_y)$:\\
+22 & \qquad \textbf{if} $\ell = Yellow$ \textbf{and} $t_y < 2.5$ \textbf{then return} $Caution$ \textbf{else return} $\bot$\\
+23 &\\
+24 & $\textsc{RuleStale}(\ell, v_e, d_s)$:\\
+25 & \qquad \textbf{if} $\ell = Green$ \textbf{and} $d_s > \textsc{StoppingDistance}(v_e)$ \textbf{then return} $Caution$ \textbf{else return} $\bot$
+\end{tabular}\end{center}
 
-\FloatBarrier
+% ── D. Pipeline ───────────────────────────────────────────────────
+\subsection*{D. Decision Pipeline --- \texttt{src/decision.rs}}
+
+\begin{center}\scriptsize
+\begin{tabular}{@{}r@{\hspace{0.7em}}p{3.0in}@{}}
+1 & $\textsc{EvaluateSafety}(v_e, d_s, D, \ell, t_y)$:\\
+2 & \qquad $l \gets$ \textbf{first} $o \in D$ \textbf{with} $o.lane = same$ \textbf{and} $o.cls \in \{2,3,5,7\}$\\
+3 & \qquad \textbf{if} $l \neq \bot$: $d_l \gets l.d$;\; $v_l \gets l.v$;\; $in\_box \gets (l.d < L_i)$\\
+4 & \qquad $R \gets [\,\textsc{RuleRed}(\ell),\ \textsc{RuleDilemma}(v_e, d_s, t_y),$\\
+5 & \qquad\qquad $\textsc{RuleLead}(v_e, d_l, v_l, in\_box, t_y),\ \textsc{RuleCutin}(D, v_e, t_y),$\\
+5 & \qquad\qquad $\textsc{RuleYellow}(\ell, t_y),\ \textsc{RuleStale}(\ell, v_e, d_s)\,]$\\
+6 & \qquad \textbf{for} $r \in R$:\\
+7 & \qquad\quad $w \gets r()$\\
+8 & \qquad\quad \textbf{if} $w \neq \bot$ \textbf{then return} $w$ \quad (first match $=$ most severe)\\
+9 & \qquad \textbf{return} $Safe$
+\end{tabular}\end{center}
+
+% ── E. Main ───────────────────────────────────────────────────────
+\subsection*{E. Binary Entry Point --- \texttt{src/main.rs}}
+
+\begin{center}\scriptsize
+\begin{tabular}{@{}r@{\hspace{0.7em}}p{3.0in}@{}}
+1 & $\textsc{run}(source)$:\\
+2 & \qquad \textbf{for} frame $f$ \textbf{from} $CameraCapture(source)$:\\
+3 & \qquad\quad $D \gets YOLODetect(f)$ \quad (ONNX, INT8)\\
+4 & \qquad\quad $T \gets DeepSORT(D)$ \quad (Kalman + Hungarian)\\
+5 & \qquad\quad $w \gets \textsc{EvaluateSafety}(v_e, d_s, T, \ell, t_y)$\\
+6 & \qquad\quad \textbf{if} $w \neq Safe$ \textbf{then} $DispatchAlert(w)$\\
+7 & $\textsc{collect}(source, rate)$: save frames at $rate$ Hz for training\\
+8 & $\textsc{train}$: build dataset $\to$ GPU train $\to$ export ONNX $\to$ validate
+\end{tabular}\end{center}
+
 \section{Conclusion}
 \label{sec:conclusion}
 A deterministic, mathematically proven system for intersection blockage
