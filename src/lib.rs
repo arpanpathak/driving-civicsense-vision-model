@@ -37,9 +37,13 @@
 //! returns empty results.  The data-collection pipeline works end-to-end
 //! on Raspberry Pi with a camera module.
 
+pub mod algebra;
 pub mod config;
+pub mod decision;
 pub mod detection;
+pub mod models;
 pub mod modules;
+pub mod rules;
 pub mod tracking;
 pub mod train;
 pub mod utils;

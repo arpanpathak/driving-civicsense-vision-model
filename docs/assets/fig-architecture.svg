@@ -21,11 +21,11 @@
 <line x1="790" y1="102" x2="820" y2="102" stroke="#212121" stroke-width="2" marker-end="url(#ah)"/>
 <line x1="710" y1="144" x2="710" y2="196" stroke="#616161" stroke-width="2" stroke-dasharray="6,5"/>
 <rect x="470" y="200" width="230" height="38" rx="6" fill="#e8f5e9" stroke="#81c784" stroke-width="1.5"/>
-<text x="485" y="216" font-size="13" font-family="Menlo,Consolas,monospace" fill="#212121">rule_light</text>
-<text x="485" y="231" font-size="11" fill="#616161">red → Critical</text>
+<text x="485" y="216" font-size="13" font-family="Menlo,Consolas,monospace" fill="#212121">rule_dilemma</text>
+<text x="485" y="231" font-size="11" fill="#616161">Thm. 4</text>
 <rect x="470" y="246" width="230" height="38" rx="6" fill="#e8f5e9" stroke="#81c784" stroke-width="1.5"/>
-<text x="485" y="262" font-size="13" font-family="Menlo,Consolas,monospace" fill="#212121">rule_dilemma</text>
-<text x="485" y="277" font-size="11" fill="#616161">Thm. 4</text>
+<text x="485" y="262" font-size="13" font-family="Menlo,Consolas,monospace" fill="#212121">rule_light</text>
+<text x="485" y="277" font-size="11" fill="#616161">red → Critical</text>
 <rect x="470" y="292" width="230" height="38" rx="6" fill="#e8f5e9" stroke="#81c784" stroke-width="1.5"/>
 <text x="485" y="308" font-size="13" font-family="Menlo,Consolas,monospace" fill="#212121">rule_lead</text>
 <text x="485" y="323" font-size="11" fill="#616161">Thm. 5</text>

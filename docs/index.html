@@ -75,7 +75,7 @@ window.MathJaxFallback = true;
     idiomatic Rust, adhering to SOLID principles, utilising exhaustive pattern
     matching, and requiring zero external dependencies for its core logic. The
     decision pipeline is a severity-ordered composition of single-responsibility
-    rules evaluated with $O(n)$ complexity per frame. The system operates in real
+    rules evaluated in $O(n)$ time per frame. The system operates in real
     time, is fully interpretable, and is suitable for deployment in
     ISO&nbsp;26262-compliant automotive systems.</p>
   </div>
@@ -168,7 +168,12 @@ window.MathJaxFallback = true;
     <p>In the vehicle safety literature,
     <a href="https://arxiv.org/abs/1708.06374" target="_blank" rel="noopener">Shalev-Shwartz
     et&nbsp;al.&nbsp;[3]</a> formalised a responsibility-sensitive safety (RSS) model that
-    defines safe longitudinal and lateral distances between vehicles. Formal methods for
+    defines safe longitudinal and lateral distances between vehicles. The present work
+    adopts a similar philosophy (safety as an explicit, checkable predicate), but it
+    specialises the predicate to the intersection-crossing manoeuvre and grounds it in
+    traffic-signal timing rather than inter-vehicle distance; RSS defines safe distances
+    between vehicles but does not address signalized intersections or the decision to
+    enter the box, which is the specific manoeuvre analysed here. Formal methods for
     road-vehicle safety extend beyond RSS to reachability analysis, which verifies
     collision freedom by computing the set of states reachable by a dynamical
     model&nbsp;<a href="https://doi.org/10.1109/TRO.2014.2312453" target="_blank" rel="noopener">[7]</a>;
@@ -655,10 +660,14 @@ window.MathJaxFallback = true;
     The &plusmn;1.5&nbsp;m operating bound on distance error corresponds to one-pixel
     bounding-box jitter at 30&nbsp;fps plus calibration tolerance at stop-line distances
     up to 60&nbsp;m; it is a conservative engineering bound to be confirmed by field
-    calibration, not a theoretical guarantee. In this paper the perception layer
-    is deliberately treated as an oracle: the formal guarantees are conditional on
-    its outputs, and an end-to-end perception error model, with covariance
-    propagation through the kinematics, is explicitly future work.</p>
+    calibration, not a theoretical guarantee. The companion repository ships the
+    perception infrastructure (detection, tracking, video) and the decision engine
+    modules listed here, with the exhaustive test suite of Section&nbsp;VI; the
+    end-to-end rig on vehicle hardware is the streaming ecosystem. In this paper
+    the perception layer is deliberately treated as an oracle: the formal
+    guarantees are conditional on its outputs, and an end-to-end perception error
+    model, with covariance propagation through the kinematics, is explicitly
+    future work.</p>
 
     <h3 class="sub">Module: <code>models.rs</code></h3>
     <p>This module defines immutable data structures and exhaustive enums. All types
@@ -878,8 +887,9 @@ window.MathJaxFallback = true;
 }
 
 <span class="cmt">/// Rule 5 (Section 4.6): Worst-case green advisory.</span>
-<span class="cmt">/// Under the vision-only worst-case interpretation, a green may end at any</span>
-<span class="cmt">/// frame; advise Caution when a comfortable stop is no longer possible.</span>
+<span class="cmt">/// Engineering heuristic, deliberately excluded from the formal theorems:</span>
+<span class="cmt">/// under the vision-only worst-case interpretation, a green may end at any</span>
+<span class="cmt">/// frame, so advise Caution when a comfortable stop is no longer possible.</span>
 #[must_use]
 <span class="kw">pub</span> <span class="kw">fn</span> rule_stale(light: LightState, ego: &amp;EgoState) -&gt; <span class="ty">Option</span>&lt;WarningLevel&gt; {
     <span class="kw">match</span> light {
@@ -930,8 +940,8 @@ window.MathJaxFallback = true;
 
     <span class="cmt">// Build the severity-ordered pipeline.</span>
     <span class="kw">let</span> rules: <span class="ty">Vec</span>&lt;<span class="ty">Box</span>&lt;<span class="kw">dyn</span> <span class="ty">Fn</span>() -&gt; <span class="ty">Option</span>&lt;WarningLevel&gt;&gt;&gt; = vec![
-        <span class="ty">Box</span>::new(|| rule_light(light, time_to_red)),
         <span class="ty">Box</span>::new(|| rule_dilemma(ego, time_to_red)),
+        <span class="ty">Box</span>::new(|| rule_light(light, time_to_red)),
         <span class="ty">Box</span>::new(|| lead_opt.and_then(|l| rule_lead(ego.speed, &amp;l, time_to_red))),
         <span class="ty">Box</span>::new(|| rule_cutin(detections, ego.speed, time_to_red)),
         <span class="ty">Box</span>::new(|| rule_stale(light, ego)),
@@ -1016,6 +1026,10 @@ edition = &quot;<span class="num">2021</span>&quot;
             <td><span class="tag safe">SAFE</span></td></tr>
       </tbody>
     </table>
+    <p class="note"><i>Note:</i> rows 2, 5, and 6 assume an ego state outside the
+    dilemma zone, so the listed rule is the first to fire; row 3 uses
+    $v_e = 14$&nbsp;m/s, $d_s = 25$&nbsp;m, $t_y = 3.5$&nbsp;s, which lies inside
+    it.</p>
     </div>
 
     <p><b>Complexity.</b> The pipeline evaluates each rule at most once, and only
@@ -1023,9 +1037,12 @@ edition = &quot;<span class="num">2021</span>&quot;
     $O(n)$ per frame, where $n$ is the number of detections. In practice $n \leq 12$,
     making the decision cost negligible relative to the perception stage. The overall
     per-frame complexity is dominated by the object detector. Because the engine is a
-    pure function over a bounded input space, exhaustive enumeration of the discrete
-    states and property-based testing of the continuous inputs are straightforward to
-    apply and are planned alongside the field campaign of Section&nbsp;VI.</p>
+    pure function over a bounded input space, it is verified by exhaustive
+    enumeration: the companion test suite (<code>tests/verification.rs</code>)
+    evaluates 15,840 states spanning the light, time-to-red, speed, distance, and
+    detection-pattern dimensions, and asserts the eight canonical scenarios, red-light
+    dominance, dilemma-zone criticality, severity ordering, and the monotonicity of
+    Corollary&nbsp;1.</p>
 
     <p><b>Sensitivity to braking capability.</b> The stopping boundary
     $d_s = d_{req}(v_e) = v_e^2/(2a_b)$ scales with the inverse of the assumed

@@ -107,7 +107,7 @@ development is given in Appendix~\ref{app:proofs}. The implementation is
 written in idiomatic Rust, adhering to SOLID principles, utilising exhaustive
 pattern matching, and requiring zero external dependencies for its core
 logic. The decision pipeline is a severity-ordered composition of
-single-responsibility rules evaluated with $O(n)$ complexity per frame. The
+single-responsibility rules evaluated in $O(n)$ time per frame. The
 system operates in real time, is fully interpretable, and is suitable for
 deployment in ISO~26262-compliant automotive systems.
 \end{abstract}
@@ -192,8 +192,11 @@ formalised a responsibility-sensitive safety (RSS) model that defines safe
 longitudinal and lateral distances between vehicles. The present work adopts
 a similar philosophy (safety as an explicit, checkable predicate) but
 specialises it to the intersection-crossing manoeuvre and grounds it in the
-traffic-signal timing rather than in inter-vehicle distance alone. Formal
-methods for road-vehicle safety extend beyond RSS to reachability analysis,
+traffic-signal timing rather than in inter-vehicle distance alone; RSS
+defines safe distances between vehicles but does not address signalized
+intersections or the decision to enter the box, which is the specific
+manoeuvre analysed here. Formal methods for road-vehicle safety extend
+beyond RSS to reachability analysis,
 which verifies collision freedom by computing the set of states reachable by
 a dynamical model~\cite{althoff2014}; the present work applies the same
 verification spirit to a discrete decision function rather than to a
@@ -923,8 +926,8 @@ pipeline that composes five independent checkers in descending severity order
   % --- expanded decision engine (below) ---------------------------
   \draw[gray!70, dashed, thick] (dec.south) -- (10.4, -1.2);
 
-  \node[pipe] (r1) at (9.5, -1.8) {rule\_light\\red $\to$ \textsc{Critical}};
-  \node[pipe] (r2) at (9.5, -2.7) {rule\_dilemma\\Thm.~\ref{thm:dilemma}};
+  \node[pipe] (r1) at (9.5, -1.8) {rule\_dilemma\\Thm.~\ref{thm:dilemma}};
+  \node[pipe] (r2) at (9.5, -2.7) {rule\_light\\red $\to$ \textsc{Critical}};
   \node[pipe] (r3) at (9.5, -3.6) {rule\_lead\\Thm.~\ref{thm:follow}};
   \node[pipe] (r4) at (9.5, -4.5) {rule\_cutin\\Thm.~\ref{thm:cutin}};
   \node[pipe] (r5) at (9.5, -5.4) {rule\_stale\\advisory};
@@ -971,11 +974,15 @@ Section~\ref{sec:discussion} corresponds to one-pixel bounding-box jitter
 at 30~fps plus calibration tolerance at stop-line distances up to $60$~m;
 it is a conservative engineering bound to be confirmed by field
 calibration, not a theoretical guarantee. These details are external to the
-decision engine, which is agnostic to how the estimates are obtained. In
-this paper the perception layer is deliberately treated as an oracle: the
-formal guarantees are conditional on its outputs, and an end-to-end
-perception error model, with covariance propagation through the kinematics,
-is explicitly future work (Section~\ref{sec:discussion}).
+decision engine, which is agnostic to how the estimates are obtained. The
+companion repository ships the perception infrastructure (detection,
+tracking, video) and the decision engine modules listed here, with the
+exhaustive test suite of Section~\ref{sec:verif}; the end-to-end rig on
+vehicle hardware is the streaming ecosystem. In this paper the perception
+layer is deliberately treated as an oracle: the formal guarantees are
+conditional on its outputs, and an end-to-end perception error model, with
+covariance propagation through the kinematics, is explicitly future work
+(Section~\ref{sec:discussion}).
 
 \subsection{Module: \texttt{models.rs}}
 \label{sub:models}
@@ -1201,8 +1208,9 @@ pub fn rule_cutin(detections: &[Detection], ego_speed: f32, time_to_red: f32) ->
 }
 
 /// Rule 5 (Section 4.6): Worst-case green advisory.
-/// Under the vision-only worst-case interpretation, a green may end at any
-/// frame; advise Caution when a comfortable stop is no longer possible.
+/// Engineering heuristic, deliberately excluded from the formal theorems:
+/// under the vision-only worst-case interpretation, a green may end at any
+/// frame, so advise Caution when a comfortable stop is no longer possible.
 #[must_use]
 pub fn rule_stale(light: LightState, ego: &EgoState) -> Option<WarningLevel> {
     match light {
@@ -1253,20 +1261,25 @@ pub fn evaluate_safety(
             is_in_intersection: d.distance_to_ego < constants::INTERSECTION_LENGTH,
         });
 
-    // Build the severity-ordered pipeline.
+    // Build the severity-ordered pipeline. The dilemma rule precedes the
+    // light rule so a Critical dilemma state is never masked by the
+    // short-yellow Caution advisory.
     let rules: Vec<Box<dyn Fn() -> Option<WarningLevel>>> = vec![
-        Box::new(|| rule_light(light, time_to_red)),
         Box::new(|| rule_dilemma(ego, time_to_red)),
+        Box::new(|| rule_light(light, time_to_red)),
         Box::new(|| lead_opt.and_then(|l| rule_lead(ego.speed, &l, time_to_red))),
         Box::new(|| rule_cutin(detections, ego.speed, time_to_red)),
         Box::new(|| rule_stale(light, ego)),
     ];
 
     // Execute the pipeline; the first matching rule determines the level.
-    rules
+    // Bind to a local so the temporary closures drop before the borrows
+    // captured from the enclosing scope are released.
+    let level = rules
         .into_iter()
         .find_map(|rule| rule())
-        .unwrap_or(WarningLevel::Safe)
+        .unwrap_or(WarningLevel::Safe);
+    level
 }
 \end{lstlisting}
 
@@ -1340,15 +1353,22 @@ Table~\ref{tab:notation}).}
 \end{tabular}
 \end{table}
 
+\emph{Note:} rows 2, 5, and 6 assume an ego state outside the dilemma zone,
+so the listed rule is the first to fire; row 3 uses $\ve = 14$~m/s,
+$\ds = 25$~m, $\tred = 3.5$~s, which lies inside it.
+
 \paragraph{Complexity.} The pipeline evaluates each rule at most once, and
 only \texttt{rule\_cutin} iterates over the detection list, so the decision
 engine is $O(n)$ per frame, where $n$ is the number of detections. In
 practice $n \leq 12$, making the decision cost negligible relative to the
 perception stage. The overall per-frame complexity is dominated by the
 object detector. Because the engine is a pure function over a bounded input
-space, exhaustive enumeration of the discrete states and property-based
-testing of the continuous inputs are straightforward to apply and are
-planned alongside the field campaign of Section~\ref{sec:verif}.
+space, it is verified by exhaustive enumeration: the companion test suite
+(\texttt{tests/verification.rs}) evaluates $15{,}840$ states spanning the
+light, time-to-red, speed, distance, and detection pattern dimensions, and
+asserts the eight canonical scenarios of Table~\ref{tab:scenarios}, red-light
+dominance, dilemma-zone criticality, severity ordering, and the algebraic
+monotonicity of Corollary~\ref{cor:mono}.
 
 \paragraph{Sensitivity to braking capability.} The stopping boundary
 $\ds = \dreq(\ve) = \ve^2/(2\ab)$ scales with the inverse of the assumed
