@@ -1771,14 +1771,14 @@ simultaneously eliminate both false positives and false negatives; the
 kinematic rule achieves zero of both because it reproduces the exact
 coupled boundary at zero tuning cost.
 
-\begin{table}[t]
+\begin{table*}[t]
 \caption{Quantitative comparison of fixed-threshold baselines against the
 kinematic rule over $10{,}000$ random intersection approaches. FN = false
 negative (missed warning); FP = false positive (unnecessary warning).}
 \label{tab:baselines}
 \centering
 \footnotesize
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}llll@{}}
 \toprule
 Policy & FN count & FP count & Description \\
 \midrule
@@ -1788,7 +1788,7 @@ Warn if $\ve > 12$~m/s \emph{or} $\ds < 15$~m & 1\,610 & 2\,134 & Disjunctive th
 \textbf{Kinematic rule (this work)} & \textbf{0} & \textbf{0} & Conjunctive: $\ds \leq \dreq(\ve) \land \tclear \geq \tred - \epsilon$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \paragraph{Ethics and safety.} The system issues advisory warnings only; the
 driver retains full control, and the formal guarantees concern the warning
