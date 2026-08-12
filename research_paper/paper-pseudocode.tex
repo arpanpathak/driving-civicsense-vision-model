@@ -11,6 +11,7 @@
 \usepackage{microtype}
 \usepackage{algpseudocode}
 \usepackage{algorithm}
+\usepackage{float}
 \usepackage{fontawesome5}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning, calc, fit, backgrounds, decorations.pathreplacing}
@@ -1518,7 +1519,7 @@ This section presents the system architecture in language-agnostic pseudocode.
 The Rust implementation (58 tests, zero dependencies for core logic) is at
 \url{https://github.com/arpanpathak/driving-civicsense-vision-model}.
 
-\begin{algorithm}[t]
+\begin{algorithm}[H]
 \caption{Core data types (\texttt{src/models.rs}). All types are immutable.}
 \begin{algorithmic}[1]
 \State \textbf{Enums} (exhaustive, compile-time checked):
@@ -1546,87 +1547,78 @@ The Rust implementation (58 tests, zero dependencies for core logic) is at
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[t]
+\begin{algorithm}[H]
 \caption{Kinematic functions (\texttt{src/algebra.rs}). All pure, stateless, deterministic.}
 \begin{algorithmic}[1]
 \State \textbf{Constants}: $a_b = 4.0$~m/s$^2$, $t_r = 1.0$~s, $L_i = 16$~m, $\epsilon = 0.8$~s, $W_l = 3.5$~m
 \State \qquad $v_{\max} = 30$~m/s, $L = t_r + v_{\max}/a_b = 8.5$~s \Comment{Lipschitz constant (Theorem~7)}
-\State
 \Function{StoppingDistance}{$v_e$}
-\State $\mathbf{R}$eturn $v_e \cdot t_r + v_e^2 / (2 \cdot a_b)$ \Comment{Eq.~(1)}
+\State \Return $v_e \cdot t_r + v_e^2 / (2 \cdot a_b)$ \Comment{Eq.~(1)}
 \EndFunction
-\State
 \Function{ClearanceTime}{$d_s, v$}
-\State $\mathbf{R}$eturn $(d_s + L_i) / (v + \delta)$ \qquad $(\delta = 0.1)$ \Comment{Eq.~(2)}
+\State \Return $(d_s + L_i) / (v + \delta)$ \qquad $(\delta = 0.1)$ \Comment{Eq.~(2)}
 \EndFunction
-\State
 \Function{IntrusionTime}{$v_{\text{lat}}$}
-\State $\mathbf{R}$eturn $W_l / (|v_{\text{lat}}| + \delta)$ \Comment{Eq.~(4)}
+\State \Return $W_l / (|v_{\text{lat}}| + \delta)$ \Comment{Eq.~(4)}
 \EndFunction
-\State
 \Function{LipschitzBound}{$\Delta v$}
-\State $\mathbf{R}$eturn $L \cdot \Delta v$ \Comment{Max shift of stopping boundary under sensor noise}
+\State \Return $L \cdot \Delta v$ \Comment{Max shift of stopping boundary under sensor noise}
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[t]
+\begin{algorithm}[H]
 \caption{Decision rules (\texttt{src/rules.rs}). Each returns a warning level or nil.}
 \begin{algorithmic}[1]
 \Function{RuleRed}{$\ell$}
-\If{$\ell = Red$} $\mathbf{R}$eturn $Critical$ \EndIf
-\State $\mathbf{R}$eturn $nil$
+\If{$\ell = Red$} \Return Critical \EndIf
+\State \Return nil
 \EndFunction
-\State
 \Function{RuleDilemma}{$v_e, d_s, t_y$}
 \State $d_{\text{req}} \gets StoppingDistance(v_e)$
 \State $t_c \gets ClearanceTime(d_s, v_e)$
 \State $\textit{no\_stop} \gets (d_s \le d_{\text{req}})$
 \State $\textit{no\_clear} \gets (t_c \ge t_y - \epsilon)$
-\If{$\textit{no\_stop} \land \textit{no\_clear}$} $\mathbf{R}$eturn $Critical$ \EndIf
-\State $\mathbf{R}$eturn $nil$
+\If{$\textit{no\_stop} \land \textit{no\_clear}$} \Return Critical \EndIf
+\State \Return nil
 \EndFunction
-\State
 \Function{RuleLead}{$v_e, d_l, v_l, \textit{in\_box}, t_y$}
 \State $d_{\text{req}} \gets StoppingDistance(v_e)$
 \If{$v_l < 1.0 \land d_l < d_{\text{req}} \land \textit{in\_box}$}
-\State $\mathbf{R}$eturn $Critical$ \Comment{3a: leader stopped inside box}
+\State \Return Critical \Comment{3a: leader stopped inside box}
 \EndIf
 \State $t_{\text{eff}} \gets ClearanceTime(d_l, v_l)$
 \If{$t_{\text{eff}} \ge t_y - \epsilon \land d_l < d_{\text{req}}$}
-\State $\mathbf{R}$eturn $Warning$ \Comment{3b: clearance failure behind leader}
+\State \Return Warning \Comment{3b: clearance failure behind leader}
 \EndIf
-\State $\mathbf{R}$eturn $nil$
+\State \Return nil
 \EndFunction
-\State
 \Function{RuleCutin}{$D, v_e, t_y$}
 \State $d_{\text{req}} \gets StoppingDistance(v_e)$
 \ForAll{$o \in D$ \textbf{where} $o.\textit{class} \in \{2,3,5,7\}$}
 \If{$o.\textit{signal} \land o.\textit{lane} \ne same$}
 \If{$o.\textit{age} \ge 3 \land |o.v_{\text{lat}}| \le 4.0$}
 \State $t_i \gets IntrusionTime(o.v_{\text{lat}})$
-\If{$t_i < t_y \land o.d < d_{\text{req}}$} $\mathbf{R}$eturn $Warning$ \EndIf
+\If{$t_i < t_y \land o.d < d_{\text{req}}$} \Return Warning \EndIf
 \EndIf
 \EndIf
 \EndFor
-\State $\mathbf{R}$eturn $nil$
+\State \Return nil
 \EndFunction
-\State
 \Function{RuleYellow}{$\ell, t_y$}
-\If{$\ell = Yellow \land t_y < 2.5$} $\mathbf{R}$eturn $Caution$ \EndIf
-\State $\mathbf{R}$eturn $nil$
+\If{$\ell = Yellow \land t_y < 2.5$} \Return Caution \EndIf
+\State \Return nil
 \EndFunction
-\State
 \Function{RuleStale}{$\ell, v_e, d_s$}
 \If{$\ell = Green \land d_s > StoppingDistance(v_e)$}
-\State $\mathbf{R}$eturn $Caution$ \Comment{Worst-case: green may end at any frame}
+\State \Return Caution \Comment{Worst-case: green may end at any frame}
 \EndIf
-\State $\mathbf{R}$eturn $nil$
+\State \Return nil
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[t]
+\begin{algorithm}[H]
 \caption{Decision pipeline (\texttt{src/decision.rs}). Composes rules in descending severity.}
 \begin{algorithmic}[1]
 \Function{EvaluateSafety}{$v_e, d_s, D, \ell, t_y$}
@@ -1643,14 +1635,14 @@ The Rust implementation (58 tests, zero dependencies for core logic) is at
 \State \qquad\; $RuleStale(\ell, v_e, d_s) \;]$
 \ForAll{$r \in R$} \Comment{Evaluated in severity order; first match wins}
 \State $w \gets r()$
-\If{$w \ne nil$} $\mathbf{R}$eturn $w$ \EndIf
+\If{$w \ne nil$} \Return $w$ \EndIf
 \EndFor
-\State $\mathbf{R}$eturn $Safe$
+\State \Return Safe
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[t]
+\begin{algorithm}[H]
 \caption{Binary entry point (\texttt{src/main.rs}).}
 \begin{algorithmic}[1]
 \State \textbf{Subcommand} $run(\textit{source})$:
@@ -1670,7 +1662,7 @@ The Rust implementation (58 tests, zero dependencies for core logic) is at
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[t]
+\begin{algorithm}[H]
 \caption{Project structure (\texttt{Cargo.toml}). Zero external dependencies for core logic.}
 \begin{algorithmic}[1]
 \State \textbf{Package}: \texttt{driving-civicsense-vision-model} v0.1.0
