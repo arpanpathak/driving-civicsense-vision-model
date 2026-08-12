@@ -185,16 +185,22 @@ window.MathJaxFallback = true;
     offer a complementary path to systematic evaluation.</p>
     <p>End-to-end learning approaches to intersection
     behaviour&nbsp;<a href="https://arxiv.org/abs/2004.02903" target="_blank" rel="noopener">[11]</a>
-    predict occupancy or intention from raw video. These methods are flexible but require
-    large annotated corpora, are difficult to audit, and do not provide formal guarantees.
-    Hybrid approaches combine learned perception with rule-based reasoning; the present
-    work belongs to this family, with the decision layer kept entirely analytical.</p>
+    predict occupancy or intention from raw video. Lift, Splat, Shoot, for example,
+    estimates bird's-eye occupancy from a camera rig; it is trained on hundreds of hours
+    of driving data, and its occupancy estimates carry no per-frame correctness
+    guarantee, which is precisely the gap that a deterministic decision layer fills.
+    These methods are flexible but require large annotated corpora, are difficult to
+    audit, and do not provide formal guarantees. Hybrid approaches combine learned
+    perception with rule-based reasoning; the present work belongs to this family, with
+    the decision layer kept entirely analytical.</p>
     <p>Finally, the use of the Rust language for safety-critical embedded software is well
     established&nbsp;<a href="https://doi.org/10.1145/2692956.2663188" target="_blank" rel="noopener">[12]</a>;
     its ownership model eliminates data races, and its exhaustive pattern matching forces
     explicit handling of all sensor states, which aligns with the verification
     requirements of <a href="https://www.iso.org/standard/68383.html" target="_blank" rel="noopener">ISO&nbsp;26262&nbsp;[16]</a>.
-    The language is documented for systems programming at
+    The advisory-only output is compatible with ASIL&nbsp;A/B-rated development
+    practice, since the engine never arbitrates vehicle control; certification
+    itself is future work. The language is documented for systems programming at
     large&nbsp;<a href="https://doc.rust-lang.org/book/" target="_blank" rel="noopener">[13]</a>.</p>
   </section>
 
@@ -398,13 +404,23 @@ window.MathJaxFallback = true;
     </div>
 
     <div class="proof">
-      <span class="head">Proof sketch.</span>
-      <p>Necessity: if $t_c \geq t_y - \epsilon$, the constant-speed trajectory reaches
-      the far boundary no earlier than $t_y - \epsilon$, so it cannot exit before the
-      red phase. Sufficiency: if $t_c < t_y - \epsilon$, the far boundary is reached
-      strictly before $t_y - \epsilon$, which itself precedes $t_y$; the vehicle exits
-      with margin $\epsilon$ to spare. The margin guarantees that cross traffic has
-      not yet entered the box.</p>
+      <span class="head">Proof.</span>
+      <p>By Equation&nbsp;(2), $t_c(v_e, d_s) = (d_s + L_i)/v_e$, so the clearance
+      condition $t_c < t_y - \epsilon$ is algebraically equivalent to
+      $d_s + L_i < v_e(t_y - \epsilon)$.
+      <b>Necessity:</b> suppose $d_s + L_i \geq v_e(t_y - \epsilon)$. Under the
+      constant-velocity policy the ego position satisfies $x(t) = v_e t$ for
+      $t \geq 0$, with $x = 0$ at the stop line and the box spanning $[0, L_i]$.
+      At $t = t_y - \epsilon$ the ego has reached
+      $x(t_y - \epsilon) = v_e(t_y - \epsilon) \leq d_s + L_i$, so it has not yet
+      crossed the far boundary; since $t_y - \epsilon < t_y$, it is still inside
+      the box when the conflicting phase begins, and clearance fails.
+      <b>Sufficiency:</b> if $d_s + L_i < v_e(t_y - \epsilon)$, then
+      $x(t_y - \epsilon) > d_s + L_i$, so the far boundary is crossed strictly
+      before $t_y - \epsilon$, leaving margin $\epsilon$ before $t_y$; the box is
+      empty before cross traffic may enter. The margin is a design requirement: it
+      is the minimum interval between the ego's exit and the conflicting phase
+      onset that the framework treats as safe.</p>
       <span class="qed">&#9633;</span>
     </div>
 
@@ -622,7 +638,10 @@ window.MathJaxFallback = true;
     The &plusmn;1.5&nbsp;m operating bound on distance error corresponds to one-pixel
     bounding-box jitter at 30&nbsp;fps plus calibration tolerance at stop-line distances
     up to 60&nbsp;m; it is a conservative engineering bound to be confirmed by field
-    calibration, not a theoretical guarantee.</p>
+    calibration, not a theoretical guarantee. In this paper the perception layer
+    is deliberately treated as an oracle: the formal guarantees are conditional on
+    its outputs, and an end-to-end perception error model, with covariance
+    propagation through the kinematics, is explicitly future work.</p>
 
     <h3 class="sub">Module: <code>models.rs</code></h3>
     <p>This module defines immutable data structures and exhaustive enums. All types
@@ -841,8 +860,9 @@ window.MathJaxFallback = true;
         .map(|_| WarningLevel::Warning)
 }
 
-<span class="cmt">/// Rule 5 (Section 4.6): Stale-green heuristic.</span>
-<span class="cmt">/// Advises Caution when the green has been active long enough.</span>
+<span class="cmt">/// Rule 5 (Section 4.6): Worst-case green advisory.</span>
+<span class="cmt">/// Under the vision-only worst-case interpretation, a green may end at any</span>
+<span class="cmt">/// frame; advise Caution when a comfortable stop is no longer possible.</span>
 #[must_use]
 <span class="kw">pub</span> <span class="kw">fn</span> rule_stale(light: LightState, ego: &amp;EgoState) -&gt; <span class="ty">Option</span>&lt;WarningLevel&gt; {
     <span class="kw">match</span> light {
@@ -973,7 +993,7 @@ edition = &quot;<span class="num">2021</span>&quot;
             <td><span class="tag warning">WARNING</span></td></tr>
         <tr><td>6</td><td>Cut-in vehicle, $v_{\mathrm{lat}}{=}1.2$, $d_a{=}15$</td><td><code>rule_cutin</code></td>
             <td><span class="tag warning">WARNING</span></td></tr>
-        <tr><td>7</td><td>Stale green, far from line</td><td><code>rule_stale</code></td>
+        <tr><td>7</td><td>Green beyond stop envelope</td><td><code>rule_stale</code></td>
             <td><span class="tag caution">CAUTION</span></td></tr>
         <tr><td>8</td><td>Green, comfortable stop margin</td><td>none</td>
             <td><span class="tag safe">SAFE</span></td></tr>
@@ -985,7 +1005,10 @@ edition = &quot;<span class="num">2021</span>&quot;
     <code>rule_cutin</code> iterates over the detection list, so the decision engine is
     $O(n)$ per frame, where $n$ is the number of detections. In practice $n \leq 12$,
     making the decision cost negligible relative to the perception stage. The overall
-    per-frame complexity is dominated by the object detector.</p>
+    per-frame complexity is dominated by the object detector. Because the engine is a
+    pure function over a bounded input space, exhaustive enumeration of the discrete
+    states and property-based testing of the continuous inputs are straightforward to
+    apply and are planned alongside the field campaign of Section&nbsp;VI.</p>
 
     <p><b>Sensitivity to braking capability.</b> The stopping boundary
     $d_s = d_{req}(v_e) = v_e^2/(2a_b)$ scales with the inverse of the assumed

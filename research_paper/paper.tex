@@ -206,17 +206,24 @@ environments such as CARLA~\cite{dosovitskiy2017} and
 SUMO~\cite{lopez2018} offer a complementary path to systematic evaluation.
 
 End-to-end learning approaches to intersection behaviour~\cite{philion2019}
-predict occupancy or intention from raw video. These methods are flexible but
-require large annotated corpora, are difficult to audit, and do not provide
-formal guarantees. Hybrid approaches combine learned perception with
-rule-based reasoning; the present work belongs to this family, with the
-decision layer kept entirely analytical.
+predict occupancy or intention from raw video. Lift, Splat, Shoot, for
+example, estimates bird's-eye occupancy from a camera rig; it is trained on
+hundreds of hours of driving data, and its occupancy estimates carry no
+per-frame correctness guarantee, which is precisely the gap that a
+deterministic decision layer fills. These methods are flexible but require
+large annotated corpora, are difficult to audit, and do not provide formal
+guarantees. Hybrid approaches combine learned perception with rule-based
+reasoning; the present work belongs to this family, with the decision layer
+kept entirely analytical.
 
 Finally, the use of the Rust language for safety-critical embedded software
 is well established~\cite{matsakis2014rust}; its ownership model eliminates
 data races, and its exhaustive pattern matching forces explicit handling of
 all sensor states, which aligns with the verification requirements of
-ISO~26262~\cite{iso26262}. The language is documented for systems
+ISO~26262~\cite{iso26262}. The advisory-only output is compatible with
+ASIL~A/B-rated development practice, since the engine never arbitrates
+vehicle control; certification itself is future work
+(Section~\ref{sec:discussion}). The language is documented for systems
 programming at large~\cite{klabnik2019}, and its adoption in automotive
 perception pipelines is growing.
 
@@ -489,13 +496,23 @@ the ego vehicle can clear the intersection before the red phase if and only
 if $\tclear(\ve, \ds) < \tred - \epsilon$.
 \end{theorem}
 
-\begin{proof}[Proof sketch]
-Necessity: if $\tclear \geq \tred - \epsilon$, the constant-speed trajectory
-reaches the far boundary no earlier than $\tred - \epsilon$, so it cannot
-exit before the red phase. Sufficiency: if $\tclear < \tred - \epsilon$, the
-far boundary is reached strictly before $\tred - \epsilon$, which itself
-precedes $\tred$; the vehicle exits with margin $\epsilon$ to spare. The
-margin guarantees that cross traffic has not yet entered the box.
+\begin{proof}
+By Equation~(2), $\tclear(\ve,\ds) = (\ds + \Li)/\ve$, so the clearance
+condition $\tclear < \tred - \epsilon$ is algebraically equivalent to
+$\ds + \Li < \ve(\tred - \epsilon)$.
+\emph{Necessity}: suppose $\ds + \Li \geq \ve(\tred - \epsilon)$. Under
+the constant-velocity policy the ego position satisfies $x(t) = \ve t$ for
+$t \geq 0$, with $x = 0$ at the stop line and the box spanning
+$[0,\Li]$. At $t = \tred - \epsilon$ the ego has reached
+$x(\tred - \epsilon) = \ve(\tred - \epsilon) \leq \ds + \Li$, so it has
+not yet crossed the far boundary; since $\tred - \epsilon < \tred$, it is
+still inside the box when the conflicting phase begins, and clearance fails.
+\emph{Sufficiency}: if $\ds + \Li < \ve(\tred - \epsilon)$, then
+$x(\tred - \epsilon) > \ds + \Li$, so the far boundary is crossed strictly
+before $\tred - \epsilon$, leaving margin $\epsilon$ before $\tred$; the box
+is empty before cross traffic may enter. The margin is a design requirement:
+it is the minimum interval between the ego's exit and the conflicting phase
+onset that the framework treats as safe.
 \end{proof}
 
 \begin{remark}
@@ -901,7 +918,11 @@ Section~\ref{sec:discussion} corresponds to one-pixel bounding-box jitter
 at 30~fps plus calibration tolerance at stop-line distances up to $60$~m;
 it is a conservative engineering bound to be confirmed by field
 calibration, not a theoretical guarantee. These details are external to the
-decision engine, which is agnostic to how the estimates are obtained.
+decision engine, which is agnostic to how the estimates are obtained. In
+this paper the perception layer is deliberately treated as an oracle: the
+formal guarantees are conditional on its outputs, and an end-to-end
+perception error model, with covariance propagation through the kinematics,
+is explicitly future work (Section~\ref{sec:discussion}).
 
 \subsection{Module: \texttt{models.rs}}
 \label{sub:models}
@@ -1126,8 +1147,9 @@ pub fn rule_cutin(detections: &[Detection], ego_speed: f32, time_to_red: f32) ->
         .map(|_| WarningLevel::Warning)
 }
 
-/// Rule 5 (Section 4.6): Stale-green heuristic.
-/// Advises Caution when the green has been active long enough.
+/// Rule 5 (Section 4.6): Worst-case green advisory.
+/// Under the vision-only worst-case interpretation, a green may end at any
+/// frame; advise Caution when a comfortable stop is no longer possible.
 #[must_use]
 pub fn rule_stale(light: LightState, ego: &EgoState) -> Option<WarningLevel> {
     match light {
@@ -1259,7 +1281,7 @@ Table~\ref{tab:notation}).}
 4 & Lead stopped inside box & rule\_lead (3a) & \textsc{Critical} \\
 5 & Slow lead, $\vl{=}5$, $\dl{=}20$ & rule\_lead (3b) & \textsc{Warning} \\
 6 & Cut-in vehicle, $\vlat{=}1.2$, $\da{=}15$ & rule\_cutin & \textsc{Warning} \\
-7 & Stale green, far from line & rule\_stale & \textsc{Caution} \\
+7 & Green beyond stop envelope & rule\_stale & \textsc{Caution} \\
 8 & Green, comfortable stop margin & none & \textsc{Safe} \\
 \bottomrule
 \end{tabular}
@@ -1270,7 +1292,10 @@ only \texttt{rule\_cutin} iterates over the detection list, so the decision
 engine is $O(n)$ per frame, where $n$ is the number of detections. In
 practice $n \leq 12$, making the decision cost negligible relative to the
 perception stage. The overall per-frame complexity is dominated by the
-object detector.
+object detector. Because the engine is a pure function over a bounded input
+space, exhaustive enumeration of the discrete states and property-based
+testing of the continuous inputs are straightforward to apply and are
+planned alongside the field campaign of Section~\ref{sec:verif}.
 
 \paragraph{Sensitivity to braking capability.} The stopping boundary
 $\ds = \dreq(\ve) = \ve^2/(2\ab)$ scales with the inverse of the assumed
