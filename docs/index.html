@@ -719,11 +719,28 @@ window.MathJaxFallback = true;
     <span class="kw">pub</span> turn_signal_active: <span class="ty">bool</span>,
 }
 
+<span class="cmt">/// COCO dataset class ids treated as motor vehicles by the engine.</span>
+<span class="cmt">/// The engine reasons only about these classes; everything else is ignored.</span>
+<span class="kw">pub</span> <span class="kw">mod</span> coco_vehicle_classes {
+    <span class="kw">pub</span> <span class="kw">const</span> CAR: <span class="ty">u8</span> = <span class="num">2</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> MOTORCYCLE: <span class="ty">u8</span> = <span class="num">3</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> BUS: <span class="ty">u8</span> = <span class="num">5</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> TRUCK: <span class="ty">u8</span> = <span class="num">7</span>;
+}
+
+<span class="cmt">/// The vehicle classes the engine reasons about (COCO ids).</span>
+<span class="kw">pub</span> <span class="kw">const</span> VEHICLE_CLASSES: [<span class="ty">u8</span>; <span class="num">4</span>] = [
+    coco_vehicle_classes::CAR,
+    coco_vehicle_classes::MOTORCYCLE,
+    coco_vehicle_classes::BUS,
+    coco_vehicle_classes::TRUCK,
+];
+
 <span class="kw">impl</span> Detection {
     <span class="cmt">/// Returns `true` if the detection belongs to a vehicle class.</span>
     #[must_use]
     <span class="kw">pub</span> <span class="kw">fn</span> is_vehicle(&amp;<span class="kw">self</span>) -&gt; <span class="ty">bool</span> {
-        matches!(<span class="kw">self</span>.class_id, <span class="num">2</span> | <span class="num">3</span> | <span class="num">5</span> | <span class="num">7</span>)
+        VEHICLE_CLASSES.contains(&amp;<span class="kw">self</span>.class_id)
     }
 }
 
@@ -764,6 +781,11 @@ window.MathJaxFallback = true;
     <span class="kw">pub</span> <span class="kw">const</span> EPSILON: <span class="ty">f32</span> = <span class="num">0.1</span>;
     <span class="cmt">/// Standard lane width for cut-in calculations (meters).</span>
     <span class="kw">pub</span> <span class="kw">const</span> LANE_WIDTH: <span class="ty">f32</span> = <span class="num">3.5</span>;
+    <span class="cmt">/// Time-to-red below which a yellow is treated as too short for a</span>
+    <span class="cmt">/// comfortable stop (seconds).</span>
+    <span class="kw">pub</span> <span class="kw">const</span> SHORT_YELLOW_THRESHOLD: <span class="ty">f32</span> = <span class="num">2.5</span>;
+    <span class="cmt">/// Speed below which a lead vehicle is treated as stopped (m/s).</span>
+    <span class="kw">pub</span> <span class="kw">const</span> STOPPED_SPEED_THRESHOLD: <span class="ty">f32</span> = <span class="num">1.0</span>;
 }
 
 <span class="cmt">/// Computes the minimum stopping distance (Eq. 1).</span>
@@ -859,7 +881,10 @@ window.MathJaxFallback = true;
     <span class="kw">let</span> d_req = stopping_distance(ego_speed);
 
     <span class="cmt">// Sub-rule 3a: leader is stopped and already inside the intersection.</span>
-    <span class="kw">if</span> lead.speed &lt; <span class="num">1.0</span> &amp;&amp; lead.distance &lt; d_req &amp;&amp; lead.is_in_intersection {
+    <span class="kw">if</span> lead.speed &lt; constants::STOPPED_SPEED_THRESHOLD
+        &amp;&amp; lead.distance &lt; d_req
+        &amp;&amp; lead.is_in_intersection
+    {
         <span class="kw">return</span> <span class="ty">Some</span>(WarningLevel::Critical);
     }
 
@@ -890,12 +915,17 @@ window.MathJaxFallback = true;
 }
 
 <span class="cmt">/// Rule 5 (Section 4.6): Short-yellow advisory.</span>
-<span class="cmt">/// A yellow with less than 2.5 s to red implies Caution.</span>
+<span class="cmt">/// A yellow with less than SHORT_YELLOW_THRESHOLD seconds to red implies</span>
+<span class="cmt">/// Caution. Kept after the Warning-level rules so it never masks them.</span>
 <span class="cmt">/// Kept after the Warning-level rules so it never masks them.</span>
 #[must_use]
 <span class="kw">pub</span> <span class="kw">fn</span> rule_yellow(light: LightState, time_to_red: <span class="ty">f32</span>) -&gt; <span class="ty">Option</span>&lt;WarningLevel&gt; {
     <span class="kw">match</span> light {
-        LightState::Yellow <span class="kw">if</span> time_to_red &lt; <span class="num">2.5</span> =&gt; <span class="ty">Some</span>(WarningLevel::Caution),
+        LightState::Yellow
+            <span class="kw">if</span> time_to_red &lt; constants::SHORT_YELLOW_THRESHOLD =&gt;
+        {
+            <span class="ty">Some</span>(WarningLevel::Caution)
+        }
         _ =&gt; <span class="ty">None</span>,
     }
 }
@@ -936,6 +966,9 @@ window.MathJaxFallback = true;
 <span class="cmt">/// precede the stale-green heuristic (Caution). `find_map` returns the</span>
 <span class="cmt">/// first rule that fires; `unwrap_or(Safe)` covers the no-warning case.</span>
 #[must_use]
+<span class="cmt">// The result is bound to a local so the temporary boxed closures, which</span>
+<span class="cmt">// borrow from the enclosing scope, drop before it ends (borrow checker).</span>
+#[allow(clippy::let_and_return)]
 <span class="kw">pub</span> <span class="kw">fn</span> evaluate_safety(
     ego: &amp;EgoState,
     detections: &amp;[Detection],

@@ -1040,11 +1040,28 @@ pub struct Detection {
     pub turn_signal_active: bool,
 }
 
+/// COCO dataset class ids treated as motor vehicles by the engine.
+/// The engine reasons only about these classes; everything else is ignored.
+pub mod coco_vehicle_classes {
+    pub const CAR: u8 = 2;
+    pub const MOTORCYCLE: u8 = 3;
+    pub const BUS: u8 = 5;
+    pub const TRUCK: u8 = 7;
+}
+
+/// The vehicle classes the engine reasons about (COCO ids).
+pub const VEHICLE_CLASSES: [u8; 4] = [
+    coco_vehicle_classes::CAR,
+    coco_vehicle_classes::MOTORCYCLE,
+    coco_vehicle_classes::BUS,
+    coco_vehicle_classes::TRUCK,
+];
+
 impl Detection {
     /// Returns `true` if the detection belongs to a vehicle class.
     #[must_use]
     pub fn is_vehicle(&self) -> bool {
-        matches!(self.class_id, 2 | 3 | 5 | 7)
+        VEHICLE_CLASSES.contains(&self.class_id)
     }
 }
 
@@ -1087,6 +1104,11 @@ pub mod constants {
     pub const EPSILON: f32 = 0.1;
     /// Standard lane width for cut-in calculations (meters).
     pub const LANE_WIDTH: f32 = 3.5;
+    /// Time-to-red below which a yellow is treated as too short for a
+    /// comfortable stop (seconds).
+    pub const SHORT_YELLOW_THRESHOLD: f32 = 2.5;
+    /// Speed below which a lead vehicle is treated as stopped (m/s).
+    pub const STOPPED_SPEED_THRESHOLD: f32 = 1.0;
 }
 
 /// Computes the minimum stopping distance (Eq. 1).
@@ -1184,7 +1206,10 @@ pub fn rule_lead(ego_speed: f32, lead: &LeadVehicle, time_to_red: f32) -> Option
     let d_req = stopping_distance(ego_speed);
 
     // Sub-rule 3a: leader is stopped and already inside the intersection.
-    if lead.speed < 1.0 && lead.distance < d_req && lead.is_in_intersection {
+    if lead.speed < constants::STOPPED_SPEED_THRESHOLD
+        && lead.distance < d_req
+        && lead.is_in_intersection
+    {
         return Some(WarningLevel::Critical);
     }
 
@@ -1215,12 +1240,16 @@ pub fn rule_cutin(detections: &[Detection], ego_speed: f32, time_to_red: f32) ->
 }
 
 /// Rule 5 (Section 4.6): Short-yellow advisory.
-/// A yellow with less than 2.5 s to red implies Caution.
-/// Kept after the Warning-level rules so it never masks them.
+/// A yellow with less than SHORT_YELLOW_THRESHOLD seconds to red implies
+/// Caution. Kept after the Warning-level rules so it never masks them.
 #[must_use]
 pub fn rule_yellow(light: LightState, time_to_red: f32) -> Option<WarningLevel> {
     match light {
-        LightState::Yellow if time_to_red < 2.5 => Some(WarningLevel::Caution),
+        LightState::Yellow
+            if time_to_red < constants::SHORT_YELLOW_THRESHOLD =>
+        {
+            Some(WarningLevel::Caution)
+        }
         _ => None,
     }
 }
@@ -1264,6 +1293,9 @@ use crate::rules::*;
 /// (Caution). `find_map` returns the first rule that fires;
 /// `unwrap_or(Safe)` covers the no-warning case.
 #[must_use]
+// The result is bound to a local so the temporary boxed closures, which
+// borrow from the enclosing scope, drop before it ends (borrow checker).
+#[allow(clippy::let_and_return)]
 pub fn evaluate_safety(
     ego: &EgoState,
     detections: &[Detection],

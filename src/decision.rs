@@ -14,7 +14,14 @@ use crate::rules::*;
 /// (Warning), which precedes the yellow and stale-green advisories
 /// (Caution). `find_map` returns the first rule that fires;
 /// `unwrap_or(Safe)` covers the no-warning case.
+///
+/// # Note on `let_and_return`
+/// The result is deliberately bound to a local before being returned: the
+/// boxed closures borrow from `ego`, `light`, `time_to_red`, and
+/// `lead_opt`, and binding the tail expression forces those temporaries to
+/// drop before the enclosing scope ends (required by the borrow checker).
 #[must_use]
+#[allow(clippy::let_and_return)]
 pub fn evaluate_safety(
     ego: &EgoState,
     detections: &[Detection],

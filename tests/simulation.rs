@@ -153,8 +153,8 @@ fn monte_carlo_10000_scenes_match_theorem_ground_truth() {
     println!();
     for (i, n) in names.iter().enumerate() {
         print!("{n:>9}: ");
-        for j in 0..4 {
-            print!("{:>9}", confusion[i][j]);
+        for value in confusion[i] {
+            print!("{value:>9}");
         }
         println!();
     }

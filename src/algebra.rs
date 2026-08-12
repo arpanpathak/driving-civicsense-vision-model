@@ -15,6 +15,11 @@ pub mod constants {
     pub const EPSILON: f32 = 0.1;
     /// Standard lane width for cut-in calculations (meters).
     pub const LANE_WIDTH: f32 = 3.5;
+    /// Time-to-red below which a yellow is treated as too short for a
+    /// comfortable stop (seconds).
+    pub const SHORT_YELLOW_THRESHOLD: f32 = 2.5;
+    /// Speed below which a lead vehicle is treated as stopped (m/s).
+    pub const STOPPED_SPEED_THRESHOLD: f32 = 1.0;
 }
 
 /// Computes the minimum stopping distance (Eq. 1).

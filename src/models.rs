@@ -40,11 +40,28 @@ pub struct Detection {
     pub turn_signal_active: bool,
 }
 
+/// COCO dataset class ids treated as motor vehicles by the engine.
+/// The engine reasons only about these classes; everything else is ignored.
+pub mod coco_vehicle_classes {
+    pub const CAR: u8 = 2;
+    pub const MOTORCYCLE: u8 = 3;
+    pub const BUS: u8 = 5;
+    pub const TRUCK: u8 = 7;
+}
+
+/// The vehicle classes the engine reasons about (COCO ids).
+pub const VEHICLE_CLASSES: [u8; 4] = [
+    coco_vehicle_classes::CAR,
+    coco_vehicle_classes::MOTORCYCLE,
+    coco_vehicle_classes::BUS,
+    coco_vehicle_classes::TRUCK,
+];
+
 impl Detection {
     /// Returns `true` if the detection belongs to a vehicle class.
     #[must_use]
     pub fn is_vehicle(&self) -> bool {
-        matches!(self.class_id, 2 | 3 | 5 | 7)
+        VEHICLE_CLASSES.contains(&self.class_id)
     }
 }
 

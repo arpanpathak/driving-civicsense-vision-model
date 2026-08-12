@@ -39,7 +39,10 @@ pub fn rule_lead(ego_speed: f32, lead: &LeadVehicle, time_to_red: f32) -> Option
     let d_req = stopping_distance(ego_speed);
 
     // Sub-rule 3a: leader is stopped and already inside the intersection.
-    if lead.speed < 1.0 && lead.distance < d_req && lead.is_in_intersection {
+    if lead.speed < constants::STOPPED_SPEED_THRESHOLD
+        && lead.distance < d_req
+        && lead.is_in_intersection
+    {
         return Some(WarningLevel::Critical);
     }
 
@@ -70,12 +73,16 @@ pub fn rule_cutin(detections: &[Detection], ego_speed: f32, time_to_red: f32) ->
 }
 
 /// Rule 5 (Section 4.6): Short-yellow advisory.
-/// A yellow with less than 2.5 s to red implies Caution.
-/// Kept after the Warning-level rules so it never masks them.
+/// A yellow with less than SHORT_YELLOW_THRESHOLD seconds to red implies
+/// Caution. Kept after the Warning-level rules so it never masks them.
 #[must_use]
 pub fn rule_yellow(light: LightState, time_to_red: f32) -> Option<WarningLevel> {
     match light {
-        LightState::Yellow if time_to_red < 2.5 => Some(WarningLevel::Caution),
+        LightState::Yellow
+        if time_to_red < constants::SHORT_YELLOW_THRESHOLD =>
+        {
+            Some(WarningLevel::Caution)
+        }
         _ => None,
     }
 }
