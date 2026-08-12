@@ -38,6 +38,11 @@ pub struct Detection {
     pub distance_to_ego: f32,
     pub lane: LanePosition,
     pub turn_signal_active: bool,
+    /// Number of consecutive frames this track has been observed.
+    /// Used by the cut-in rule to enforce a minimum observation window
+    /// (CUTIN_MIN_OBSERVATION_FRAMES), preventing single-frame false
+    /// positives from bounding-box jitter.
+    pub track_age: u32,
 }
 
 /// COCO dataset class ids treated as motor vehicles by the engine.
@@ -78,4 +83,46 @@ pub struct LeadVehicle {
     pub distance: f32,
     pub speed: f32,
     pub is_in_intersection: bool,
+}
+
+/// Driver-specific reaction-time profile for distributional analysis.
+///
+/// Models human perception-reaction time as a log-normal distribution
+/// parameterised by its mean and standard deviation. The conservative
+/// pipeline uses the 85th percentile (1.0 s); this struct enables
+/// sensitivity studies across the full human range (~0.5 s expectant
+/// to ~2.5 s surprised) and supports dynamic threshold adaptation
+/// for known-slow-reactor drivers.
+#[derive(Debug, Clone, Copy)]
+pub struct ReactionProfile {
+    /// Mean perception-reaction time (s).
+    pub mean: f32,
+    /// Standard deviation of reaction time (s).
+    pub std_dev: f32,
+}
+
+impl Default for ReactionProfile {
+    fn default() -> Self {
+        // These values mirror algebra::constants::REACTION_TIME_MEAN
+        // and REACTION_TIME_STD; duplicated here to keep models.rs
+        // free of a dependency on algebra.rs (CODING_STANDARDS §5).
+        const DEFAULT_REACTION_MEAN: f32 = 1.0;
+        const DEFAULT_REACTION_STD: f32 = 0.3;
+        Self {
+            mean: DEFAULT_REACTION_MEAN,
+            std_dev: DEFAULT_REACTION_STD,
+        }
+    }
+}
+
+impl ReactionProfile {
+    /// Returns the reaction time at a given z-score percentile.
+    ///
+    /// z = 0     -> median (mean)
+    /// z = 1.645 -> 95th percentile (~1.5 s)
+    /// z = -1.645 -> 5th percentile (~0.5 s)
+    #[must_use]
+    pub fn at_percentile(&self, z_score: f32) -> f32 {
+        (self.mean + z_score * self.std_dev).max(0.0)
+    }
 }

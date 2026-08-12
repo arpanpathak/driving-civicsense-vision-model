@@ -57,7 +57,9 @@ fn ground_truth(
         .iter()
         .find(|d| d.is_vehicle() && d.lane == LanePosition::Same);
     let lead_blocked = lead.is_some_and(|l| {
-        l.speed < 1.0 && l.distance_to_ego < d_req && l.distance_to_ego < INTERSECTION_LENGTH
+        l.speed < STOPPED_SPEED_THRESHOLD
+            && l.distance_to_ego < d_req
+            && l.distance_to_ego < INTERSECTION_LENGTH
     });
     let lead_follow = lead.is_some_and(|l| {
         clearance_time(l.distance_to_ego, l.speed) >= (time_to_red - SAFETY_MARGIN)
@@ -67,11 +69,13 @@ fn ground_truth(
         d.is_vehicle()
             && d.turn_signal_active
             && d.lane != LanePosition::Same
+            && d.track_age >= CUTIN_MIN_OBSERVATION_FRAMES
+            && d.lateral_speed.abs() <= CUTIN_MAX_LATERAL_SPEED
             && intrusion_time(d.lateral_speed) < time_to_red
             && d.distance_to_ego < d_req
     });
 
-    let short_yellow = light == LightState::Yellow && time_to_red < 2.5;
+    let short_yellow = light == LightState::Yellow && time_to_red < SHORT_YELLOW_THRESHOLD;
     let stale = light == LightState::Green && ego.distance_to_stop_line > d_req;
 
     if light == LightState::Red || dilemma || lead_blocked {
@@ -99,6 +103,11 @@ fn random_detections(rng: &mut Rng) -> Vec<Detection> {
                 distance_to_ego: rng.f(2.0, 60.0),
                 lane,
                 turn_signal_active: signal,
+                track_age: if signal {
+                    CUTIN_MIN_OBSERVATION_FRAMES
+                } else {
+                    0
+                },
             }
         })
         .collect()

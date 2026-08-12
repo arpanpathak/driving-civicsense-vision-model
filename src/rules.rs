@@ -58,6 +58,17 @@ pub fn rule_lead(ego_speed: f32, lead: &LeadVehicle, time_to_red: f32) -> Option
 /// Rule 4 (Theorem 6): Cut-in rule.
 /// Detects adjacent vehicles with turn signals that will intrude
 /// before the light changes.
+///
+/// # Latency condition (added per R2-6 audit)
+/// A cut-in vehicle must be observed for at least
+/// `CUTIN_MIN_OBSERVATION_FRAMES` consecutive frames before the rule
+/// fires. This prevents single-frame false positives from bounding-box
+/// jitter, which can simulate a spurious `turn_signal_active` flag on a
+/// stationary parked car or a detection artifact.
+///
+/// Additionally, the lateral speed is capped at `CUTIN_MAX_LATERAL_SPEED`;
+/// values above this are treated as detection artifacts (a vehicle cannot
+/// physically change lanes faster than ~4 m/s laterally).
 #[must_use]
 pub fn rule_cutin(
     detections: &[Detection],
@@ -68,7 +79,13 @@ pub fn rule_cutin(
 
     detections
         .iter()
-        .filter(|d| d.is_vehicle() && d.turn_signal_active && d.lane != LanePosition::Same)
+        .filter(|d| {
+            d.is_vehicle()
+                && d.turn_signal_active
+                && d.lane != LanePosition::Same
+                && d.track_age >= constants::CUTIN_MIN_OBSERVATION_FRAMES
+                && d.lateral_speed.abs() <= constants::CUTIN_MAX_LATERAL_SPEED
+        })
         .find(|d| {
             let t_intrude = intrusion_time(d.lateral_speed);
             t_intrude < time_to_red && d.distance_to_ego < d_req

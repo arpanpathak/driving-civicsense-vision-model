@@ -38,6 +38,11 @@ fn detection(
         distance_to_ego,
         lane,
         turn_signal_active,
+        track_age: if turn_signal_active {
+            CUTIN_MIN_OBSERVATION_FRAMES
+        } else {
+            0
+        },
     }
 }
 
