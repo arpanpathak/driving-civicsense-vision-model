@@ -132,8 +132,9 @@ annotated video. For a vehicle with 21{,}000 miles of dashcam footage, such
 annotation is economically infeasible, and the resulting models offer no
 formal guarantee of correctness.
 
-This paper proposes an alternative: a mathematically grounded, zero-training
-system. The perception layer (a YOLO-based object detector) supplies physical
+This paper proposes an alternative: a mathematically grounded system that
+requires zero training for the decision layer (the perception layer still
+requires camera calibration). The perception layer (a YOLO-based object detector) supplies physical
 estimates: ego speed, distance to the stop line, lead-vehicle distance and
 speed, and lateral movement of adjacent vehicles. The decision layer then
 applies the equations of motion to determine whether a safe stop or a safe
@@ -1383,7 +1384,10 @@ deliberately agnostic to how the inputs are obtained. When V2I is
 unavailable, a vision-based signal-phase classifier~\cite{behrendt2017} can
 supply the phase and a conservative estimate of time-to-red; any reduction
 in certainty degrades gracefully to the worst-case bound of
-Remark~\ref{rem:worstcase}. Moving the physical
+Remark~\ref{rem:worstcase}. The engine treats the input vector as a
+synchronized snapshot: estimates are assumed to refer to the same instant,
+and a residual staleness of one frame period (about $33$~ms at 30~fps) is
+absorbed by the $\pm 1.5$~m operating bound. Moving the physical
 bounds into the type system (e.g., constructors that reject impossible
 speeds or distances) is planned future work and would push a further part of
 this verification into the compiler.

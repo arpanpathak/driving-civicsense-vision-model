@@ -1079,7 +1079,11 @@ edition = &quot;<span class="num">2021</span>&quot;
     conditional statement: if the inputs satisfy the assumptions, the output is
     correct. Guaranteeing the inputs themselves (object detection, tracking,
     signal timing) is a perception problem, and the deterministic engine is
-    deliberately agnostic to how the inputs are obtained. Moving the physical
+    deliberately agnostic to how the inputs are obtained. The engine treats the
+    input vector as a synchronized snapshot: estimates are assumed to refer to
+    the same instant, and a residual staleness of one frame period (about
+    33&nbsp;ms at 30&nbsp;fps) is absorbed by the &plusmn;1.5&nbsp;m operating
+    bound. Moving the physical
     bounds into the type system (e.g., constructors that reject impossible speeds
     or distances) is planned future work and would push a further part of this
     verification into the compiler.</p>
