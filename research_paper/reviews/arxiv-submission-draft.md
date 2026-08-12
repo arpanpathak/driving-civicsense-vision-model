@@ -8,7 +8,7 @@ Ready-to-paste metadata and abstract for an arXiv submission. The companion PDF 
 |---|---|
 | Title | Deterministic Intersection Blockage Prediction: A Kinematic Framework with Formal Proofs and a Modular Rust Implementation |
 | Author | Arpan Pathak |
-| Affiliation | CivicSense Research |
+| Affiliation | Driving CivicSense Research |
 | Categories | `cs.CV` (Computer Vision and Pattern Recognition), `cs.RO` (Robotics), `eess.IV` (Image and Video Processing) |
 | Comments | 13 pages, 5 theorems with complete constructive proofs in the appendix, IEEE conference format (IEEEtran, 2-column); companion implementation at https://github.com/arpanpathak/driving-civicsense-vision-model |
 | Keywords | intersection blockage, dilemma zone, kinematic safety, formal verification, Rust, ADAS |
