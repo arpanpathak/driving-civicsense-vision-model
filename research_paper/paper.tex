@@ -101,7 +101,7 @@ video corpora, this work presents a deterministic framework based exclusively
 on kinematic constraints. The system ingests a sliding window of video frames
 from a forward-facing camera, applies object detection to obtain physical
 measurements (ego speed, stop-line distance, lead-vehicle state), and
-evaluates five formally derived criteria on those estimates. Each criterion is
+evaluates six single-responsibility criteria on those estimates. Each criterion is
 expressed as a theorem with a constructive proof; the complete formal
 development is given in Appendix~\ref{app:proofs}. The implementation is
 written in idiomatic Rust, adhering to SOLID principles, utilising exhaustive
@@ -164,7 +164,7 @@ The principal contributions are:
 The remainder of this paper is organised as follows.
 Section~\ref{sec:related} discusses related work.
 Section~\ref{sec:formulation} formalises the problem.
-Section~\ref{sec:kinematics} derives the kinematic model and states the five
+Section~\ref{sec:kinematics} derives the kinematic model and states the six
 theorems.
 Section~\ref{sec:arch} describes the system architecture and its Rust
 implementation.
@@ -880,13 +880,14 @@ either case the kinematic constraints are violated, so a warning is required.
 \subsection{Signal-State and Advisory Rules}
 \label{subsec:signal}
 
-Two operational rules complete the criterion set. First, an observed red
+Three operational rules complete the criterion set. First, an observed red
 signal makes blockage imminent by definition and must produce a
-\textsc{Critical} warning. A yellow signal with $\tred < 2.5$~s leaves
-insufficient time for a safe stop in most traffic and produces a
-\textsc{Caution}. Second, a stale-green heuristic issues a \textsc{Caution}
-when the green phase has been active long enough that the driver should
-prepare for a possible transition while still at a distance
+\textsc{Critical} warning (rule \texttt{rule\_red}). Second, a yellow
+signal with $\tred < 2.5$~s leaves insufficient time for a safe stop in most
+traffic and produces a \textsc{Caution} (rule \texttt{rule\_yellow}).
+Third, a stale-green heuristic issues a \textsc{Caution} (rule
+\texttt{rule\_stale}) when the green phase has been active long enough that
+the driver should prepare for a possible transition while still at a distance
 $\ds > \dreq(\ve)$ (i.e., while stopping remains feasible). These rules are
 stated directly in the implementation (Section~\ref{sec:arch}) rather than as
 additional theorems, since they encode operational policy rather than
@@ -897,7 +898,7 @@ kinematic law.
 
 The implementation is structured into four modules, each adhering to the
 Single Responsibility Principle (SRP). The decision engine is a functional
-pipeline that composes five independent checkers in descending severity order
+pipeline that composes six independent checkers in descending severity order
 (Figure~\ref{fig:arch}).
 
 \begin{figure*}[t]
@@ -926,31 +927,34 @@ pipeline that composes five independent checkers in descending severity order
   % --- expanded decision engine (below) ---------------------------
   \draw[gray!70, dashed, thick] (dec.south) -- (10.4, -1.2);
 
-  \node[pipe] (r1) at (9.5, -1.8) {rule\_dilemma\\Thm.~\ref{thm:dilemma}};
-  \node[pipe] (r2) at (9.5, -2.7) {rule\_light\\red $\to$ \textsc{Critical}};
+  \node[pipe] (r1) at (9.5, -1.8) {rule\_red\\red $\to$ \textsc{Critical}};
+  \node[pipe] (r2) at (9.5, -2.7) {rule\_dilemma\\Thm.~\ref{thm:dilemma}};
   \node[pipe] (r3) at (9.5, -3.6) {rule\_lead\\Thm.~\ref{thm:follow}};
   \node[pipe] (r4) at (9.5, -4.5) {rule\_cutin\\Thm.~\ref{thm:cutin}};
-  \node[pipe] (r5) at (9.5, -5.4) {rule\_stale\\advisory};
+  \node[pipe] (r5) at (9.5, -5.4) {rule\_yellow\\short yellow};
+  \node[pipe] (r6) at (9.5, -6.3) {rule\_stale\\advisory};
 
   \node[chip] (c1) at (11.5, -1.8) {\textsc{Critical}};
   \node[chip] (c2) at (11.5, -2.7) {\textsc{Critical}};
   \node[chip] (c3) at (11.5, -3.6) {\textsc{Warning}};
   \node[chip] (c4) at (11.5, -4.5) {\textsc{Warning}};
   \node[chip] (c5) at (11.5, -5.4) {\textsc{Caution}};
+  \node[chip] (c6) at (11.5, -6.3) {\textsc{Caution}};
 
   \draw[->, thick] (r1.east) -- (11.0, -1.8);
   \draw[->, thick] (r2.east) -- (11.0, -2.7);
   \draw[->, thick] (r3.east) -- (11.0, -3.6);
   \draw[->, thick] (r4.east) -- (11.0, -4.5);
   \draw[->, thick] (r5.east) -- (11.0, -5.4);
+  \draw[->, thick] (r6.east) -- (11.0, -6.3);
 
-  \node[draw=gray!60, dashed, rounded corners=4pt, fit=(c1)(c2)(c3)(c4)(c5),
+  \node[draw=gray!60, dashed, rounded corners=4pt, fit=(c1)(c2)(c3)(c4)(c5)(c6),
         inner sep=5pt] {};
-  \node[font=\scriptsize, align=left] at (13.2, -3.6) {\texttt{find\_map}:\\first match wins};
-  \node[font=\scriptsize, align=center] at (9.5, -6.2) {\texttt{unwrap\_or(\textsc{Safe})}};
+  \node[font=\scriptsize, align=left] at (13.2, -4.05) {\texttt{find\_map}:\\first match wins};
+  \node[font=\scriptsize, align=center] at (9.5, -7.1) {\texttt{unwrap\_or(\textsc{Safe})}};
 \end{tikzpicture}
 \caption{System architecture. Raw frames are processed by the perception
-layer into physical quantities; the decision engine evaluates five
+layer into physical quantities; the decision engine evaluates six
 single-responsibility rules in descending severity order and returns the
 first match (or \textsc{Safe} if none fires).}
 \label{fig:arch}
@@ -975,10 +979,14 @@ at 30~fps plus calibration tolerance at stop-line distances up to $60$~m;
 it is a conservative engineering bound to be confirmed by field
 calibration, not a theoretical guarantee. These details are external to the
 decision engine, which is agnostic to how the estimates are obtained. The
-companion repository ships the perception infrastructure (detection,
-tracking, video) and the decision engine modules listed here, with the
-exhaustive test suite of Section~\ref{sec:verif}; the end-to-end rig on
-vehicle hardware is the streaming ecosystem. In this paper the perception
+pieces ship as companion repositories: \texttt{civicsense-pi-stream}
+(camera capture and MJPEG streaming on the Pi Zero),
+\texttt{civicsense-stream-client} (YOLOv8n inference via the pure-Rust
+\texttt{candle} runtime, Deep SORT tracking, and distance estimation), and
+\texttt{civicsense-companion} (the Kotlin Multiplatform phone app). The
+decision engine modules listed here, with the exhaustive test suite of
+Section~\ref{sec:verif}, live in the main repository; the end-to-end rig on
+vehicle hardware is this streaming ecosystem. In this paper the perception
 layer is deliberately treated as an oracle: the formal guarantees are
 conditional on its outputs, and an end-to-end perception error model, with
 covariance propagation through the kinematics, is explicitly future work
@@ -1130,7 +1138,7 @@ pub fn intrusion_time(lateral_speed: f32) -> f32 {
 
 \subsection{Module: \texttt{rules.rs}}
 \label{sub:rules}
-This module contains five single-responsibility functions. Each function
+This module contains six single-responsibility functions. Each function
 takes the relevant state and returns \texttt{Option<WarningLevel>}; they are
 completely independent and deterministic.
 
@@ -1142,13 +1150,12 @@ completely independent and deterministic.
 use crate::algebra::*;
 use crate::models::*;
 
-/// Rule 1 (Section 4.6): Light state rule.
-/// Red implies Critical; short yellow implies Caution.
+/// Rule 1 (Section 4.6): Red-light rule.
+/// A red light implies Critical, unconditionally.
 #[must_use]
-pub fn rule_light(light: LightState, time_to_red: f32) -> Option<WarningLevel> {
+pub fn rule_red(light: LightState) -> Option<WarningLevel> {
     match light {
         LightState::Red => Some(WarningLevel::Critical),
-        LightState::Yellow if time_to_red < 2.5 => Some(WarningLevel::Caution),
         _ => None,
     }
 }
@@ -1207,7 +1214,18 @@ pub fn rule_cutin(detections: &[Detection], ego_speed: f32, time_to_red: f32) ->
         .map(|_| WarningLevel::Warning)
 }
 
-/// Rule 5 (Section 4.6): Worst-case green advisory.
+/// Rule 5 (Section 4.6): Short-yellow advisory.
+/// A yellow with less than 2.5 s to red implies Caution.
+/// Kept after the Warning-level rules so it never masks them.
+#[must_use]
+pub fn rule_yellow(light: LightState, time_to_red: f32) -> Option<WarningLevel> {
+    match light {
+        LightState::Yellow if time_to_red < 2.5 => Some(WarningLevel::Caution),
+        _ => None,
+    }
+}
+
+/// Rule 6 (Section 4.6): Worst-case green advisory.
 /// Engineering heuristic, deliberately excluded from the formal theorems:
 /// under the vision-only worst-case interpretation, a green may end at any
 /// frame, so advise Caution when a comfortable stop is no longer possible.
@@ -1229,7 +1247,7 @@ The orchestrator composes the rules using a functional pipeline
 severity so that the first matching rule is always the most urgent one.
 
 \begin{lstlisting}[language=Rust, caption=src/decision.rs]
-//! Decision engine pipeline. Composes five rules.
+//! Decision engine pipeline. Composes six rules.
 //! Adding a new rule requires inserting it into the vector.
 
 use crate::algebra::constants;
@@ -1240,10 +1258,11 @@ use crate::rules::*;
 /// warning.
 ///
 /// # Pipeline design
-/// Rules are ordered by descending severity: red light and the dilemma
-/// zone (Critical) precede the lead and cut-in rules (Warning), which
-/// precede the stale-green heuristic (Caution). `find_map` returns the
-/// first rule that fires; `unwrap_or(Safe)` covers the no-warning case.
+/// Rules are ordered strictly by descending severity: red light, the
+/// dilemma zone, and the lead rules (Critical) precede the cut-in rule
+/// (Warning), which precedes the yellow and stale-green advisories
+/// (Caution). `find_map` returns the first rule that fires;
+/// `unwrap_or(Safe)` covers the no-warning case.
 #[must_use]
 pub fn evaluate_safety(
     ego: &EgoState,
@@ -1261,14 +1280,14 @@ pub fn evaluate_safety(
             is_in_intersection: d.distance_to_ego < constants::INTERSECTION_LENGTH,
         });
 
-    // Build the severity-ordered pipeline. The dilemma rule precedes the
-    // light rule so a Critical dilemma state is never masked by the
-    // short-yellow Caution advisory.
+    // Build the severity-ordered pipeline. Each rule returns at most one
+    // level, and the order guarantees the first match is the most severe.
     let rules: Vec<Box<dyn Fn() -> Option<WarningLevel>>> = vec![
+        Box::new(|| rule_red(light)),
         Box::new(|| rule_dilemma(ego, time_to_red)),
-        Box::new(|| rule_light(light, time_to_red)),
         Box::new(|| lead_opt.and_then(|l| rule_lead(ego.speed, &l, time_to_red))),
         Box::new(|| rule_cutin(detections, ego.speed, time_to_red)),
+        Box::new(|| rule_yellow(light, time_to_red)),
         Box::new(|| rule_stale(light, ego)),
     ];
 
@@ -1341,8 +1360,8 @@ Table~\ref{tab:notation}).}
 \toprule
 \# & Scene summary & Firing rule & Expected level \\
 \midrule
-1 & Red light, any state & rule\_light & \textsc{Critical} \\
-2 & Yellow, $\tred=1.5$~s & rule\_light & \textsc{Caution} \\
+1 & Red light, any state & rule\_red & \textsc{Critical} \\
+2 & Yellow, $\tred=1.5$~s & rule\_yellow & \textsc{Caution} \\
 3 & Dilemma zone, $\ve{=}14$, $\ds{=}25$ & rule\_dilemma & \textsc{Critical} \\
 4 & Lead stopped inside box & rule\_lead (3a) & \textsc{Critical} \\
 5 & Slow lead, $\vl{=}5$, $\dl{=}20$ & rule\_lead (3b) & \textsc{Warning} \\
@@ -1368,7 +1387,13 @@ space, it is verified by exhaustive enumeration: the companion test suite
 light, time-to-red, speed, distance, and detection pattern dimensions, and
 asserts the eight canonical scenarios of Table~\ref{tab:scenarios}, red-light
 dominance, dilemma-zone criticality, severity ordering, and the algebraic
-monotonicity of Corollary~\ref{cor:mono}.
+monotonicity of Corollary~\ref{cor:mono}. A Monte Carlo simulation of
+$10{,}000$ random intersection approaches (\texttt{tests/simulation.rs},
+reproducible seed) compares the pipeline output against an independent oracle
+derived directly from the theorem conditions of Section~\ref{sec:kinematics}.
+The resulting confusion matrix is perfectly diagonal: the pipeline agrees
+with the theorem oracle on every scene, over a distribution of $41.9\%$ safe,
+$13.5\%$ caution, $12.0\%$ warning, and $32.6\%$ critical states.
 
 \paragraph{Sensitivity to braking capability.} The stopping boundary
 $\ds = \dreq(\ve) = \ve^2/(2\ab)$ scales with the inverse of the assumed

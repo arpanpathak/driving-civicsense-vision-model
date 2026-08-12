@@ -5,13 +5,12 @@
 use crate::algebra::*;
 use crate::models::*;
 
-/// Rule 1 (Section 4.6): Light state rule.
-/// Red implies Critical; short yellow implies Caution.
+/// Rule 1 (Section 4.6): Red-light rule.
+/// A red light implies Critical, unconditionally.
 #[must_use]
-pub fn rule_light(light: LightState, time_to_red: f32) -> Option<WarningLevel> {
+pub fn rule_red(light: LightState) -> Option<WarningLevel> {
     match light {
         LightState::Red => Some(WarningLevel::Critical),
-        LightState::Yellow if time_to_red < 2.5 => Some(WarningLevel::Caution),
         _ => None,
     }
 }
@@ -70,7 +69,18 @@ pub fn rule_cutin(detections: &[Detection], ego_speed: f32, time_to_red: f32) ->
         .map(|_| WarningLevel::Warning)
 }
 
-/// Rule 5 (Section 4.6): Worst-case green advisory.
+/// Rule 5 (Section 4.6): Short-yellow advisory.
+/// A yellow with less than 2.5 s to red implies Caution.
+/// Kept after the Warning-level rules so it never masks them.
+#[must_use]
+pub fn rule_yellow(light: LightState, time_to_red: f32) -> Option<WarningLevel> {
+    match light {
+        LightState::Yellow if time_to_red < 2.5 => Some(WarningLevel::Caution),
+        _ => None,
+    }
+}
+
+/// Rule 6 (Section 4.6): Worst-case green advisory.
 /// Engineering heuristic, deliberately excluded from the formal theorems:
 /// under the vision-only worst-case interpretation, a green may end at any
 /// frame, so advise Caution when a comfortable stop is no longer possible.

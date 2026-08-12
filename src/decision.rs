@@ -1,4 +1,4 @@
-//! Decision engine pipeline. Composes five rules.
+//! Decision engine pipeline. Composes six rules.
 //! Adding a new rule requires inserting it into the vector.
 
 use crate::algebra::constants;
@@ -9,11 +9,10 @@ use crate::rules::*;
 /// warning.
 ///
 /// # Pipeline design
-/// Rules are ordered by descending severity: the dilemma zone (Critical)
-/// and red light (Critical) precede the lead and cut-in rules (Warning),
-/// which precede the stale-green heuristic (Caution). The dilemma rule
-/// runs before the yellow advisory so a Critical state is never masked
-/// by a Caution. `find_map` returns the first rule that fires;
+/// Rules are ordered strictly by descending severity: red light, the
+/// dilemma zone, and the lead rules (Critical) precede the cut-in rule
+/// (Warning), which precedes the yellow and stale-green advisories
+/// (Caution). `find_map` returns the first rule that fires;
 /// `unwrap_or(Safe)` covers the no-warning case.
 #[must_use]
 pub fn evaluate_safety(
@@ -32,12 +31,14 @@ pub fn evaluate_safety(
             is_in_intersection: d.distance_to_ego < constants::INTERSECTION_LENGTH,
         });
 
-    // Build the severity-ordered pipeline.
+    // Build the severity-ordered pipeline. Each rule returns at most one
+    // level, and the order guarantees the first match is the most severe.
     let rules: Vec<Box<dyn Fn() -> Option<WarningLevel>>> = vec![
+        Box::new(|| rule_red(light)),
         Box::new(|| rule_dilemma(ego, time_to_red)),
-        Box::new(|| rule_light(light, time_to_red)),
         Box::new(|| lead_opt.and_then(|l| rule_lead(ego.speed, &l, time_to_red))),
         Box::new(|| rule_cutin(detections, ego.speed, time_to_red)),
+        Box::new(|| rule_yellow(light, time_to_red)),
         Box::new(|| rule_stale(light, ego)),
     ];
 
