@@ -753,7 +753,8 @@ window.MathJaxFallback = true;
     up to 60&nbsp;m; it is a conservative engineering bound to be confirmed by field
     calibration, not a theoretical guarantee. The pieces ship as companion
     repositories: <code>civicsense-pi-stream</code> (camera capture and MJPEG
-    streaming on the Pi Zero), <code>civicsense-stream-client</code> (YOLOv8n
+    streaming on the Pi Zero, or direct CSI connection to the
+    Jetson), <code>civicsense-stream-client</code> (YOLOv8n
     inference via the pure-Rust <code>candle</code> runtime, Deep SORT tracking,
     and distance estimation), and <code>civicsense-companion</code> (the Kotlin
     Multiplatform phone app). The decision engine modules listed here, with the
@@ -1527,11 +1528,13 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
     <p><b>Acknowledgment.</b> The author thanks the CivicSense community for field
     data and feedback, and gratefully acknowledges NVIDIA for the Jetson Orin
     Nano Super platform (67 INT8 TOPS, 8 GB unified memory, 7–15 W), which
-    serves as the primary deployment target for the inference pipeline. The
-    Jetson ecosystem's support for ONNX Runtime, INT8 quantisation, and
-    low-power edge deployment made the real-time distributed pipeline
-    (Pico → Pi Zero → Jetson → KMP companion) feasible at a price point
-    that makes civic AI accessible. Source code, this paper (PDF and LaTeX),
+    serves as the primary deployment target for the inference pipeline. With a
+    CSI camera connected directly to the Jetson, the full stack runs on a
+    single board with no network hops. The Jetson ecosystem's support for ONNX
+    Runtime, INT8 quantisation, and low-power edge deployment make civic AI
+    accessible at a $249 price point; a distributed fallback
+    (Pico → Pi Zero → Pi 5 + Hailo-8L) remains available for deployments
+    without a Jetson. Source code, this paper (PDF and LaTeX),
     and the HTML proofs appendix are available at
     <a href="https://github.com/arpanpathak/driving-civicsense-vision-model/tree/main/research_paper">github.com/arpanpathak/driving-civicsense-vision-model</a>
     and rendered at

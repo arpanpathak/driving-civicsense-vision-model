@@ -1085,7 +1085,8 @@ it is a conservative engineering bound to be confirmed by field
 calibration, not a theoretical guarantee. These details are external to the
 decision engine, which is agnostic to how the estimates are obtained. The
 pieces ship as companion repositories: \texttt{civicsense-pi-stream}
-(camera capture and MJPEG streaming on the Pi Zero),
+(camera capture and MJPEG streaming on the Pi Zero, or direct CSI
+connection to the Jetson),
 \texttt{civicsense-stream-client} (YOLOv8n inference via the pure-Rust
 \texttt{candle} runtime, Deep SORT tracking, and distance estimation), and
 \texttt{civicsense-companion} (the Kotlin Multiplatform phone app). The
@@ -1877,11 +1878,13 @@ The author thanks the CivicSense community for field data and feedback,
 and gratefully acknowledges NVIDIA for the Jetson Orin Nano Super
 platform (67 INT8 TOPS, 8 GB unified memory, 7--15 W), which serves as
 the primary deployment target for the inference pipeline described in
-this work. The Jetson ecosystem's support for ONNX Runtime, INT8
-quantisation, and low-power edge deployment made the real-time
-distributed pipeline architecture (Pico $\rightarrow$ Pi Zero
-$\rightarrow$ Jetson $\rightarrow$ KMP companion) feasible at a price
-point that makes civic AI accessible.
+this work. With a CSI camera connected directly to the Jetson, the
+full stack (YOLO, Deep SORT, kinematic decision engine, and gRPC alert
+dispatch) runs on a single board with no network hops. The Jetson
+ecosystem's support for ONNX Runtime, INT8 quantisation, and low-power
+edge deployment make civic AI accessible at a \$249 price point;
+a distributed fallback (Pico $\rightarrow$ Pi Zero $\rightarrow$
+Pi~5~+~Hailo-8L) remains available for deployments without a Jetson.
 Source code, this paper (PDF and \LaTeX{}), and the HTML proofs appendix are
 available at
 \url{https://github.com/arpanpathak/driving-civicsense-vision-model/tree/main/research_paper}
