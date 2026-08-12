@@ -1512,9 +1512,9 @@ verification suite.
 \section{Implementation Pseudocode}
 \label{sec:pseudocode}
 
-The algorithms below present the system in language-agnostic form,
-matching the notation of Table~I.  The Rust implementation (58~tests,
-zero dependencies for core logic) is at
+The algorithms below present the system in language-agnostic form
+with C-style block braces, matching the notation of Table~I.  The Rust
+implementation (58~tests, zero dependencies for core logic) is at
 \url{https://github.com/arpanpathak/driving-civicsense-vision-model}.
 
 % ── A. Data Types ─────────────────────────────────────────────────
@@ -1525,15 +1525,16 @@ zero dependencies for core logic) is at
 1 & \textbf{enum} $\ell \in \{Red, Yellow, Green, Unknown\}$ \quad (traffic-light phase)\\
 2 & \textbf{enum} $\lambda \in \{same, left, right, unknown\}$ \quad (lane position)\\
 3 & \textbf{enum} $w \in \{Safe, Caution, Warning, Critical\}$ \quad ($Safe < Caution < Warning < Critical$)\\
-4 & \textbf{record} $Detection$ \quad (tracked object from YOLO + Deep SORT)\\
-5 & \qquad $bbox \in \mathbb{R}^4$ \quad $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ in px\\
+4 & \textbf{record} $Detection$ \{ \quad (tracked object from YOLO + Deep SORT)\\
+5 & \qquad $bbox \in \mathbb{R}^4$ \quad $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ px\\
 6 & \qquad $cls \in \{2,3,5,7\}$ \quad (COCO: car, motorcycle, bus, truck)\\
 7 & \qquad $v,\ v_{lat} \in \mathbb{R}_{\ge 0}$ \quad (longitudinal / lateral speed, m/s)\\
 8 & \qquad $d \in \mathbb{R}_{> 0}$ \quad (distance from ego front bumper, m)\\
 9 & \qquad $lane \in \lambda$;\; $signal \in \{true, false\}$\\
 10 & \qquad $age \in \mathbb{N}$ \quad (consecutive frames; gates cut-in rule)\\
-11 & \textbf{record} $EgoState$: $v_e \in \mathbb{R}_{\ge 0}$;\; $d_s \in \mathbb{R}_{> 0}$ \quad (speed; dist. to line)\\
-12 & \textbf{record} $LeadVehicle$: $d_l, v_l \in \mathbb{R}_{\ge 0}$;\; $in\_box \in \{true, false\}$ \quad ($d_l < L_i$?)
+11 & \}\\
+12 & \textbf{record} $EgoState$ \{ $v_e \in \mathbb{R}_{\ge 0}$;\; $d_s \in \mathbb{R}_{> 0}$ \} \quad (speed; dist. to line)\\
+13 & \textbf{record} $LeadVehicle$ \{ $d_l, v_l \in \mathbb{R}_{\ge 0}$;\; $in\_box \in \{true, false\}$ \} \quad ($d_l < L_i$?)
 \end{tabular}\end{center}
 
 % ── B. Kinematics ─────────────────────────────────────────────────
@@ -1543,14 +1544,17 @@ zero dependencies for core logic) is at
 \begin{tabular}{@{}r@{\hspace{0.7em}}p{3.0in}@{}}
 1 & \textbf{constants} $a_b = 4.0$,\; $t_r = 1.0$,\; $L_i = 16$,\; $\epsilon = 0.8$,\; $W_l = 3.5$,\; $k_{\min} = 3$ \quad (Table I)\\
 2 &\\
-3 & $\textsc{StoppingDistance}(v_e)$:\\
-4 & \qquad \textbf{return} $v_e \cdot t_r + v_e^2 / (2 a_b)$ \quad (Eq.~1)\\
-5 &\\
-6 & $\textsc{ClearanceTime}(d_s, v)$:\\
-7 & \qquad \textbf{return} $(d_s + L_i) / (v + 0.1)$ \quad (Eq.~2)\\
-8 &\\
-9 & $\textsc{IntrusionTime}(v_{lat})$:\\
-10 & \qquad \textbf{return} $W_l / (|v_{lat}| + 0.1)$ \quad (Eq.~4)
+3 & $\textsc{StoppingDistance}(v_e)$ \{ \quad (Eq.~1)\\
+4 & \qquad \textbf{return} $v_e \cdot t_r + v_e^2 / (2 a_b)$\\
+5 & \}\\
+6 &\\
+7 & $\textsc{ClearanceTime}(d_s, v)$ \{ \quad (Eq.~2)\\
+8 & \qquad \textbf{return} $(d_s + L_i) / (v + 0.1)$\\
+9 & \}\\
+10 &\\
+11 & $\textsc{IntrusionTime}(v_{lat})$ \{ \quad (Eq.~4)\\
+12 & \qquad \textbf{return} $W_l / (|v_{lat}| + 0.1)$\\
+13 & \}
 \end{tabular}\end{center}
 
 % ── C. Rules ──────────────────────────────────────────────────────
@@ -1558,31 +1562,39 @@ zero dependencies for core logic) is at
 
 \begin{center}\scriptsize
 \begin{tabular}{@{}r@{\hspace{0.7em}}p{3.0in}@{}}
-1 & $\textsc{RuleRed}(\ell)$:\\
+1 & $\textsc{RuleRed}(\ell)$ \{ \quad (Section IV-G)\\
 2 & \qquad \textbf{if} $\ell = Red$ \textbf{then return} $Critical$ \textbf{else return} $\bot$\\
-3 &\\
-4 & $\textsc{RuleDilemma}(v_e, d_s, t_y)$:\\
-5 & \qquad $d_{req} \gets \textsc{StoppingDistance}(v_e)$;\; $t_c \gets \textsc{ClearanceTime}(d_s, v_e)$\\
-6 & \qquad \textbf{if} $d_s \le d_{req}$ \textbf{and} $t_c \ge t_y - \epsilon$ \textbf{then return} $Critical$ \textbf{else return} $\bot$\\
-7 &\\
-8 & $\textsc{RuleLead}(v_e, d_l, v_l, in\_box, t_y)$:\\
-9 & \qquad $d_{req} \gets \textsc{StoppingDistance}(v_e)$\\
-10 & \qquad \textbf{if} $v_l < 1.0$ \textbf{and} $d_l < d_{req}$ \textbf{and} $in\_box$ \textbf{then return} $Critical$ \quad (stopped in box)\\
-11 & \qquad \textbf{if} $t_c^{eff} \ge t_y - \epsilon$ \textbf{and} $d_l < d_{req}$ \textbf{then return} $Warning$ \quad (clearance failure)\\
-12 & \qquad \textbf{return} $\bot$\\
-13 &\\
-14 & $\textsc{RuleCutin}(D, v_e, t_y)$:\\
-15 & \qquad $d_{req} \gets \textsc{StoppingDistance}(v_e)$\\
-16 & \qquad \textbf{for} $o \in D$ \textbf{with} $o.cls \in \{2,3,5,7\}$:\\
-17 & \qquad\quad \textbf{if} $o.signal$ \textbf{and} $o.lane \neq same$ \textbf{and} $o.age \ge k_{\min}$ \textbf{and} $|o.v_{lat}| \le 4.0$:\\
-18 & \qquad\quad\quad \textbf{if} $\textsc{IntrusionTime}(o.v_{lat}) < t_y$ \textbf{and} $o.d < d_{req}$ \textbf{then return} $Warning$\\
-19 & \qquad \textbf{return} $\bot$\\
-20 &\\
-21 & $\textsc{RuleYellow}(\ell, t_y)$:\\
-22 & \qquad \textbf{if} $\ell = Yellow$ \textbf{and} $t_y < 2.5$ \textbf{then return} $Caution$ \textbf{else return} $\bot$\\
-23 &\\
-24 & $\textsc{RuleStale}(\ell, v_e, d_s)$:\\
-25 & \qquad \textbf{if} $\ell = Green$ \textbf{and} $d_s > \textsc{StoppingDistance}(v_e)$ \textbf{then return} $Caution$ \textbf{else return} $\bot$
+3 & \}\\
+4 &\\
+5 & $\textsc{RuleDilemma}(v_e, d_s, t_y)$ \{ \quad (Theorem 4)\\
+6 & \qquad $d_{req} \gets \textsc{StoppingDistance}(v_e)$;\; $t_c \gets \textsc{ClearanceTime}(d_s, v_e)$\\
+7 & \qquad \textbf{if} $d_s \le d_{req}$ \textbf{and} $t_c \ge t_y - \epsilon$ \textbf{then return} $Critical$ \textbf{else return} $\bot$\\
+8 & \}\\
+9 &\\
+10 & $\textsc{RuleLead}(v_e, d_l, v_l, in\_box, t_y)$ \{ \quad (Theorem 5)\\
+11 & \qquad $d_{req} \gets \textsc{StoppingDistance}(v_e)$\\
+12 & \qquad \textbf{if} $v_l < 1.0$ \textbf{and} $d_l < d_{req}$ \textbf{and} $in\_box$ \textbf{then return} $Critical$ \quad (leader stopped in box)\\
+13 & \qquad \textbf{if} $t_c^{eff} \ge t_y - \epsilon$ \textbf{and} $d_l < d_{req}$ \textbf{then return} $Warning$ \quad (clearance failure)\\
+14 & \qquad \textbf{return} $\bot$\\
+15 & \}\\
+16 &\\
+17 & $\textsc{RuleCutin}(D, v_e, t_y)$ \{ \quad (Theorem 6)\\
+18 & \qquad $d_{req} \gets \textsc{StoppingDistance}(v_e)$\\
+19 & \qquad \textbf{for} $o \in D$ \textbf{with} $o.cls \in \{2,3,5,7\}$ \{ \quad ($k_{\min} = 3$ frames, $v_{lat}^{\max} = 4.0$)\\
+20 & \qquad\quad \textbf{if} $o.signal$ \textbf{and} $o.lane \neq same$ \textbf{and} $o.age \ge k_{\min}$ \textbf{and} $|o.v_{lat}| \le 4.0$ \{ \quad (latency filter)\\
+21 & \qquad\qquad \textbf{if} $\textsc{IntrusionTime}(o.v_{lat}) < t_y$ \textbf{and} $o.d < d_{req}$ \textbf{then return} $Warning$\\
+22 & \qquad\quad \}\\
+23 & \qquad \}\\
+24 & \qquad \textbf{return} $\bot$\\
+25 & \}\\
+26 &\\
+27 & $\textsc{RuleYellow}(\ell, t_y)$ \{ \quad (Section IV-G)\\
+28 & \qquad \textbf{if} $\ell = Yellow$ \textbf{and} $t_y < 2.5$ \textbf{then return} $Caution$ \textbf{else return} $\bot$\\
+29 & \}\\
+30 &\\
+31 & $\textsc{RuleStale}(\ell, v_e, d_s)$ \{ \quad (Section IV-G)\\
+32 & \qquad \textbf{if} $\ell = Green$ \textbf{and} $d_s > \textsc{StoppingDistance}(v_e)$ \textbf{then return} $Caution$ \textbf{else return} $\bot$\\
+33 & \}
 \end{tabular}\end{center}
 
 % ── D. Pipeline ───────────────────────────────────────────────────
@@ -1590,16 +1602,18 @@ zero dependencies for core logic) is at
 
 \begin{center}\scriptsize
 \begin{tabular}{@{}r@{\hspace{0.7em}}p{3.0in}@{}}
-1 & $\textsc{EvaluateSafety}(v_e, d_s, D, \ell, t_y)$:\\
+1 & $\textsc{EvaluateSafety}(v_e, d_s, D, \ell, t_y)$ \{ \quad (Section V)\\
 2 & \qquad $l \gets$ \textbf{first} $o \in D$ \textbf{with} $o.lane = same$ \textbf{and} $o.cls \in \{2,3,5,7\}$\\
-3 & \qquad \textbf{if} $l \neq \bot$: $d_l \gets l.d$;\; $v_l \gets l.v$;\; $in\_box \gets (l.d < L_i)$\\
-4 & \qquad $R \gets [\,\textsc{RuleRed}(\ell),\ \textsc{RuleDilemma}(v_e, d_s, t_y),$\\
+3 & \qquad \textbf{if} $l \neq \bot$ \{ $d_l \gets l.d$;\; $v_l \gets l.v$;\; $in\_box \gets (l.d < L_i)$ \}\\
+4 & \qquad $R \gets [\;\textsc{RuleRed}(\ell),\ \textsc{RuleDilemma}(v_e, d_s, t_y),$\\
 5 & \qquad\qquad $\textsc{RuleLead}(v_e, d_l, v_l, in\_box, t_y),\ \textsc{RuleCutin}(D, v_e, t_y),$\\
-5 & \qquad\qquad $\textsc{RuleYellow}(\ell, t_y),\ \textsc{RuleStale}(\ell, v_e, d_s)\,]$\\
-6 & \qquad \textbf{for} $r \in R$:\\
-7 & \qquad\quad $w \gets r()$\\
-8 & \qquad\quad \textbf{if} $w \neq \bot$ \textbf{then return} $w$ \quad (first match $=$ most severe)\\
-9 & \qquad \textbf{return} $Safe$
+6 & \qquad\qquad $\textsc{RuleYellow}(\ell, t_y),\ \textsc{RuleStale}(\ell, v_e, d_s)\;]$\\
+7 & \qquad \textbf{for} $r \in R$ \{ \quad (severity-ordered; first match wins)\\
+8 & \qquad\quad $w \gets r()$\\
+9 & \qquad\quad \textbf{if} $w \neq \bot$ \textbf{then return} $w$\\
+10 & \qquad \}\\
+11 & \qquad \textbf{return} $Safe$\\
+12 & \}
 \end{tabular}\end{center}
 
 % ── E. Main ───────────────────────────────────────────────────────
@@ -1607,14 +1621,16 @@ zero dependencies for core logic) is at
 
 \begin{center}\scriptsize
 \begin{tabular}{@{}r@{\hspace{0.7em}}p{3.0in}@{}}
-1 & $\textsc{run}(source)$:\\
-2 & \qquad \textbf{for} frame $f$ \textbf{from} $CameraCapture(source)$:\\
+1 & $\textsc{run}(source)$ \{ \quad (Section V)\\
+2 & \qquad \textbf{for} frame $f$ \textbf{from} $CameraCapture(source)$ \{ \quad (CSI camera or video)\\
 3 & \qquad\quad $D \gets YOLODetect(f)$ \quad (ONNX, INT8)\\
 4 & \qquad\quad $T \gets DeepSORT(D)$ \quad (Kalman + Hungarian)\\
 5 & \qquad\quad $w \gets \textsc{EvaluateSafety}(v_e, d_s, T, \ell, t_y)$\\
 6 & \qquad\quad \textbf{if} $w \neq Safe$ \textbf{then} $DispatchAlert(w)$\\
-7 & $\textsc{collect}(source, rate)$: save frames at $rate$ Hz for training\\
-8 & $\textsc{train}$: build dataset $\to$ GPU train $\to$ export ONNX $\to$ validate
+7 & \qquad \}\\
+8 & \}\\
+9 & $\textsc{collect}(source, rate)$ \{ save frames at $rate$ Hz for training \}\\
+10 & $\textsc{train}$ \{ build dataset $\to$ GPU train $\to$ export ONNX $\to$ validate \}
 \end{tabular}\end{center}
 
 \section{Conclusion}
