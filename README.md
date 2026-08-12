@@ -291,7 +291,7 @@ git submodule update --init --recursive
 
 | Layer | Technology |
 |-------|-----------|
-| **Pipeline Language** | Rust (edition 2021) |
+| **Pipeline Language** | Rust (edition 2024) |
 | Detection | YOLOv8n / YOLOv11n via ONNX Runtime |
 | Tracking | Deep SORT (custom Rust, Kalman filter + IoU matching) |
 | Geometry | Pinhole camera model |

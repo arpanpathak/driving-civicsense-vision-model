@@ -136,7 +136,9 @@ fn exhaustive_input_space_is_total_and_deterministic() {
     ];
     let times = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0];
     let speeds = [0.0, 2.0, 5.0, 8.0, 10.0, 14.0, 18.0, 20.0];
-    let distances = [5.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 38.0, 40.0, 50.0, 60.0];
+    let distances = [
+        5.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 38.0, 40.0, 50.0, 60.0,
+    ];
     let patterns: [(&str, Vec<Detection>); 5] = [
         ("none", no_detections()),
         ("stopped lead", stopped_lead_in_box()),
@@ -158,7 +160,10 @@ fn exhaustive_input_space_is_total_and_deterministic() {
                         let e = ego(speed, dist);
                         let a = evaluate_safety(&e, dets, light, ttr);
                         let b = evaluate_safety(&e, dets, light, ttr);
-                        assert_eq!(a, b, "non-deterministic result for {light:?} {ttr} {speed} {dist}");
+                        assert_eq!(
+                            a, b,
+                            "non-deterministic result for {light:?} {ttr} {speed} {dist}"
+                        );
                         count += 1;
                     }
                 }

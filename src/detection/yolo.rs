@@ -93,13 +93,7 @@ struct LetterBox {
 ///
 /// Returns a CHW float32 tensor (normalized to [0, 1]) plus the scale and
 /// padding needed to map detections back to the original image.
-fn letterbox(
-    frame: &[u8],
-    src_w: u32,
-    src_h: u32,
-    dst_w: u32,
-    dst_h: u32,
-) -> LetterBox {
+fn letterbox(frame: &[u8], src_w: u32, src_h: u32, dst_w: u32, dst_h: u32) -> LetterBox {
     let scale = (dst_w as f32 / src_w as f32).min(dst_h as f32 / src_h as f32);
     let new_w = (src_w as f32 * scale).round() as u32;
     let new_h = (src_h as f32 * scale).round() as u32;
@@ -109,7 +103,10 @@ fn letterbox(
     let src_img =
         image::RgbImage::from_raw(src_w, src_h, frame.to_vec()).expect("valid frame buffer");
     let resized = image::imageops::resize(
-        &src_img, new_w, new_h, image::imageops::FilterType::CatmullRom,
+        &src_img,
+        new_w,
+        new_h,
+        image::imageops::FilterType::CatmullRom,
     );
 
     let mut tensor = vec![114.0f32 / 255.0; (dst_w * dst_h * 3) as usize];
@@ -125,7 +122,12 @@ fn letterbox(
         }
     }
 
-    LetterBox { tensor, scale, pad_x, pad_y }
+    LetterBox {
+        tensor,
+        scale,
+        pad_x,
+        pad_y,
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -206,12 +208,16 @@ impl AnchorGrid {
             .iter()
             .flat_map(|&stride| {
                 let grid = input_size / stride;
-                (0..grid)
-                    .flat_map(move |gy| (0..grid).map(move |gx| (gx as f32, gy as f32, stride as f32)))
+                (0..grid).flat_map(move |gy| {
+                    (0..grid).map(move |gx| (gx as f32, gy as f32, stride as f32))
+                })
             })
             .collect();
         let n = anchors.len();
-        Self { anchors, num_predictions: n }
+        Self {
+            anchors,
+            num_predictions: n,
+        }
     }
 
     /// Decode raw YOLOv8 output tensor into candidate bounding boxes.
@@ -258,7 +264,12 @@ impl AnchorGrid {
             })
             .filter(|(x1, y1, x2, y2, _, _)| (x2 - x1) >= 1.0 && (y2 - y1) >= 1.0)
             .map(|(x1, y1, x2, y2, class_id, confidence)| BBox {
-                x1, y1, x2, y2, confidence, class_id,
+                x1,
+                y1,
+                x2,
+                y2,
+                confidence,
+                class_id,
             })
             .collect()
     }
@@ -302,7 +313,11 @@ impl YoloDetector {
                     .map_err(|e| format!("ort init: {e}"))?
                     .commit_from_file(path)
                     .map_err(|e| format!("Failed to load model '{}': {e}", config.model_path))?;
-                log::info!("Model loaded: {}x{} input", config.input_width, config.input_height);
+                log::info!(
+                    "Model loaded: {}x{} input",
+                    config.input_width,
+                    config.input_height
+                );
                 Some(s)
             }
             false => {
@@ -316,7 +331,11 @@ impl YoloDetector {
         };
 
         let anchor_grid = AnchorGrid::new(config.input_width);
-        Ok(Self { config, session, anchor_grid })
+        Ok(Self {
+            config,
+            session,
+            anchor_grid,
+        })
     }
 
     /// Run inference on a single video frame.
@@ -334,17 +353,32 @@ impl YoloDetector {
             None => return Ok(Vec::new()),
         };
 
-        let LetterBox { tensor, scale, pad_x, pad_y } =
-            letterbox(frame, width, height, self.config.input_width, self.config.input_height);
+        let LetterBox {
+            tensor,
+            scale,
+            pad_x,
+            pad_y,
+        } = letterbox(
+            frame,
+            width,
+            height,
+            self.config.input_width,
+            self.config.input_height,
+        );
 
         let array = ndarray::Array4::from_shape_vec(
-            (1, 3, self.config.input_height as usize, self.config.input_width as usize),
+            (
+                1,
+                3,
+                self.config.input_height as usize,
+                self.config.input_width as usize,
+            ),
             tensor,
         )
         .map_err(|e| format!("tensor shape: {e}"))?;
 
-        let input_tensor = ort::value::Tensor::from_array(array)
-            .map_err(|e| format!("tensor from array: {e}"))?;
+        let input_tensor =
+            ort::value::Tensor::from_array(array).map_err(|e| format!("tensor from array: {e}"))?;
 
         let outputs = session
             .run(ort::inputs![input_tensor])
@@ -370,8 +404,14 @@ impl YoloDetector {
             )),
             true => {
                 let candidates = self.anchor_grid.decode(
-                    output_data, num_classes, self.config.conf_threshold,
-                    width, height, scale, pad_x, pad_y,
+                    output_data,
+                    num_classes,
+                    self.config.conf_threshold,
+                    width,
+                    height,
+                    scale,
+                    pad_x,
+                    pad_y,
                 );
 
                 let kept = non_max_suppression(candidates, self.config.iou_threshold);
@@ -379,8 +419,12 @@ impl YoloDetector {
                 let detections: Vec<Detection> = kept
                     .into_iter()
                     .map(|b| Detection {
-                        x1: b.x1, y1: b.y1, x2: b.x2, y2: b.y2,
-                        confidence: b.confidence, class_id: b.class_id,
+                        x1: b.x1,
+                        y1: b.y1,
+                        x2: b.x2,
+                        y2: b.y2,
+                        confidence: b.confidence,
+                        class_id: b.class_id,
                     })
                     .collect();
 
@@ -445,9 +489,30 @@ mod tests {
     #[test]
     fn test_nms_keeps_best() {
         let candidates = vec![
-            BBox { x1: 10.0, y1: 10.0, x2: 100.0, y2: 100.0, confidence: 0.9, class_id: 0 },
-            BBox { x1: 15.0, y1: 15.0, x2: 95.0, y2: 95.0, confidence: 0.8, class_id: 0 },
-            BBox { x1: 200.0, y1: 200.0, x2: 300.0, y2: 300.0, confidence: 0.7, class_id: 0 },
+            BBox {
+                x1: 10.0,
+                y1: 10.0,
+                x2: 100.0,
+                y2: 100.0,
+                confidence: 0.9,
+                class_id: 0,
+            },
+            BBox {
+                x1: 15.0,
+                y1: 15.0,
+                x2: 95.0,
+                y2: 95.0,
+                confidence: 0.8,
+                class_id: 0,
+            },
+            BBox {
+                x1: 200.0,
+                y1: 200.0,
+                x2: 300.0,
+                y2: 300.0,
+                confidence: 0.7,
+                class_id: 0,
+            },
         ];
         let kept = non_max_suppression(candidates, 0.5);
         assert_eq!(kept.len(), 2);

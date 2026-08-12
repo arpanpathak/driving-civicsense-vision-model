@@ -59,7 +59,11 @@ pub fn rule_lead(ego_speed: f32, lead: &LeadVehicle, time_to_red: f32) -> Option
 /// Detects adjacent vehicles with turn signals that will intrude
 /// before the light changes.
 #[must_use]
-pub fn rule_cutin(detections: &[Detection], ego_speed: f32, time_to_red: f32) -> Option<WarningLevel> {
+pub fn rule_cutin(
+    detections: &[Detection],
+    ego_speed: f32,
+    time_to_red: f32,
+) -> Option<WarningLevel> {
     let d_req = stopping_distance(ego_speed);
 
     detections
@@ -78,9 +82,7 @@ pub fn rule_cutin(detections: &[Detection], ego_speed: f32, time_to_red: f32) ->
 #[must_use]
 pub fn rule_yellow(light: LightState, time_to_red: f32) -> Option<WarningLevel> {
     match light {
-        LightState::Yellow
-        if time_to_red < constants::SHORT_YELLOW_THRESHOLD =>
-        {
+        LightState::Yellow if time_to_red < constants::SHORT_YELLOW_THRESHOLD => {
             Some(WarningLevel::Caution)
         }
         _ => None,

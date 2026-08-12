@@ -106,7 +106,11 @@ impl LaneSpeedAnalyzer {
             frame_width: config.camera.frame_width as f32,
             focal_length: config.camera.focal_length,
             vehicle_width_m: 1.8,
-            lanes: [LaneState::default(), LaneState::default(), LaneState::default()],
+            lanes: [
+                LaneState::default(),
+                LaneState::default(),
+                LaneState::default(),
+            ],
             alpha: 0.3,
         }
     }
@@ -202,11 +206,8 @@ impl LaneSpeedAnalyzer {
             };
 
             self.lanes[lane_idx].avg_speed = avg_speed;
-            self.lanes[lane_idx].smoothed_speed = low_pass_filter(
-                avg_speed,
-                self.lanes[lane_idx].smoothed_speed,
-                self.alpha,
-            );
+            self.lanes[lane_idx].smoothed_speed =
+                low_pass_filter(avg_speed, self.lanes[lane_idx].smoothed_speed, self.alpha);
             self.lanes[lane_idx].prev_distances = curr.to_vec();
         }
     }

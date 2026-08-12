@@ -131,10 +131,7 @@ pub fn low_pass_filter(value: f32, prev_value: f32, alpha: f32) -> f32 {
 /// let iou = compute_iou((0.0, 0.0, 10.0, 10.0), (0.0, 0.0, 10.0, 10.0));
 /// assert!((iou - 1.0).abs() < 1e-6);
 /// ```
-pub fn compute_iou(
-    a: (f32, f32, f32, f32),
-    b: (f32, f32, f32, f32),
-) -> f32 {
+pub fn compute_iou(a: (f32, f32, f32, f32), b: (f32, f32, f32, f32)) -> f32 {
     let (ax1, ay1, ax2, ay2) = a;
     let (bx1, by1, bx2, by2) = b;
 
@@ -151,11 +148,7 @@ pub fn compute_iou(
     let b_area = (bx2 - bx1) * (by2 - by1);
     let union = a_area + b_area - inter;
 
-    if union <= 0.0 {
-        0.0
-    } else {
-        inter / union
-    }
+    if union <= 0.0 { 0.0 } else { inter / union }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

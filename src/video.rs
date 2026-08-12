@@ -102,9 +102,13 @@ pub fn open_source(
     match kind {
         SourceKind::Video => open_video_file(Path::new(source)),
         SourceKind::Image => open_single_image(Path::new(source)),
-        SourceKind::Directory => open_image_directory(Path::new(source), default_width, default_height),
+        SourceKind::Directory => {
+            open_image_directory(Path::new(source), default_width, default_height)
+        }
         SourceKind::Camera => open_camera(default_width, default_height),
-        SourceKind::V4l2Device(dev_path) => open_v4l2_device(&dev_path, default_width, default_height),
+        SourceKind::V4l2Device(dev_path) => {
+            open_v4l2_device(&dev_path, default_width, default_height)
+        }
     }
 }
 
@@ -198,25 +202,21 @@ fn has_tool(name: &str) -> bool {
 /// Capture a single frame via an external camera tool, decode it, and return
 /// the raw RGB buffer.
 fn capture_frame_via(tool: &str, args: &[&str], capture_path: &Path) -> Option<Vec<u8>> {
-    let status = std::process::Command::new(tool)
-        .args(args)
-        .output();
+    let status = std::process::Command::new(tool).args(args).output();
 
     match status {
-        Ok(output) if output.status.success() => {
-            match image::open(capture_path) {
-                Ok(img) => {
-                    let rgb = img.into_rgb8();
-                    let buffer = rgb.into_raw();
-                    let _ = std::fs::remove_file(capture_path);
-                    Some(buffer)
-                }
-                Err(e) => {
-                    log::error!("Failed to decode captured image: {e}");
-                    None
-                }
+        Ok(output) if output.status.success() => match image::open(capture_path) {
+            Ok(img) => {
+                let rgb = img.into_rgb8();
+                let buffer = rgb.into_raw();
+                let _ = std::fs::remove_file(capture_path);
+                Some(buffer)
             }
-        }
+            Err(e) => {
+                log::error!("Failed to decode captured image: {e}");
+                None
+            }
+        },
         Ok(output) => {
             let stderr = String::from_utf8_lossy(&output.stderr);
             log::error!("{tool} failed: {stderr}");
@@ -235,10 +235,7 @@ fn capture_frame_via(tool: &str, args: &[&str], capture_path: &Path) -> Option<V
 /// 1. `libcamera-still`, modern Raspberry Pi OS
 /// 2. `raspistill`, legacy Raspberry Pi OS
 /// 3. If neither is found, logs setup instructions and returns a single dummy frame.
-fn open_camera(
-    default_width: u32,
-    default_height: u32,
-) -> Result<(FrameIter, u32, u32), String> {
+fn open_camera(default_width: u32, default_height: u32) -> Result<(FrameIter, u32, u32), String> {
     // Determine available backend.
     let tool = if has_tool("libcamera-still") {
         log::info!("Raspberry Pi camera detected (libcamera)");
@@ -247,15 +244,16 @@ fn open_camera(
         log::info!("Raspberry Pi camera detected (raspistill)");
         "raspistill"
     } else {
-        log::warn!(
-            "No camera backend found. Use a video file, or install libcamera-apps on Pi."
-        );
-        return Ok((once_iter(dummy_frame(default_width, default_height)), default_width, default_height));
+        log::warn!("No camera backend found. Use a video file, or install libcamera-apps on Pi.");
+        return Ok((
+            once_iter(dummy_frame(default_width, default_height)),
+            default_width,
+            default_height,
+        ));
     };
 
     let tmp_dir = std::env::temp_dir().join("civicsense_capture");
-    std::fs::create_dir_all(&tmp_dir)
-        .map_err(|e| format!("Cannot create temp dir: {e}"))?;
+    std::fs::create_dir_all(&tmp_dir).map_err(|e| format!("Cannot create temp dir: {e}"))?;
 
     let mut frame_idx: u64 = 0;
     let w = default_width;
@@ -323,7 +321,11 @@ fn open_v4l2_device(
         "V4L2 device capture not yet implemented. \
          Use a video file or the libcamera backend."
     );
-    Ok((once_iter(dummy_frame(default_width, default_height)), default_width, default_height))
+    Ok((
+        once_iter(dummy_frame(default_width, default_height)),
+        default_width,
+        default_height,
+    ))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -335,12 +337,7 @@ fn open_v4l2_device(
 /// # Errors
 /// Returns `Err` if the buffer dimensions are invalid or the file cannot be
 /// written.
-pub fn save_frame(
-    buffer: &[u8],
-    width: u32,
-    height: u32,
-    path: &Path,
-) -> Result<(), String> {
+pub fn save_frame(buffer: &[u8], width: u32, height: u32, path: &Path) -> Result<(), String> {
     let img = image::RgbImage::from_raw(width, height, buffer.to_vec())
         .ok_or_else(|| "Failed to create image from raw buffer".to_string())?;
 

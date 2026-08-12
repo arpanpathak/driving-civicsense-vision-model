@@ -118,39 +118,64 @@ enum TrainCommand {
 // ─────────────────────────────────────────────────────────────────────────────
 
 fn main() {
-    env_logger::Builder::from_env(
-        env_logger::Env::default().default_filter_or("info"),
-    )
-    .format_timestamp_millis()
-    .init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .format_timestamp_millis()
+        .init();
 
     match Cli::parse().command {
-        Commands::Run { source, config, visualize, ego_speed } => {
-            let result = Pipeline::new(&source, &config, visualize, ego_speed)
-                .and_then(|mut p| p.run());
+        Commands::Run {
+            source,
+            config,
+            visualize,
+            ego_speed,
+        } => {
+            let result =
+                Pipeline::new(&source, &config, visualize, ego_speed).and_then(|mut p| p.run());
             if let Err(e) = result {
                 log::error!("Pipeline failed: {e}");
                 std::process::exit(1);
             }
         }
-        Commands::Collect { source, output, rate, max_frames, .. } => {
-            let result = Collector::new(&source, &output, rate, max_frames)
-                .and_then(|mut c| c.run());
+        Commands::Collect {
+            source,
+            output,
+            rate,
+            max_frames,
+            ..
+        } => {
+            let result =
+                Collector::new(&source, &output, rate, max_frames).and_then(|mut c| c.run());
             if let Err(e) = result {
                 log::error!("Data collection failed: {e}");
                 std::process::exit(1);
             }
         }
         Commands::Train(cmd) => match cmd {
-            TrainCommand::Prepare { dataset, split, val_fraction, output } => {
+            TrainCommand::Prepare {
+                dataset,
+                split,
+                val_fraction,
+                output,
+            } => {
                 let result = run_train_prepare(&dataset, split.as_deref(), val_fraction, &output);
                 if let Err(e) = result {
                     log::error!("Dataset preparation failed: {e}");
                     std::process::exit(1);
                 }
             }
-            TrainCommand::Run { data, model, epochs, batch, imgsz, device, project, name } => {
-                let result = run_train_run(&data, &model, epochs, batch, imgsz, &device, &project, &name);
+            TrainCommand::Run {
+                data,
+                model,
+                epochs,
+                batch,
+                imgsz,
+                device,
+                project,
+                name,
+            } => {
+                let result = run_train_run(
+                    &data, &model, epochs, batch, imgsz, &device, &project, &name,
+                );
                 if let Err(e) = result {
                     log::error!("Training failed: {e}");
                     std::process::exit(1);
@@ -172,7 +197,12 @@ fn main() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// `civicsense train prepare`: validate/split dataset, write YAML config.
-fn run_train_prepare(dataset: &str, split: Option<&str>, val_fraction: f64, output: &str) -> Result<(), String> {
+fn run_train_prepare(
+    dataset: &str,
+    split: Option<&str>,
+    val_fraction: f64,
+    output: &str,
+) -> Result<(), String> {
     let dataset_path = std::path::Path::new(dataset);
 
     if let Some(source) = split {
@@ -250,7 +280,12 @@ struct Pipeline {
 }
 
 impl Pipeline {
-    fn new(source: &str, config_path: &str, visualize: bool, ego_speed: f32) -> Result<Self, String> {
+    fn new(
+        source: &str,
+        config_path: &str,
+        visualize: bool,
+        ego_speed: f32,
+    ) -> Result<Self, String> {
         let config = Config::load_or_default(config_path);
         log::info!("Config loaded. Model: {}", config.model.path);
 
@@ -261,8 +296,11 @@ impl Pipeline {
             config.tracking.max_cosine_distance,
         );
 
-        let (frame_iter, frame_width, frame_height) =
-            video::open_source(source, config.camera.frame_width, config.camera.frame_height)?;
+        let (frame_iter, frame_width, frame_height) = video::open_source(
+            source,
+            config.camera.frame_width,
+            config.camera.frame_height,
+        )?;
 
         let intersection_analyzer = IntersectionAnalyzer::new(&config, frame_width, frame_height);
         let lane_speed_analyzer = LaneSpeedAnalyzer::new(&config);
@@ -273,11 +311,10 @@ impl Pipeline {
                 .map_err(|e| format!("Cannot create output dir: {e}"))?;
         }
 
-        log::info!("Pipeline started. Source: {source}, Resolution: {frame_width}x{frame_height}, Visualize: {visualize}");
         log::info!(
-            "Model available: {}",
-            detector.is_model_available()
+            "Pipeline started. Source: {source}, Resolution: {frame_width}x{frame_height}, Visualize: {visualize}"
         );
+        log::info!("Model available: {}", detector.is_model_available());
 
         Ok(Self {
             detector,
@@ -299,7 +336,10 @@ impl Pipeline {
         loop {
             match (self.frame_iter)() {
                 None => {
-                    log::info!("End of video source. Processed {} frames.", self.frame_count);
+                    log::info!(
+                        "End of video source. Processed {} frames.",
+                        self.frame_count
+                    );
                     return Ok(());
                 }
                 Some((buffer, _)) => {
@@ -316,19 +356,28 @@ impl Pipeline {
     /// stop gracefully, or `Err` on failure.
     fn process_frame(&mut self, frame_buffer: &[u8]) -> Result<bool, String> {
         let dt_secs = 1.0 / self.config.camera.fps as f32;
-        let detections = self.detector.detect(frame_buffer, self.frame_width, self.frame_height)?;
+        let detections = self
+            .detector
+            .detect(frame_buffer, self.frame_width, self.frame_height)?;
         let tracks = self.tracker.update(&detections);
 
-        let intersection_alerts = self.intersection_analyzer
-            .analyze(&detections, self.ego_speed, dt_secs);
-        let lane_alerts = self.lane_speed_analyzer
+        let intersection_alerts =
+            self.intersection_analyzer
+                .analyze(&detections, self.ego_speed, dt_secs);
+        let lane_alerts = self
+            .lane_speed_analyzer
             .analyze(&tracks, self.ego_speed, dt_secs);
 
         log_intersection_alerts(&intersection_alerts);
         log_lane_alerts(&lane_alerts);
 
         if self.visualize && !detections.is_empty() {
-            self.render_frame(&detections, &intersection_alerts, &lane_alerts, frame_buffer);
+            self.render_frame(
+                &detections,
+                &intersection_alerts,
+                &lane_alerts,
+                frame_buffer,
+            );
         }
 
         self.frame_count += 1;
@@ -355,21 +404,33 @@ impl Pipeline {
         let class_names = self.config.model.classes.clone();
 
         visualization::draw_detections(
-            &mut viz, self.frame_width, self.frame_height, detections, &class_names,
+            &mut viz,
+            self.frame_width,
+            self.frame_height,
+            detections,
+            &class_names,
         );
 
         if !intersection_alerts.is_empty() {
             visualization::draw_alert_text(
-                &mut viz, self.frame_width, self.frame_height, "STOP SIGN VIOLATION",
+                &mut viz,
+                self.frame_width,
+                self.frame_height,
+                "STOP SIGN VIOLATION",
             );
         }
         if !lane_alerts.is_empty() {
             visualization::draw_alert_text(
-                &mut viz, self.frame_width, self.frame_height, "MERGE RIGHT REMINDER",
+                &mut viz,
+                self.frame_width,
+                self.frame_height,
+                "MERGE RIGHT REMINDER",
             );
         }
 
-        let out_path = self.viz_output_dir.join(format!("frame_{:06}.jpg", self.frame_count));
+        let out_path = self
+            .viz_output_dir
+            .join(format!("frame_{:06}.jpg", self.frame_count));
         if let Err(e) = video::save_frame(&viz, self.frame_width, self.frame_height, &out_path) {
             log::warn!("Failed to save visualization frame: {e}");
         }
@@ -407,10 +468,21 @@ impl Collector {
         log::info!("Data collection started. Source: {source} -> {output_dir}/");
         log::info!(
             "Resolution: {frame_width}x{frame_height}, Rate: {rate} fps, Max frames: {}",
-            if max_frames == 0 { "unlimited".into() } else { max_frames.to_string() }
+            if max_frames == 0 {
+                "unlimited".into()
+            } else {
+                max_frames.to_string()
+            }
         );
 
-        Ok(Self { frame_iter, frame_width, frame_height, output_path, min_interval_ms, max_frames })
+        Ok(Self {
+            frame_iter,
+            frame_width,
+            frame_height,
+            output_path,
+            min_interval_ms,
+            max_frames,
+        })
     }
 
     fn run(&mut self) -> Result<(), String> {
@@ -477,16 +549,30 @@ impl Collector {
 fn log_intersection_alerts(alerts: &[IntersectionAlert]) {
     for alert in alerts {
         match alert {
-            IntersectionAlert::StopSignViolation { confidence, distance_to_stop_line, ego_speed } => {
+            IntersectionAlert::StopSignViolation {
+                confidence,
+                distance_to_stop_line,
+                ego_speed,
+            } => {
                 log::warn!(
                     "STOP SIGN VIOLATION! conf={:.2}, dist={:.1}ft, speed={:.1}mph",
-                    confidence, distance_to_stop_line, ego_speed
+                    confidence,
+                    distance_to_stop_line,
+                    ego_speed
                 );
             }
-            IntersectionAlert::BlockedIntersection { confidence, occupancy_pct, distance_to_stop_line, ego_speed } => {
+            IntersectionAlert::BlockedIntersection {
+                confidence,
+                occupancy_pct,
+                distance_to_stop_line,
+                ego_speed,
+            } => {
                 log::warn!(
                     "BLOCKED INTERSECTION! conf={:.2}, occupancy={:.1}%, dist={:.1}ft, speed={:.1}mph",
-                    confidence, occupancy_pct, distance_to_stop_line, ego_speed
+                    confidence,
+                    occupancy_pct,
+                    distance_to_stop_line,
+                    ego_speed
                 );
             }
         }
@@ -497,7 +583,8 @@ fn log_lane_alerts(alerts: &[LaneSpeedAlert]) {
     for alert in alerts {
         log::warn!(
             "MERGE RIGHT REMINDER! Right lane is {:.1} mph faster (for {:.1}s)",
-            alert.speed_diff_mph, alert.duration_secs
+            alert.speed_diff_mph,
+            alert.duration_secs
         );
     }
 }

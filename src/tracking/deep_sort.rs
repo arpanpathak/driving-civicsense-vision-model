@@ -375,7 +375,11 @@ impl MultiObjectTracker {
 
     /// Greedily assign detections to tracks from candidate list.
     /// Returns indices of unmatched detections.
-    fn apply_matches(&mut self, detections: &[Detection], matches: &[(usize, usize, f32)]) -> Vec<usize> {
+    fn apply_matches(
+        &mut self,
+        detections: &[Detection],
+        matches: &[(usize, usize, f32)],
+    ) -> Vec<usize> {
         let mut used_trk = vec![false; self.tracks.len()];
         let mut used_det = vec![false; detections.len()];
 

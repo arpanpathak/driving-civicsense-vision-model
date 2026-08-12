@@ -48,7 +48,8 @@ fn ground_truth(
 ) -> WarningLevel {
     let d_req = stopping_distance(ego.speed);
     let cannot_stop = ego.distance_to_stop_line <= d_req;
-    let cannot_clear = clearance_time(ego.distance_to_stop_line, ego.speed) >= (time_to_red - SAFETY_MARGIN);
+    let cannot_clear =
+        clearance_time(ego.distance_to_stop_line, ego.speed) >= (time_to_red - SAFETY_MARGIN);
     let dilemma = cannot_stop && cannot_clear;
 
     let lead = dets

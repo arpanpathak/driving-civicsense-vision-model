@@ -205,8 +205,7 @@ impl Dataset {
             root.join("labels").join("val"),
         ];
         for d in &dirs {
-            fs::create_dir_all(d)
-                .map_err(|e| format!("Cannot create '{:?}': {e}", d))?;
+            fs::create_dir_all(d).map_err(|e| format!("Cannot create '{:?}': {e}", d))?;
         }
 
         // Copy files (same filesystem = fast reflink copies).
@@ -217,10 +216,12 @@ impl Dataset {
                     .ok_or_else(|| "Bad filename".to_string())?;
                 let dest_img = img_dir.join(fname);
                 let dest_lbl = lbl_dir.join(fname).with_extension("txt");
-                fs::copy(img_path, &dest_img)
-                    .map_err(|e| format!("Cannot copy '{:?}' -> '{:?}': {e}", img_path, dest_img))?;
-                fs::copy(lbl_path, &dest_lbl)
-                    .map_err(|e| format!("Cannot copy '{:?}' -> '{:?}': {e}", lbl_path, dest_lbl))?;
+                fs::copy(img_path, &dest_img).map_err(|e| {
+                    format!("Cannot copy '{:?}' -> '{:?}': {e}", img_path, dest_img)
+                })?;
+                fs::copy(lbl_path, &dest_lbl).map_err(|e| {
+                    format!("Cannot copy '{:?}' -> '{:?}': {e}", lbl_path, dest_lbl)
+                })?;
             }
             Ok::<_, String>(())
         };
@@ -362,7 +363,10 @@ impl TrainingRun {
             .map_err(|e| format!("Failed to export ONNX: {e}"))?;
 
         if !export_status.success() {
-            return Err(format!("ONNX export failed (exit code: {:?})", export_status.code()));
+            return Err(format!(
+                "ONNX export failed (exit code: {:?})",
+                export_status.code()
+            ));
         }
 
         // ── 5. Validate ONNX with `ort` ─────────────────────────────
@@ -400,8 +404,8 @@ pub fn validate_onnx(path: &Path) -> Result<(), String> {
     let array = ndarray::Array4::from_shape_vec(input_shape, dummy)
         .map_err(|e| format!("Dummy tensor shape: {e}"))?;
 
-    let tensor = ort::value::Tensor::from_array(array)
-        .map_err(|e| format!("Tensor from array: {e}"))?;
+    let tensor =
+        ort::value::Tensor::from_array(array).map_err(|e| format!("Tensor from array: {e}"))?;
 
     let _outputs = session
         .run(ort::inputs![tensor])
@@ -461,8 +465,14 @@ fn validate_labels(dir: &Path) -> Result<(), String> {
                 ));
             }
             for (i, p) in parts.iter().enumerate() {
-                p.parse::<f32>()
-                    .map_err(|_| format!("'{:?}' line {} field {}: not a float", path, lineno + 1, i + 1))?;
+                p.parse::<f32>().map_err(|_| {
+                    format!(
+                        "'{:?}' line {} field {}: not a float",
+                        path,
+                        lineno + 1,
+                        i + 1
+                    )
+                })?;
             }
         }
     }

@@ -151,18 +151,18 @@ impl IntersectionAnalyzer {
         alerts: &mut Vec<IntersectionAlert>,
     ) {
         const MIN_CONFIDENCE: f32 = 0.5;
-        for sign in detections.iter().filter(|d| d.class_id == 0 && d.confidence >= MIN_CONFIDENCE) {
+        for sign in detections
+            .iter()
+            .filter(|d| d.class_id == 0 && d.confidence >= MIN_CONFIDENCE)
+        {
             let pixel_width = (sign.x2 - sign.x1).abs();
             if pixel_width < 1.0 {
                 continue;
             }
 
-            let distance = estimate_distance(
-                pixel_width,
-                self.stop_sign_width_m,
-                self.focal_length,
-            )
-            .clamp(1.0, 200.0);
+            let distance =
+                estimate_distance(pixel_width, self.stop_sign_width_m, self.focal_length)
+                    .clamp(1.0, 200.0);
 
             if distance <= self.config.stop_sign_warning_distance
                 && ego_speed >= self.config.stop_sign_warning_speed
@@ -258,9 +258,9 @@ mod tests {
             make_det(3, 640.0, 0.0, 1280.0, 360.0, 0.9),
         ];
         let alerts = analyzer.analyze(&dets, 20.0, 0.033);
-        let blocked = alerts.iter().any(|a| {
-            matches!(a, IntersectionAlert::BlockedIntersection { .. })
-        });
+        let blocked = alerts
+            .iter()
+            .any(|a| matches!(a, IntersectionAlert::BlockedIntersection { .. }));
         assert!(blocked, "Expected BlockedIntersection alert");
     }
 }
