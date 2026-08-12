@@ -17,10 +17,13 @@ use civicsense::decision::evaluate_safety;
 use civicsense::models::*;
 use civicsense::rules::{rule_cutin, rule_dilemma, rule_lead, rule_red, rule_stale, rule_yellow};
 
-/// Deterministic xorshift64 RNG, so the simulation is reproducible.
+/// Deterministic xorshift64 pseudo-random number generator, seeded
+/// with a fixed constant so the simulation is bit-for-bit
+/// reproducible across runs and machines.
 struct Rng(u64);
 
 impl Rng {
+    /// Returns the next `u64` in the xorshift64 sequence.
     fn next(&mut self) -> u64 {
         let mut x = self.0;
         x ^= x << 13;
@@ -30,10 +33,13 @@ impl Rng {
         x
     }
 
+    /// Returns a uniformly distributed `f32` in the half-open
+    /// interval `[lo, hi)`.
     fn f(&mut self, lo: f32, hi: f32) -> f32 {
         lo + (self.next() as f32 / u64::MAX as f32) * (hi - lo)
     }
 
+    /// Returns a random element from the given slice (panics if empty).
     fn pick<T: Copy>(&mut self, items: &[T]) -> T {
         items[(self.next() % items.len() as u64) as usize]
     }
@@ -89,6 +95,12 @@ fn ground_truth(
     }
 }
 
+/// Generates 0–3 random vehicle detections with uniform lane
+/// assignment and 25 % probability of an active turn signal.
+///
+/// Signal-active detections receive a plausible lateral speed
+/// (0.5–3.0 m/s) and full `track_age` credit so they pass the
+/// cut-in latency filter.
 fn random_detections(rng: &mut Rng) -> Vec<Detection> {
     let n = rng.next() % 4; // 0..=3 vehicles
     (0..n)
@@ -184,16 +196,28 @@ fn monte_carlo_10000_scenes_match_theorem_ground_truth() {
 /// This is a baseline comparison of the design choices themselves: a rule
 /// with a large first-fire share carries the decision burden; a rule whose
 /// removal flips many scenes is load-bearing.
+/// Which rule in the severity-ordered pipeline fired first for a
+/// given scene.  The variant order mirrors the pipeline order
+/// (most severe first).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum RuleIdx {
+    /// [`rule_red`] fired — Critical.
     Red,
+    /// [`rule_dilemma`] fired — Critical.
     Dilemma,
+    /// [`rule_lead`] fired — Critical or Warning.
     Lead,
+    /// [`rule_cutin`] fired — Warning.
     Cutin,
+    /// [`rule_yellow`] fired — Caution.
     Yellow,
+    /// [`rule_stale`] fired — Caution.
     Stale,
 }
 
+/// Determines which rule fires first (if any) for a given scene,
+/// matching the severity order of [`evaluate_safety`].  Used by the
+/// ablation test to compute per-rule first-fire shares.
 fn first_rule(ego: &EgoState, dets: &[Detection], light: LightState, ttr: f32) -> Option<RuleIdx> {
     let lead_opt = dets
         .iter()
@@ -227,7 +251,16 @@ fn first_rule(ego: &EgoState, dets: &[Detection], light: LightState, ttr: f32) -
     None
 }
 
-/// Runs the severity-ordered pipeline with one rule optionally removed.
+/// Runs the severity-ordered pipeline with one rule optionally
+/// removed.
+///
+/// When `skip` is `Some(rule)`, that rule is treated as if it
+/// returned `None` (did not fire), and the next rule in severity
+/// order is evaluated.  When `skip` is `None`, the behaviour is
+/// identical to [`evaluate_safety`].
+///
+/// Used by the ablation test to measure how many scenes change
+/// their warning level when a specific rule is removed.
 fn evaluate_skip(
     ego: &EgoState,
     dets: &[Detection],

@@ -17,6 +17,8 @@ use civicsense::algebra::{clearance_time, stopping_distance};
 use civicsense::decision::evaluate_safety;
 use civicsense::models::*;
 
+/// Constructs an [`EgoState`] from its two scalar fields: speed (m/s)
+/// and distance to the stop line (m).
 fn ego(speed: f32, distance_to_stop_line: f32) -> EgoState {
     EgoState {
         speed,
@@ -24,6 +26,14 @@ fn ego(speed: f32, distance_to_stop_line: f32) -> EgoState {
     }
 }
 
+/// Constructs a [`Detection`] for a passenger car with the given
+/// longitudinal speed, distance, lane position, and turn-signal
+/// status.
+///
+/// When `turn_signal_active` is true the lateral speed is set to
+/// 1.2 m/s (a realistic lane-change rate) and `track_age` to
+/// [`CUTIN_MIN_OBSERVATION_FRAMES`] so the cut-in rule's latency
+/// filter is satisfied.  Otherwise both are zero.
 fn detection(
     speed: f32,
     distance_to_ego: f32,
@@ -46,22 +56,33 @@ fn detection(
     }
 }
 
-/// Helper: a `Detection` also carries `is_in_intersection` implicitly via
-/// `distance_to_ego < INTERSECTION_LENGTH` in the decision engine, so the
-/// flag is ignored there. We keep it for clarity in scenario construction.
+/// Scenario helper: a lead vehicle stopped 10 m ahead, inside the
+/// 16 m intersection box.  Used in canonical scenarios row 4
+/// (lead stopped → Critical).
+///
+/// Note: the detection's `distance_to_ego < INTERSECTION_LENGTH`
+/// is what the engine uses for `is_in_intersection`, so no explicit
+/// flag is needed.
 #[allow(dead_code)]
 fn stopped_lead_in_box() -> Vec<Detection> {
     vec![detection(0.0, 10.0, LanePosition::Same, false)]
 }
 
+/// Scenario helper: a slow-moving lead vehicle (5 m/s, 20 m ahead).
+/// Used in canonical scenarios row 5 (slow lead → Warning).
 fn slow_lead() -> Vec<Detection> {
     vec![detection(5.0, 20.0, LanePosition::Same, false)]
 }
 
+/// Scenario helper: a vehicle in the left lane with an active turn
+/// signal, 15 m ahead at 18 m/s with lateral speed 1.2 m/s.
+/// Used in canonical scenarios row 6 (cut-in → Warning).
 fn cutin_left() -> Vec<Detection> {
     vec![detection(18.0, 15.0, LanePosition::Left, true)]
 }
 
+/// Empty detection list, used when a scenario involves only the ego
+/// vehicle and the traffic signal.
 fn no_detections() -> Vec<Detection> {
     Vec::new()
 }
