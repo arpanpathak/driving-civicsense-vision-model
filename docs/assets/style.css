@@ -344,3 +344,11 @@ ol.reviewer-response li {
   margin-bottom: 0.75rem;
   line-height: 1.65;
 }
+
+/* Project tagline (paper header) */
+.paper-header .tagline {
+  margin: 10px 0 14px;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}

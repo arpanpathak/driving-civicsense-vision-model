@@ -5,6 +5,11 @@
 # CivicSense
 
 > *Aftermarket AI vision for your windshield. Voice-guided, edge-native, socially aware.*
+>
+> *don't trust your vision if it's blurry,*
+> *don't rush the yellow in a hurry,*
+> *the math is proven, the call is true,*
+> *better safe than sorry, let it clear, then pass through.*
 
 **Edge AI perception for intersection discipline, lane courtesy, road hazard alerts, and cooperative safety, running on 3D-printed smart glasses or dashcam hardware.**
 
