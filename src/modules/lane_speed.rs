@@ -178,7 +178,7 @@ impl LaneSpeedAnalyzer {
 
             let distance_m =
                 estimate_distance(pixel_width, self.vehicle_width_m, self.focal_length);
-            if distance_m >= 0.5 && distance_m <= 200.0 {
+            if (0.5..=200.0).contains(&distance_m) {
                 lane_dists[lane].push(distance_m);
             }
         }
@@ -188,9 +188,8 @@ impl LaneSpeedAnalyzer {
 
     /// Update per-lane smoothed speeds from distance measurements.
     fn compute_lane_speeds(&mut self, lane_dists: &[Vec<f32>; 3], dt_secs: f32) {
-        for lane_idx in 0..3 {
+        for (lane_idx, curr) in lane_dists.iter().enumerate() {
             let prev = &self.lanes[lane_idx].prev_distances;
-            let curr = &lane_dists[lane_idx];
 
             let avg_speed = if !prev.is_empty() && !curr.is_empty() && dt_secs > 0.001 {
                 let n = prev.len().min(curr.len());

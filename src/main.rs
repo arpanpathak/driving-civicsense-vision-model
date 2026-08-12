@@ -196,6 +196,7 @@ fn run_train_prepare(dataset: &str, split: Option<&str>, val_fraction: f64, outp
 }
 
 /// `civicsense train run`: train YOLO on GPU, export ONNX, validate.
+#[allow(clippy::too_many_arguments)] // CLI plumbing; grouped config would obscure the subcommand
 fn run_train_run(
     data: &str,
     model: &str,
@@ -428,15 +429,15 @@ impl Collector {
                 }
             };
 
-            if last_save.elapsed().as_millis() as u64 >= self.min_interval_ms {
-                if self.save_one_frame(&frame_buffer, saved_count).is_ok() {
-                    saved_count += 1;
-                    last_save = Instant::now();
+            if last_save.elapsed().as_millis() as u64 >= self.min_interval_ms
+                && self.save_one_frame(&frame_buffer, saved_count).is_ok()
+            {
+                saved_count += 1;
+                last_save = Instant::now();
 
-                    if self.max_frames > 0 && saved_count >= self.max_frames {
-                        log::info!("Reached max frames ({}). Stopping.", self.max_frames);
-                        break;
-                    }
+                if self.max_frames > 0 && saved_count >= self.max_frames {
+                    log::info!("Reached max frames ({}). Stopping.", self.max_frames);
+                    break;
                 }
             }
         }

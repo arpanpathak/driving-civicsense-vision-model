@@ -43,7 +43,7 @@ fn class_color(class_id: u32) -> (u8, u8, u8) {
     match class_id {
         0 => STOP_SIGN_COLOR,
         1 | 2 => TRAFFIC_LIGHT_COLOR,
-        3 | 4 | 5 => VEHICLE_COLOR,
+        3..=5 => VEHICLE_COLOR,
         _ => DEFAULT_COLOR,
     }
 }
@@ -86,6 +86,7 @@ fn set_pixel(frame: &mut [u8], x: u32, y: u32, width: u32, height: u32, color: (
 /// - `width`, `height`, Frame dimensions.
 /// - `color`, `(R, G, B)` colour.
 /// - `thickness`, Line thickness in pixels (≥ 1).
+#[allow(clippy::too_many_arguments)] // low-level pixel routine; params are the box spec
 fn draw_rect(
     frame: &mut [u8],
     x1: u32,

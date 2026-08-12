@@ -219,6 +219,7 @@ impl AnchorGrid {
     /// The model output is `[1, 4 + num_classes, num_predictions]` in CHW
     /// (channel-major) layout.  Each anchor produces a bounding box
     /// (cx, cy, w, h) at channels 0-3, and class logits at channels 4+.
+    #[allow(clippy::too_many_arguments)] // decode is a pure low-level box decoder
     fn decode(
         &self,
         output: &[f32],
@@ -237,7 +238,7 @@ impl AnchorGrid {
             .enumerate()
             .filter_map(|(i, &(gx, gy, s))| {
                 let cx = (sigmoid(output[i]) * 2.0 - 0.5 + gx) * s;
-                let cy = (sigmoid(output[1 * stride + i]) * 2.0 - 0.5 + gy) * s;
+                let cy = (sigmoid(output[stride + i]) * 2.0 - 0.5 + gy) * s;
                 let w = (sigmoid(output[2 * stride + i]) * 2.0).powi(2) * s;
                 let h = (sigmoid(output[3 * stride + i]) * 2.0).powi(2) * s;
 
