@@ -13,29 +13,29 @@
 
 **Edge AI perception for intersection discipline, lane courtesy, road hazard alerts, and cooperative safety, running on NVIDIA Jetson Orin Nano Super, 3D-printed smart glasses, or dashcam hardware.**
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue?style=flat-square)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
 <br>
-[![Rust](https://img.shields.io/badge/Rust-1.85+-orange?logo=rust)](https://www.rust-lang.org)
-[![YOLOv8](https://img.shields.io/badge/YOLO-v8/v11-00BFFF?logo=yolo)](https://github.com/ultralytics/ultralytics)
-[![ONNX Runtime](https://img.shields.io/badge/ONNX-Runtime-005CED?logo=onnx)](https://onnxruntime.ai/)
-[![Candle](https://img.shields.io/badge/Candle-Rust%20ML-D97757?logo=rust)](https://github.com/huggingface/candle)
-[![Kalman Filter](https://img.shields.io/badge/Kalman-Filter-333?logo=kalilinux)](https://en.wikipedia.org/wiki/Kalman_filter)
+[![Rust](https://img.shields.io/badge/Rust-1.85+-orange?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org)
+[![YOLOv8](https://img.shields.io/badge/YOLO-v8%2Fv11-00BFFF?style=flat-square)](https://github.com/ultralytics/ultralytics)
+[![ONNX](https://img.shields.io/badge/ONNX-Runtime-005CED?style=flat-square&logo=onnx&logoColor=white)](https://onnxruntime.ai/)
+[![Candle](https://img.shields.io/badge/Candle-Rust%20ML-D97757?style=flat-square)](https://github.com/huggingface/candle)
+[![Kalman](https://img.shields.io/badge/Kalman-Filter-333?style=flat-square)](https://en.wikipedia.org/wiki/Kalman_filter)
 <br>
-[![NVIDIA Jetson](https://img.shields.io/badge/NVIDIA-Jetson%20Orin%20Nano%20Super-76B900?logo=nvidia)](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/)
-[![Deep SORT](https://img.shields.io/badge/Tracking-Deep%20SORT-444?logo=deepnote)](https://arxiv.org/abs/1703.07402)
-[![CARLA](https://img.shields.io/badge/Sim-CARLA-00BCF2?logo=carla)](https://carla.org/)
-[![SUMO](https://img.shields.io/badge/Sim-SUMO-006600?logo=sumologic)](https://eclipse.dev/sumo/)
-[![RSS](https://img.shields.io/badge/Safety-RSS%20(Mobileye)-E31E25?logo=mobileye)](https://arxiv.org/abs/1708.06374)
-[![ISO 26262](https://img.shields.io/badge/Safety-ISO%2026262-333?logo=iso)](https://www.iso.org/standard/68383.html)
-[![Gazis 1960](https://img.shields.io/badge/Foundation-Gazis%20et%20al.%201960-555?logo=google scholar)](https://doi.org/10.1287/opre.8.1.112)
+[![NVIDIA Jetson](https://img.shields.io/badge/NVIDIA-Jetson%20Orin%20Nano%20Super-76B900?style=flat-square&logo=nvidia&logoColor=white)](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/)
+[![Deep SORT](https://img.shields.io/badge/Tracking-Deep%20SORT-555?style=flat-square)](https://arxiv.org/abs/1703.07402)
+[![CARLA](https://img.shields.io/badge/Sim-CARLA-00BCF2?style=flat-square)](https://carla.org/)
+[![SUMO](https://img.shields.io/badge/Sim-SUMO-006600?style=flat-square)](https://eclipse.dev/sumo/)
+[![RSS](https://img.shields.io/badge/Safety-RSS%20Mobileye-E31E25?style=flat-square)](https://arxiv.org/abs/1708.06374)
+[![ISO 26262](https://img.shields.io/badge/Safety-ISO%2026262-333?style=flat-square&logo=iso&logoColor=white)](https://www.iso.org/standard/68383.html)
+[![Gazis 1960](https://img.shields.io/badge/Foundation-Gazis%20et%20al.%201960-777?style=flat-square)](https://doi.org/10.1287/opre.8.1.112)
 <br>
-[![Paper: Intersection Blockage](https://img.shields.io/badge/Paper-Intersection%20Blockage-8A2BE2)](https://arpanpathak.github.io/driving-civicsense-vision-model/)
-[![Book: Seeing Machines](https://img.shields.io/badge/Book-Seeing%20Machines-FF6B6B)](https://arpanpathak.github.io/seeing-machines-book/foreword.html)
-[![KMP Companion](https://img.shields.io/badge/KMP-Companion-purple)](https://github.com/arpanpathak/civicsense-companion)
-[![Pi Stream](https://img.shields.io/badge/Pi%20Stream-Rust%20MJPEG-FF6B6B)](https://github.com/arpanpathak/civicsense-pi-stream)
-[![Stream Client](https://img.shields.io/badge/Stream%20Client-Candle%20YOLO-D97757)](https://github.com/arpanpathak/civicsense-stream-client)
-[![Cloud GPU](https://img.shields.io/badge/Cloud%20GPU%20Guide-8A2BE2)](CLOUD_TRAINING.md)
+[![Paper](https://img.shields.io/badge/Paper-Intersection%20Blockage-8A2BE2?style=flat-square)](https://arpanpathak.github.io/driving-civicsense-vision-model/)
+[![Book](https://img.shields.io/badge/Book-Seeing%20Machines-FF6B6B?style=flat-square)](https://arpanpathak.github.io/seeing-machines-book/foreword.html)
+[![KMP Companion](https://img.shields.io/badge/KMP-Companion-purple?style=flat-square)](https://github.com/arpanpathak/civicsense-companion)
+[![Pi Stream](https://img.shields.io/badge/Pi%20Stream-Rust%20MJPEG-FF6B6B?style=flat-square)](https://github.com/arpanpathak/civicsense-pi-stream)
+[![Stream Client](https://img.shields.io/badge/Stream%20Client-Candle%20YOLO-D97757?style=flat-square)](https://github.com/arpanpathak/civicsense-stream-client)
+[![Cloud GPU](https://img.shields.io/badge/Cloud%20GPU%20Guide-8A2BE2?style=flat-square)](CLOUD_TRAINING.md)
 
 </div>
 
