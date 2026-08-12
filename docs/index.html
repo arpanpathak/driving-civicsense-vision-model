@@ -1054,6 +1054,23 @@ edition = &quot;<span class="num">2021</span>&quot;
     camera-only footage, ego speed and signal timing must be estimated or annotated,
     and the operating bounds of Section&nbsp;VII apply instead.</p>
 
+    <p><b>Collection protocol.</b> The campaign collects intersection approaches
+    across a fixed set of routes spanning day and night, wet and dry conditions,
+    and low and high traffic density. Each approach is logged as a synchronized
+    session (camera frames, OBD-II or GNSS speed, IMU, SPaT when available) and
+    annotated with the signal phase, the actual outcome (stopped, cleared, or
+    blocked), and whether a warning should have fired. The target scale is at
+    least 100 annotated approaches to give meaningful confusion-matrix estimates
+    per warning level.</p>
+
+    <p><b>Benchmarking.</b> The evaluation reports, per warning level, precision,
+    recall, and F1, together with the end-to-end latency (detect-to-alert, p50
+    and p95) on the deployment hardware. Two baselines are compared on the same
+    data: the fixed threshold rules of Section&nbsp;VII, and a YOLO-only
+    end-to-end detector that labels blocked-box risk directly from the image.
+    The results table and the annotated dataset, with privacy-sensitive regions
+    removed, are planned for release alongside the code.</p>
+
     <div class="table-wrap">
     <table>
       <caption><b>Table V.</b> Recommended sensor suite for field evaluation. Each
