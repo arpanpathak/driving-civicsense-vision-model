@@ -352,3 +352,11 @@ ol.reviewer-response li {
   color: var(--muted);
   line-height: 1.5;
 }
+
+/* clickable reference links */
+ol.refs .ref-link {
+  font-family: var(--mono);
+  font-size: 11px;
+  margin-left: 4px;
+  white-space: nowrap;
+}

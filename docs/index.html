@@ -152,29 +152,50 @@ window.MathJaxFallback = true;
   <!-- ================= II. RELATED WORK ================= -->
   <section id="s2">
     <h2 class="sec"><span class="no">II.</span> Related Work</h2>
-    <p>The dilemma zone was first analysed by Gazis et&nbsp;al.&nbsp;[1] in the context
-    of signal timing, who showed that for certain combinations of speed, distance,
-    and yellow duration neither stopping nor proceeding is legal and safe. Classical
-    traffic engineering addresses the dilemma zone by adjusting signal timing (e.g.,
-    all-red clearance intervals) rather than by in-vehicle warning. This work
+    <p>The dilemma zone was first analysed by
+    <a href="https://doi.org/10.1287/opre.8.1.112" target="_blank" rel="noopener">Gazis
+    et&nbsp;al.&nbsp;[1]</a> in the context of signal timing, who showed that for certain
+    combinations of speed, distance, and yellow duration neither stopping nor proceeding
+    is legal and safe. Classical traffic engineering addresses the dilemma zone by
+    adjusting signal timing (e.g., all-red clearance intervals) rather than by in-vehicle
+    warning, and the design space of green-extension and all-red systems is reviewed in
+    <a href="https://scholar.google.com/scholar?q=%22Green-extension+systems+at+high-speed+intersections%22"
+    target="_blank" rel="noopener">Zegeer and Deen&nbsp;[15]</a>. Recent data-driven work
+    predicts driver stop/go decisions at yellow onset from loop-detector and video data;
+    these models are accurate but site-specific and carry no formal guarantee. This work
     inverts the problem: given a fixed signal, warn the driver about the impending
-    blockage.</p>
-    <p>In the vehicle safety literature, Shalev-Shwartz et&nbsp;al.&nbsp;[3]
-    formalised a responsibility-sensitive safety (RSS) model that defines safe
-    longitudinal and lateral distances between vehicles. The present work adopts a
-    similar philosophy (safety as an explicit, checkable predicate) but
-    specialises it to the intersection-crossing manoeuvre and grounds it in the
-    traffic-signal timing rather than in inter-vehicle distance alone.</p>
-    <p>End-to-end learning approaches to intersection behaviour&nbsp;[4] predict
-    occupancy or intention from raw video. These methods are flexible but require
-    large annotated corpora, are difficult to audit, and do not provide formal
-    guarantees. Hybrid approaches combine learned perception with rule-based
-    reasoning; the present work belongs to this family, with the decision layer kept
-    entirely analytical.</p>
-    <p>Finally, the use of the Rust language for safety-critical embedded software is
-    well established&nbsp;[5]; its ownership model eliminates data races, and its
-    exhaustive pattern matching forces explicit handling of all sensor states, which
-    aligns with the verification requirements of ISO&nbsp;26262&nbsp;[6].</p>
+    blockage with a decision that is guaranteed correct.</p>
+    <p>In the vehicle safety literature,
+    <a href="https://arxiv.org/abs/1708.06374" target="_blank" rel="noopener">Shalev-Shwartz
+    et&nbsp;al.&nbsp;[3]</a> formalised a responsibility-sensitive safety (RSS) model that
+    defines safe longitudinal and lateral distances between vehicles. Formal methods for
+    road-vehicle safety extend beyond RSS to reachability analysis, which verifies
+    collision freedom by computing the set of states reachable by a dynamical
+    model&nbsp;<a href="https://doi.org/10.1109/TRO.2014.2312453" target="_blank" rel="noopener">[7]</a>;
+    the present work applies the same verification spirit to a discrete decision function
+    rather than to a continuous controller. On the perception side, real-time
+    detection&nbsp;<a href="https://arxiv.org/abs/1506.02640" target="_blank" rel="noopener">[4]</a>,
+    multi-object tracking&nbsp;<a href="https://arxiv.org/abs/1603.00831" target="_blank" rel="noopener">[5]</a>,
+    and monocular depth estimation&nbsp;<a href="https://arxiv.org/abs/1806.01260" target="_blank" rel="noopener">[10]</a>
+    are mature, and traffic-light
+    perception&nbsp;<a href="https://doi.org/10.1109/ICRA.2017.7989163" target="_blank" rel="noopener">[6]</a>
+    has likewise been demonstrated. Simulation environments such as
+    <a href="https://arxiv.org/abs/1711.04238" target="_blank" rel="noopener">CARLA&nbsp;[8]</a>
+    and <a href="https://arxiv.org/abs/1802.02215" target="_blank" rel="noopener">SUMO&nbsp;[9]</a>
+    offer a complementary path to systematic evaluation.</p>
+    <p>End-to-end learning approaches to intersection
+    behaviour&nbsp;<a href="https://arxiv.org/abs/2004.02903" target="_blank" rel="noopener">[11]</a>
+    predict occupancy or intention from raw video. These methods are flexible but require
+    large annotated corpora, are difficult to audit, and do not provide formal guarantees.
+    Hybrid approaches combine learned perception with rule-based reasoning; the present
+    work belongs to this family, with the decision layer kept entirely analytical.</p>
+    <p>Finally, the use of the Rust language for safety-critical embedded software is well
+    established&nbsp;<a href="https://doi.org/10.1145/2692956.2663188" target="_blank" rel="noopener">[12]</a>;
+    its ownership model eliminates data races, and its exhaustive pattern matching forces
+    explicit handling of all sensor states, which aligns with the verification
+    requirements of <a href="https://www.iso.org/standard/68383.html" target="_blank" rel="noopener">ISO&nbsp;26262&nbsp;[16]</a>.
+    The language is documented for systems programming at
+    large&nbsp;<a href="https://doc.rust-lang.org/book/" target="_blank" rel="noopener">[13]</a>.</p>
   </section>
 
   <!-- ================= III. PROBLEM FORMULATION ================= -->
@@ -1220,25 +1241,39 @@ edition = &quot;<span class="num">2021</span>&quot;
   <!-- ================= REFERENCES ================= -->
   <section id="refs">
     <h2 class="sec">References</h2>
-    <ol class="refs">
-      <li><span class="cite">[1]</span> D. Gazis, R. Herman, and A. Maradudin, &ldquo;The
-          problem of the amber signal light in traffic flow,&rdquo; <i>Operations
-          Research</i>, vol. 8, no. 1, pp. 112&ndash;132, 1960.</li>
-      <li><span class="cite">[2]</span> D. A. Redelmeier and R. J. Tibshirani,
-          &ldquo;Association between cellular-telephone calls and motor vehicle
-          collisions,&rdquo; <i>N. Engl. J. Med.</i>, vol. 336, no. 7, pp.
-          453&ndash;458, 1997.</li>
-      <li><span class="cite">[3]</span> S. Shalev-Shwartz, S. Shammah, and A. Shashua,
-          &ldquo;On a formal model of safe and scalable self-driving cars,&rdquo;
-          <i>arXiv preprint arXiv:1708.06374</i>, 2017.</li>
-      <li><span class="cite">[4]</span> J. Philion and S. Fidler, &ldquo;Lift, splat,
-          shoot: Encoding images from arbitrary camera rigs by implicitly unprojecting
-          to 3D,&rdquo; in <i>Proc. ECCV</i>, 2020, pp. 194&ndash;210.</li>
-      <li><span class="cite">[5]</span> N. Matsakis and F. Klock, &ldquo;The Rust
-          language,&rdquo; <i>ACM SIGAda Ada Letters</i>, vol. 34, no. 3, pp.
-          103&ndash;104, 2014.</li>
-      <li><span class="cite">[6]</span> ISO, <i>Road vehicles &ndash; Functional
-          safety</i>, ISO 26262:2018, 2018.</li>
+        <ol class="refs">
+      <li><span class="cite">[1]</span> D. Gazis, R. Herman, and A. Maradudin, &ldquo;The problem of the amber signal light in traffic flow,&rdquo; <i>Operations Research</i>, vol. 8, no. 1, pp. 112&ndash;132, 1960.
+          <a class="ref-link" href="https://doi.org/10.1287/opre.8.1.112" target="_blank" rel="noopener">doi.org/10.1287/opre.8.1.112</a></li>
+      <li><span class="cite">[2]</span> D. A. Redelmeier and R. J. Tibshirani, &ldquo;Association between cellular-telephone calls and motor vehicle collisions,&rdquo; <i>N. Engl. J. Med.</i>, vol. 336, no. 7, pp. 453&ndash;458, 1997.
+          <a class="ref-link" href="https://doi.org/10.1056/NEJM199702133360701" target="_blank" rel="noopener">doi.org/10.1056/NEJM199702133360701</a></li>
+      <li><span class="cite">[3]</span> S. Shalev-Shwartz, S. Shammah, and A. Shashua, &ldquo;On a formal model of safe and scalable self-driving cars,&rdquo; <i>arXiv:1708.06374</i>, 2017.
+          <a class="ref-link" href="https://arxiv.org/abs/1708.06374" target="_blank" rel="noopener">arXiv:1708.06374</a></li>
+      <li><span class="cite">[4]</span> J. Redmon, S. Divvala, R. Girshick, and A. Farhadi, &ldquo;You only look once: Unified, real-time object detection,&rdquo; in <i>Proc. IEEE CVPR</i>, 2016, pp. 779&ndash;788.
+          <a class="ref-link" href="https://arxiv.org/abs/1506.02640" target="_blank" rel="noopener">arXiv:1506.02640</a></li>
+      <li><span class="cite">[5]</span> N. Wojke, A. Bewley, and D. Paulus, &ldquo;Simple online and realtime tracking with a deep association metric,&rdquo; in <i>Proc. IEEE ICIP</i>, 2017, pp. 3645&ndash;3649.
+          <a class="ref-link" href="https://arxiv.org/abs/1603.00831" target="_blank" rel="noopener">arXiv:1603.00831</a></li>
+      <li><span class="cite">[6]</span> K. Behrendt and L. Novak, &ldquo;A deep learning approach to traffic lights: Detection, tracking, and classification,&rdquo; in <i>Proc. IEEE ICRA</i>, 2017, pp. 1244&ndash;1249.
+          <a class="ref-link" href="https://doi.org/10.1109/ICRA.2017.7989163" target="_blank" rel="noopener">doi.org/10.1109/ICRA.2017.7989163</a></li>
+      <li><span class="cite">[7]</span> M. Althoff and J. M. Dolan, &ldquo;Online verification of automated road vehicles using reachability analysis,&rdquo; <i>IEEE Trans. Robot.</i>, vol. 30, no. 4, pp. 903&ndash;918, 2014.
+          <a class="ref-link" href="https://doi.org/10.1109/TRO.2014.2312453" target="_blank" rel="noopener">doi.org/10.1109/TRO.2014.2312453</a></li>
+      <li><span class="cite">[8]</span> A. Dosovitskiy, G. Ros, F. Codevilla, A. Lopez, and V. Koltun, &ldquo;CARLA: An open urban driving simulator,&rdquo; in <i>Proc. Conf. on Robot Learning</i>, 2017, pp. 1&ndash;16.
+          <a class="ref-link" href="https://arxiv.org/abs/1711.04238" target="_blank" rel="noopener">arXiv:1711.04238</a></li>
+      <li><span class="cite">[9]</span> P. A. Lopez et al., &ldquo;Microscopic traffic simulation using SUMO,&rdquo; in <i>Proc. IEEE ITSC</i>, 2018, pp. 2575&ndash;2582.
+          <a class="ref-link" href="https://arxiv.org/abs/1802.02215" target="_blank" rel="noopener">arXiv:1802.02215</a></li>
+      <li><span class="cite">[10]</span> C. Godard, O. Mac Aodha, M. Firman, and G. J. Brostow, &ldquo;Digging into self-supervised monocular depth estimation,&rdquo; in <i>Proc. IEEE ICCV</i>, 2019, pp. 3828&ndash;3838.
+          <a class="ref-link" href="https://arxiv.org/abs/1806.01260" target="_blank" rel="noopener">arXiv:1806.01260</a></li>
+      <li><span class="cite">[11]</span> J. Philion and S. Fidler, &ldquo;Lift, splat, shoot: Encoding images from arbitrary camera rigs by implicitly unprojecting to 3D,&rdquo; in <i>Proc. ECCV</i>, 2020, pp. 194&ndash;210.
+          <a class="ref-link" href="https://arxiv.org/abs/2004.02903" target="_blank" rel="noopener">arXiv:2004.02903</a></li>
+      <li><span class="cite">[12]</span> N. Matsakis and F. Klock, &ldquo;The Rust language,&rdquo; <i>ACM SIGAda Ada Letters</i>, vol. 34, no. 3, pp. 103&ndash;104, 2014.
+          <a class="ref-link" href="https://doi.org/10.1145/2692956.2663188" target="_blank" rel="noopener">doi.org/10.1145/2692956.2663188</a></li>
+      <li><span class="cite">[13]</span> S. Klabnik and C. Nichols, <i>The Rust Programming Language</i>, 2nd ed. San Francisco, CA, USA: No Starch Press, 2019.
+          <a class="ref-link" href="https://doc.rust-lang.org/book/" target="_blank" rel="noopener">doc.rust-lang.org/book</a></li>
+      <li><span class="cite">[14]</span> V. Vovk, A. Gammerman, and G. Shafer, <i>Algorithmic Learning in a Random World</i>, 2nd ed. Cham, Switzerland: Springer, 2022.
+          <a class="ref-link" href="https://doi.org/10.1007/978-3-031-06649-8" target="_blank" rel="noopener">doi.org/10.1007/978-3-031-06649-8</a></li>
+      <li><span class="cite">[15]</span> C. V. Zegeer and R. C. Deen, &ldquo;Green-extension systems at high-speed intersections,&rdquo; <i>ITE J.</i>, vol. 48, no. 11, pp. 19&ndash;24, 1978.
+          <a class="ref-link" href="https://scholar.google.com/scholar?q=%22Green-extension+systems+at+high-speed+intersections%22" target="_blank" rel="noopener">Google Scholar</a></li>
+      <li><span class="cite">[16]</span> ISO, <i>Road vehicles &ndash; Functional safety</i>, ISO 26262:2018, 2018.
+          <a class="ref-link" href="https://www.iso.org/standard/68383.html" target="_blank" rel="noopener">iso.org/standard/68383</a></li>
     </ol>
   </section>
 
