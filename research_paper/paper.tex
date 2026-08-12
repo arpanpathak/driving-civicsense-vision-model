@@ -435,7 +435,35 @@ perception--reaction time $\tr$ yields:
 \textbf{Intuition.} Equation~\eqref{eq:stop} consists of two additive terms:
 $\ve \tr$ is the distance travelled during the driver's reaction time, during
 which no braking is applied; $\ve^2/(2\ab)$ is the pure braking distance,
-derived from the work--energy principle.
+derived from the work--energy principle. Figure~\ref{fig:vt} makes the
+identity visible: the area under the velocity--time curve is exactly the
+sum of the two terms.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[font=\small, >=Stealth]
+  \draw[->] (-0.3,0) -- (6.9,0) node[below] {$t$ (s)};
+  \draw[->] (0,-0.3) -- (0,4.4) node[left] {$v$ (m/s)};
+  \draw[very thick, blue] (0,3.2) -- (2.2,3.2);
+  \draw[very thick, blue] (2.2,3.2) -- (5.4,0);
+  \fill[blue!10]  (0,0) rectangle (2.2,3.2);
+  \fill[orange!12] (2.2,0) -- (2.2,3.2) -- (5.4,0) -- cycle;
+  \draw[dashed] (2.2,0) -- (2.2,3.2);
+  \node[below] at (2.2,-0.08) {$\tr$};
+  \node[below] at (5.4,-0.08) {$\tr+\ve/\ab$};
+  \node[left] at (0,3.2) {$\ve$};
+  \node[blue!60!black] at (1.1,1.5) {$\ve\tr$};
+  \node[orange!80!black] at (3.9,1.0) {$\ve^2/(2\ab)$};
+  \node[blue!60!black, font=\scriptsize] at (1.1,3.55) {reaction};
+  \node[orange!80!black, font=\scriptsize] at (4.0,2.9) {braking};
+\end{tikzpicture}
+\caption{Velocity--time profile under maximum braking
+(Theorem~\ref{thm:stopdist}). The rectangle of height $\ve$ and width $\tr$
+contributes the reaction distance $\ve\tr$; the triangle of height $\ve$ and
+base $\ve/\ab$ contributes the braking distance $\ve^2/(2\ab)$. The total
+area is $\dreq(\ve)$.}
+\label{fig:vt}
+\end{figure}
 
 \begin{theorem}[Stopping distance formula]
 \label{thm:stopdist}
@@ -514,6 +542,31 @@ is empty before cross traffic may enter. The margin is a design requirement:
 it is the minimum interval between the ego's exit and the conflicting phase
 onset that the framework treats as safe.
 \end{proof}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[font=\small, >=Stealth]
+  \draw[->] (-0.4,0) -- (8.1,0) node[below] {$t$ (s)};
+  \fill[blue!8] (0.9,0) rectangle (2.9,0.42);
+  \fill[green!12] (2.9,0) rectangle (5.1,0.55);
+  \fill[orange!15] (5.1,0) rectangle (6.9,0.4);
+  \draw[thick] (0.9,-0.15) -- (0.9,0.15);
+  \draw[thick, blue] (2.9,-0.15) -- (2.9,0.15);
+  \draw[thick, orange] (5.1,-0.15) -- (5.1,0.15);
+  \draw[thick, red!80!black] (6.9,-0.15) -- (6.9,0.15);
+  \node[below, font=\scriptsize] at (0.9,-0.22) {$0$ decision};
+  \node[below, blue!60!black, font=\scriptsize] at (2.9,-0.22) {$t_c$ exit};
+  \node[below, orange!80!black, font=\scriptsize] at (5.1,-0.22) {$t_y-\epsilon$ onset};
+  \node[below, red!80!black, font=\scriptsize] at (6.9,-0.22) {$t_y$ red};
+  \node[blue!60!black, font=\scriptsize] at (1.9,0.21) {in box};
+  \node[green!50!black, font=\scriptsize] at (4.0,0.27) {safe window};
+  \node[orange!80!black, font=\scriptsize] at (6.0,0.2) {$\epsilon$};
+\end{tikzpicture}
+\caption{Clearance timeline (Theorem~\ref{thm:clear}). The ego exits the
+box at $t_c$ before the phase onset $t_y - \epsilon$, with margin
+$\epsilon$ to $t_y$.}
+\label{fig:timeline}
+\end{figure}
 
 \begin{remark}
 Under Assumption~\ref{asm:cv} the constant-velocity policy is the only
@@ -1348,6 +1401,23 @@ vehicle; with camera-only footage, ego speed and signal timing must be
 estimated or annotated, and the operating bounds of
 Section~\ref{sec:discussion} apply instead.
 
+\paragraph{Collection protocol.} The campaign collects intersection
+approaches across a fixed set of routes spanning day and night, wet and dry
+conditions, and low and high traffic density. Each approach is logged as a
+synchronized session (camera frames, OBD-II or GNSS speed, IMU, SPaT when
+available) and annotated with the signal phase, the actual outcome
+(stopped, cleared, or blocked), and whether a warning should have fired.
+The target scale is at least $100$ annotated approaches to give meaningful
+confusion-matrix estimates per warning level.
+
+\paragraph{Benchmarking.} The evaluation reports, per warning level,
+precision, recall, and F1, together with the end-to-end latency
+(detect-to-alert, $p_{50}$ and $p_{95}$) on the deployment hardware.
+Two baselines are compared on the same data: the fixed threshold rules of
+Section~\ref{sec:discussion}, and a YOLO-only end-to-end detector that
+labels blocked-box risk directly from the image. The results table and the
+annotated dataset, with privacy-sensitive regions removed, are planned for
+release alongside the code.
 \begin{table*}[t]
 \caption{Recommended sensor suite for field evaluation. Each modality
 either supplies an input to the decision engine or a ground-truth reference
@@ -1530,10 +1600,11 @@ arithmetic, or conformal prediction bounds on detector
 outputs~\cite{vovk2005}; (ii)~dynamic warning thresholds adapted to the
 driver's reaction time and to estimated road friction from rain or
 temperature sensors; (iii)~extension of the rule set to vulnerable road
-users and multi-lane crossing scenes; and (iv)~an evaluation campaign on real driving data using the sensor suite of
-Table~\ref{tab:sensors}, together with simulation in SUMO or
-CARLA~\cite{lopez2018,dosovitskiy2017}, with randomised intersection
-approaches and baseline comparison, complementing the exhaustive
+users and multi-lane crossing scenes; and (iv)~an evaluation and benchmarking campaign on real driving data using the
+sensor suite of Table~\ref{tab:sensors}, together with simulation in SUMO
+or CARLA~\cite{lopez2018,dosovitskiy2017}, with randomised intersection
+approaches, reporting precision, recall, and latency against the two
+baselines of Section~\ref{sec:verif}, complementing the exhaustive
 verification suite.
 
 \section{Conclusion}
