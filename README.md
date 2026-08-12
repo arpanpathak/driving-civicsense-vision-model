@@ -158,9 +158,32 @@ All variants process **100% on-device**. No cloud upload. No subscription.
 
 ---
 
-## The Full Pipeline: Distributed Edge Vision
+## The Simple Way: Camera → Jetson (Recommended)
 
-Squeezing a YOLO model into 512 MB of RAM on a Pi Zero is a losing game, you trade accuracy for 2 FPS and watch it thermal-throttle. **Don't embed, distribute.** Each node does the job it's best at, and the heaviest brain in the room runs the real inference:
+If you have an **NVIDIA Jetson Orin Nano Super** (or any Jetson with a CSI port), the whole pipeline runs on **one board**. No Pi Zero, no Pico, no network hops. Just plug in a camera and go:
+
+```
+[ CSI Camera ] ──→ [ Jetson Orin Nano Super ]
+                       │
+                       ├── YOLOv8n ONNX (INT8, ~12 ms)
+                       ├── Deep SORT + Kalman
+                       ├── Kinematic Decision Engine (Rust)
+                       └── gRPC → KMP Companion App
+```
+
+The Jetson has:
+- **CSI camera connector** — direct, zero-latency capture
+- **67 INT8 TOPS** — runs YOLO inference at real-time speeds
+- **8 GB unified memory** — enough for the full stack
+- **7–15 W** — runs off a car USB-C port
+
+This is the configuration you want for a real deployment. The distributed pipeline below exists for one reason: **if you don't have a Jetson**, you can still run CivicSense by splitting the work across cheap commodity boards.
+
+---
+
+## The Distributed Way: Pico → Pi Zero → Brain (Budget / DIY)
+
+If you don't have a Jetson and want to build from spare parts, squeeze YOLO out of a Pi Zero is a losing game — you trade accuracy for 2 FPS and watch it thermal-throttle. **Don't embed, distribute.** Each node does the job it's best at:
 
 <p align="center">
   <img src="assets/pipeline.svg" alt="CivicSense distributed edge pipeline: Pico triggers, Pi Zero streams, the brain infers, KMP app alerts" width="860"/>
@@ -168,10 +191,13 @@ Squeezing a YOLO model into 512 MB of RAM on a Pi Zero is a losing game, you tra
 
 | Tier | Node | Job | Stack |
 |------|------|-----|-------|
-| **1 · Trigger** | Raspberry Pi Pico | Physical sensing & control: PIR motion, buttons, ultrasonic, power states, LED/buzzer | RP2040 **PIO** state machines |
-| **2 · Capture & Stream** | Raspberry Pi Zero | CSI camera capture, MJPEG/H.264 encode, low-latency streaming | libcamera, Rust/Go stream daemon |
-| **3 · Brain** | Pi 5 + Hailo-8L / desktop GPU | Heavy inference: YOLO ONNX (INT8), NMS, Deep SORT + Kalman, alert engine | ONNX Runtime, Rust |
+| **1 · Trigger** | Raspberry Pi Pico (optional) | Physical sensing & control: PIR motion, buttons, ultrasonic, power states, LED/buzzer | RP2040 **PIO** state machines |
+| **2 · Capture** | CSI camera or Pi Zero | Direct capture (Jetson CSI) or remote stream (Pi Zero MJPEG) | libcamera, Rust stream daemon |
+| **3 · Brain** | **NVIDIA Jetson Orin Nano Super** | Heavy inference: YOLO ONNX (INT8), NMS, Deep SORT + Kalman, alert engine | ONNX Runtime, Rust |
+| **3-alt · Budget brain** | Pi 5 + Hailo-8L / desktop GPU | Same as Tier 3, for those without a Jetson | ONNX Runtime, Rust |
 | **4 · Companion** | Phone (KMP) | Live alerts, violations, map view | Kotlin Multiplatform, gRPC |
+
+> **With a Jetson:** skip Tiers 1 and 2. Plug a CSI camera directly into the Jetson. Everything runs on one board. The Pico and Pi Zero are only needed if you're building from spare parts without a Jetson.
 
 **Streaming stack (included as submodules, MIT licensed):**
 
@@ -180,14 +206,20 @@ Squeezing a YOLO model into 512 MB of RAM on a Pi Zero is a losing game, you tra
 
 Both are dependency-free-of-Python and intentionally kept permissive (MIT), unlike the core repo's AGPL-3.0, so the streaming plumbing can be reused anywhere.
 
-**Why this wins over one-board-everything:**
+**When the distributed approach makes sense (no Jetson available):**
 
 - **The Pico's PIO** handles triggers with zero CPU cost, the camera only wakes when there's something to see.
 - **The Pi Zero** stays a dumb, low-power camera node: capture, encode, stream. No model to squeeze, no RAM anxiety, no thermal throttling.
-- **The brain** (Pi 5 or your desktop GPU) runs the full-fat model, you never trade accuracy to fit in 512 MB.
+- **The brain** (Pi 5 or desktop GPU) runs the full-fat model, you never trade accuracy to fit in 512 MB.
 - **Every hop stays on your network**, frames leave the Pi Zero, but they never leave the car.
 
+**But honestly:** if you have a Jetson Orin Nano Super, skip all of this. Plug a CSI camera into the Jetson. One board. No network hops. Zero added latency. The distributed approach is a **fallback for those without a Jetson**, not the recommended path.
+
 ```text
+# Jetson (recommended):
+[ CSI Camera ] ──→ [ Jetson Orin Nano Super ] ──→ [ KMP Companion App ]
+
+# Or, if you don't have a Jetson:
 [ Pi Pico ] --GPIO trigger--> [ Pi Zero ] --UDP frames--> [ Brain: Pi 5 / GPU ]
      ^                                                         |
      +---------------------- ack / re-trigger -----------------+
