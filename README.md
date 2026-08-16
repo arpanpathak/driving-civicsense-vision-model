@@ -13,31 +13,7 @@
 
 **Edge AI perception for intersection discipline, lane courtesy, road hazard alerts, and cooperative safety, running on NVIDIA Jetson Orin Nano Super, 3D-printed smart glasses, or dashcam hardware.**
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue?style=flat-square)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
-[![CI](https://img.shields.io/github/actions/workflow/status/arpanpathak/driving-civicsense-vision-model/ci.yml?style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/arpanpathak/driving-civicsense-vision-model/actions)
-<br>
-[![Rust](https://img.shields.io/badge/Rust-1.85+-orange?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org)
-[![YOLOv8](https://img.shields.io/badge/YOLO-v8%2Fv11-00BFFF?style=flat-square)](https://github.com/ultralytics/ultralytics)
-[![ONNX](https://img.shields.io/badge/ONNX-Runtime-005CED?style=flat-square&logo=onnx&logoColor=white)](https://onnxruntime.ai/)
-[![Candle](https://img.shields.io/badge/Candle-Rust%20ML-D97757?style=flat-square)](https://github.com/huggingface/candle)
-[![Kalman](https://img.shields.io/badge/Kalman-Filter-333?style=flat-square)](https://en.wikipedia.org/wiki/Kalman_filter)
-<br>
-[![NVIDIA Jetson](https://img.shields.io/badge/NVIDIA-Jetson%20Orin%20Nano%20Super-76B900?style=flat-square&logo=nvidia&logoColor=white)](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/)
-[![Deep SORT](https://img.shields.io/badge/Tracking-Deep%20SORT-555?style=flat-square)](https://arxiv.org/abs/1703.07402)
-[![CARLA](https://img.shields.io/badge/Sim-CARLA-00BCF2?style=flat-square)](https://carla.org/)
-[![SUMO](https://img.shields.io/badge/Sim-SUMO-006600?style=flat-square)](https://eclipse.dev/sumo/)
-[![RSS](https://img.shields.io/badge/Safety-RSS%20Mobileye-E31E25?style=flat-square)](https://arxiv.org/abs/1708.06374)
-[![ISO 26262](https://img.shields.io/badge/Safety-ISO%2026262-333?style=flat-square&logo=iso&logoColor=white)](https://www.iso.org/standard/68383.html)
-[![Gazis 1960](https://img.shields.io/badge/Foundation-Gazis%20et%20al.%201960-777?style=flat-square)](https://doi.org/10.1287/opre.8.1.112)
-<br>
-[![Paper](https://img.shields.io/badge/Paper-Intersection%20Blockage-8A2BE2?style=flat-square)](https://arpanpathak.github.io/driving-civicsense-vision-model/)
-[![Book](https://img.shields.io/badge/Book-Seeing%20Machines-FF6B6B?style=flat-square)](https://arpanpathak.github.io/seeing-machines-book/foreword.html)
-[![KMP Companion](https://img.shields.io/badge/KMP-Companion-purple?style=flat-square)](https://github.com/arpanpathak/civicsense-companion)
-[![Pi Stream](https://img.shields.io/badge/Pi%20Stream-Rust%20MJPEG-FF6B6B?style=flat-square)](https://github.com/arpanpathak/civicsense-pi-stream)
-[![Stream Client](https://img.shields.io/badge/Stream%20Client-Candle%20YOLO-D97757?style=flat-square)](https://github.com/arpanpathak/civicsense-stream-client)
-[![Cloud GPU](https://img.shields.io/badge/Cloud%20GPU%20Guide-8A2BE2?style=flat-square)](CLOUD_TRAINING.md)
-[![Data Pack](https://img.shields.io/badge/Data%20Pack-Datasets%20%26%20GT-2E8B57?style=flat-square)](https://github.com/arpanpathak/driving-civic-sense-data-crowd)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue?style=flat-square)](LICENSE) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md) [![CI](https://img.shields.io/github/actions/workflow/status/arpanpathak/driving-civicsense-vision-model/ci.yml?style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/arpanpathak/driving-civicsense-vision-model/actions) [![Rust](https://img.shields.io/badge/Rust-1.85+-orange?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org) [![YOLOv8](https://img.shields.io/badge/YOLO-v8%2Fv11-00BFFF?style=flat-square)](https://github.com/ultralytics/ultralytics) [![ONNX](https://img.shields.io/badge/ONNX-Runtime-005CED?style=flat-square&logo=onnx&logoColor=white)](https://onnxruntime.ai/) [![Candle](https://img.shields.io/badge/Candle-Rust%20ML-D97757?style=flat-square)](https://github.com/huggingface/candle) [![Kalman](https://img.shields.io/badge/Kalman-Filter-333?style=flat-square)](https://en.wikipedia.org/wiki/Kalman_filter) [![NVIDIA Jetson](https://img.shields.io/badge/NVIDIA-Jetson%20Orin%20Nano%20Super-76B900?style=flat-square&logo=nvidia&logoColor=white)](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/) [![Deep SORT](https://img.shields.io/badge/Tracking-Deep%20SORT-555?style=flat-square)](https://arxiv.org/abs/1703.07402) [![CARLA](https://img.shields.io/badge/Sim-CARLA-00BCF2?style=flat-square)](https://carla.org/) [![SUMO](https://img.shields.io/badge/Sim-SUMO-006600?style=flat-square)](https://eclipse.dev/sumo/) [![RSS](https://img.shields.io/badge/Safety-RSS%20Mobileye-E31E25?style=flat-square)](https://arxiv.org/abs/1708.06374) [![ISO 26262](https://img.shields.io/badge/Safety-ISO%2026262-333?style=flat-square&logo=iso&logoColor=white)](https://www.iso.org/standard/68383.html) [![Gazis 1960](https://img.shields.io/badge/Foundation-Gazis%20et%20al.%201960-777?style=flat-square)](https://doi.org/10.1287/opre.8.1.112) [![Paper](https://img.shields.io/badge/Paper-Intersection%20Blockage-8A2BE2?style=flat-square)](https://arpanpathak.github.io/driving-civicsense-vision-model/) [![Book](https://img.shields.io/badge/Book-Seeing%20Machines-FF6B6B?style=flat-square)](https://arpanpathak.github.io/seeing-machines-book/foreword.html) [![KMP Companion](https://img.shields.io/badge/KMP-Companion-purple?style=flat-square)](https://github.com/arpanpathak/civicsense-companion) [![Pi Stream](https://img.shields.io/badge/Pi%20Stream-Rust%20MJPEG-FF6B6B?style=flat-square)](https://github.com/arpanpathak/civicsense-pi-stream) [![Stream Client](https://img.shields.io/badge/Stream%20Client-Candle%20YOLO-D97757?style=flat-square)](https://github.com/arpanpathak/civicsense-stream-client) [![Cloud GPU](https://img.shields.io/badge/Cloud%20GPU%20Guide-8A2BE2?style=flat-square)](CLOUD_TRAINING.md) [![Data Pack](https://img.shields.io/badge/Data%20Pack-Datasets%20%26%20GT-2E8B57?style=flat-square)](https://github.com/arpanpathak/driving-civic-sense-data-crowd)
 
 </div>
 
