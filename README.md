@@ -15,6 +15,9 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue?style=flat-square)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
+[![CI](https://img.shields.io/github/actions/workflow/status/arpanathak/driving-civicsense-vision-model/ci.yml?style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/arpanathak/driving-civicsense-vision-model/actions)
+[![tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/arpanathak/driving-civicsense-vision-model/main/badges/tests.json&style=flat-square)](https://github.com/arpanathak/driving-civicsense-vision-model/actions)
+[![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/arpanathak/driving-civicsense-vision-model/main/badges/coverage.json&style=flat-square)](https://github.com/arpanathak/driving-civicsense-vision-model/actions)
 <br>
 [![Rust](https://img.shields.io/badge/Rust-1.85+-orange?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![YOLOv8](https://img.shields.io/badge/YOLO-v8%2Fv11-00BFFF?style=flat-square)](https://github.com/ultralytics/ultralytics)

@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    name: Rust validate + lint + coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt, llvm-tools-preview
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Build (pulls ort ONNX Runtime binaries)
+        run: cargo build --all-targets
+
+      - name: Test (unit + simulation + verification)
+        run: cargo test
+
+      - name: Lint (clippy -D warnings)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Format check
+        run: cargo fmt --check
+
+      - name: Compute coverage
+        id: coverage
+        run: |
+          SUMMARY="$(cargo llvm-cov --summary-only 2>/dev/null | grep '^TOTAL')"
+          LINE_COV="$(echo "$SUMMARY" | awk '{print $10}' | tr -d '%')"
+          TEST_COUNT="$(cargo test 2>&1 | grep 'test result: ok' | awk '{sum += $4} END {print sum}')"
+          echo "line_cov=$LINE_COV" >> "$GITHUB_OUTPUT"
+          echo "test_count=$TEST_COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Generate badge JSON (real numbers from this run)
+        run: |
+          mkdir -p badges
+          cat > badges/tests.json <<EOF
+          {"schemaVersion":1,"label":"tests","message":"${{ steps.coverage.outputs.test_count }} passing","color":"brightgreen"}
+          EOF
+          cat > badges/coverage.json <<EOF
+          {"schemaVersion":1,"label":"coverage","message":"${{ steps.coverage.outputs.line_cov }}%","color":"brightgreen"}
+          EOF
+
+      - name: Commit badge updates (if changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add badges/
+          if git diff --cached --quiet; then
+            echo "No badge change"
+          else
+            git commit -m "chore(badges): update live test/coverage badges"
+            git push
+          fi
