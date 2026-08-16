@@ -36,6 +36,7 @@
 [![Pi Stream](https://img.shields.io/badge/Pi%20Stream-Rust%20MJPEG-FF6B6B?style=flat-square)](https://github.com/arpanpathak/civicsense-pi-stream)
 [![Stream Client](https://img.shields.io/badge/Stream%20Client-Candle%20YOLO-D97757?style=flat-square)](https://github.com/arpanpathak/civicsense-stream-client)
 [![Cloud GPU](https://img.shields.io/badge/Cloud%20GPU%20Guide-8A2BE2?style=flat-square)](CLOUD_TRAINING.md)
+[![Data Pack](https://img.shields.io/badge/Data%20Pack-Datasets%20%26%20GT-2E8B57?style=flat-square)](https://github.com/arpanpathak/driving-civic-sense-data-crowd)
 
 </div>
 
@@ -205,6 +206,11 @@ If you don't have a Jetson and want to build from spare parts, squeeze YOLO out 
 - [**civicsense-stream-client**](https://github.com/arpanpathak/civicsense-stream-client) (`pistream_client/`): Tier 3. A Rust client that runs YOLOv8n on every frame with Candle (pure-Rust ML), draws boxes, and saves annotations. No Python, no ONNX Runtime.
 
 Both are dependency-free-of-Python and intentionally kept permissive (MIT), unlike the core repo's AGPL-3.0, so the streaming plumbing can be reused anywhere.
+
+**Dataset & ground-truth pack (included as a submodule, MIT licensed):**
+
+- [**civicsense-data-pack**](https://github.com/arpanpathak/driving-civic-sense-data-crowd) (`datasets/`): the official training + validation data companion. Ships the **7-class YOLO training vocabulary** (`stop_sign, traffic_light, crosswalk, vehicle, truck, bus, intersection_zone`), directory-layout and label validators (`civicsense-data`), a **field-validation ground-truth schema + seed manifest** for the kinematic decision engine, and public-dataset aggregation tooling (COCO / BDD100K). It is intentionally lean in git — no pixels — so it stays MIT-licensed and reusable everywhere. See the [repo README](https://github.com/arpanpathak/driving-civic-sense-data-crowd) for how to fetch and aggregate data into `data/civicsense/` (the input `civicsense train prepare` expects).
+
 
 **When the distributed approach makes sense (no Jetson available):**
 

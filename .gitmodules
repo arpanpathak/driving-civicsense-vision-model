@@ -7,3 +7,6 @@
 [submodule "pistream_client"]
 	path = pistream_client
 	url = https://github.com/arpanpathak/civicsense-stream-client
+[submodule "datasets"]
+	path = datasets
+	url = https://github.com/arpanpathak/driving-civic-sense-data-crowd.git
