@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="470" height="150" viewBox="0 0 470 150" font-family="Georgia,serif">
+<defs><marker id="tl-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#212121"/></marker></defs>
+<line x1="25" y1="80" x2="455" y2="80" stroke="#212121" stroke-width="1.4" marker-end="url(#tl-arr)"/>
+<rect x="45" y="80" width="120" height="16" fill="#e3edf7"/>
+<rect x="165" y="80" width="140" height="22" fill="#e8f5e9"/>
+<rect x="305" y="80" width="115" height="16" fill="#fde8d8"/>
+<line x1="45" y1="70" x2="45" y2="90" stroke="#212121" stroke-width="1.6"/>
+<line x1="165" y1="70" x2="165" y2="90" stroke="#1565c0" stroke-width="1.6"/>
+<line x1="305" y1="70" x2="305" y2="90" stroke="#e65100" stroke-width="1.6"/>
+<line x1="420" y1="70" x2="420" y2="90" stroke="#c62828" stroke-width="1.6"/>
+<text x="45" y="106" font-size="11" fill="#212121" text-anchor="middle">0 decision</text>
+<text x="165" y="106" font-size="11" fill="#1565c0" text-anchor="middle">t<tspan baseline-shift="sub" font-size="0.7em">c</tspan> exit</text>
+<text x="305" y="106" font-size="11" fill="#e65100" text-anchor="middle">t<tspan baseline-shift="sub" font-size="0.7em">y</tspan>&#8722;&#949; onset</text>
+<text x="420" y="106" font-size="11" fill="#c62828" text-anchor="middle">t<tspan baseline-shift="sub" font-size="0.7em">y</tspan> red</text>
+<text x="105" y="94" font-size="11" fill="#0d47a1" text-anchor="middle">in box</text>
+<text x="235" y="99" font-size="11" fill="#2e7d32" text-anchor="middle">safe window</text>
+<text x="362" y="94" font-size="12" fill="#e65100" text-anchor="middle">&#949;</text>
+<text x="455" y="128" font-size="12" fill="#212121" text-anchor="end">t (s)</text>
+</svg>

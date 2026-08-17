@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="620" viewBox="0 0 1280 620" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="1" stop-color="#0b1220"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7280"/>
+    </marker>
+    <marker id="arrowPink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f472b6"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#34d399"/>
+    </marker>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="620" fill="url(#bg)"/>
+
+  <!-- title -->
+  <text x="640" y="50" fill="#f9fafb" font-size="30" font-weight="bold" text-anchor="middle">CivicSense Full Pipeline - Produce -&gt; Perceive -&gt; Consume</text>
+  <text x="640" y="80" fill="#9ca3af" font-size="17" text-anchor="middle">three repos, one on-device chain: capture -> detect -> decide -> alert</text>
+
+  <!-- ============ STAGE 1 : Pi Stream (produce) ============ -->
+  <g filter="url(#glow)">
+    <rect x="40" y="140" width="360" height="300" rx="16" fill="#0f1a2e" stroke="#3b82f6" stroke-width="3"/>
+  </g>
+  <text x="220" y="172" fill="#3b82f6" font-size="18" font-weight="bold" text-anchor="middle">1 - Pi Stream</text>
+  <text x="220" y="194" fill="#9ca3af" font-size="13" text-anchor="middle">this repo - PRODUCES the stream</text>
+  <line x1="100" y1="210" x2="340" y2="210" stroke="#1f2937" stroke-width="1.5"/>
+
+  <text x="220" y="238" fill="#f9fafb" font-size="13.5" text-anchor="middle">IMX335 camera capture</text>
+  <text x="220" y="258" fill="#9ca3af" font-size="12.5" text-anchor="middle">rpicam-vid -> MJPEG on stdout</text>
+  <text x="220" y="278" fill="#9ca3af" font-size="12.5" text-anchor="middle">camera.rs -> SharedFrame</text>
+  <text x="220" y="298" fill="#9ca3af" font-size="12.5" text-anchor="middle">HTTP :8000 (browser)</text>
+  <text x="220" y="318" fill="#9ca3af" font-size="12.5" text-anchor="middle">UDP 9000 (phone app)</text>
+
+  <rect x="100" y="336" width="240" height="40" rx="10" fill="#0d1b33" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="220" y="361" fill="#60a5fa" font-size="12.5" text-anchor="middle">output: live MJPEG frames</text>
+
+  <text x="220" y="412" fill="#6b7280" font-size="12" text-anchor="middle">Pi Zero 2 W - 100% Rust</text>
+
+  <!-- ============ STAGE 2 : Stream Client (perceive) ============ -->
+  <g filter="url(#glow)">
+    <rect x="460" y="140" width="360" height="300" rx="16" fill="#0c1f18" stroke="#10b981" stroke-width="3"/>
+  </g>
+  <text x="640" y="172" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">2 - Stream Client</text>
+  <text x="640" y="194" fill="#9ca3af" font-size="13" text-anchor="middle">civicsense-stream-client - PERCEIVES</text>
+  <line x1="520" y1="210" x2="760" y2="210" stroke="#1f2937" stroke-width="1.5"/>
+
+  <text x="640" y="238" fill="#f9fafb" font-size="13.5" text-anchor="middle">consumes the MJPEG stream</text>
+  <text x="640" y="258" fill="#9ca3af" font-size="12.5" text-anchor="middle">Candle YOLOv8n - pure Rust ML</text>
+  <text x="640" y="278" fill="#9ca3af" font-size="12.5" text-anchor="middle">on-device object detection</text>
+  <text x="640" y="298" fill="#9ca3af" font-size="12.5" text-anchor="middle">NMS -> tracked detections</text>
+
+  <rect x="520" y="336" width="240" height="40" rx="10" fill="#0d1f18" stroke="#10b981" stroke-width="1.5"/>
+  <text x="640" y="361" fill="#34d399" font-size="12.5" text-anchor="middle">output: detections + classes</text>
+
+  <text x="640" y="412" fill="#6b7280" font-size="12" text-anchor="middle">edge device - 100% on-device</text>
+
+  <!-- ============ STAGE 3 : Main repo (consume) ============ -->
+  <g filter="url(#glow)">
+    <rect x="880" y="140" width="360" height="300" rx="16" fill="#170f26" stroke="#a855f7" stroke-width="3"/>
+  </g>
+  <text x="1060" y="172" fill="#a855f7" font-size="18" font-weight="bold" text-anchor="middle">3 - Main CivicSense</text>
+  <text x="1060" y="194" fill="#9ca3af" font-size="13" text-anchor="middle">driving-civicsense-vision-model - CONSUMES</text>
+  <line x1="940" y1="210" x2="1180" y2="210" stroke="#1f2937" stroke-width="1.5"/>
+
+  <text x="1060" y="238" fill="#f9fafb" font-size="13.5" text-anchor="middle">decision engine (Rust)</text>
+  <text x="1060" y="258" fill="#9ca3af" font-size="12.5" text-anchor="middle">intersection / lane / hazard modules</text>
+  <text x="1060" y="278" fill="#9ca3af" font-size="12.5" text-anchor="middle">Deep SORT + Kalman tracks</text>
+  <text x="1060" y="298" fill="#9ca3af" font-size="12.5" text-anchor="middle">alert priority engine</text>
+
+  <rect x="940" y="336" width="240" height="40" rx="10" fill="#1c0f26" stroke="#a855f7" stroke-width="1.5"/>
+  <text x="1060" y="361" fill="#c084fc" font-size="12.5" text-anchor="middle">output: voice / haptic / LED alerts</text>
+
+  <text x="1060" y="412" fill="#6b7280" font-size="12" text-anchor="middle">Jetson - KMP companion app</text>
+
+  <!-- ============ ARROWS BETWEEN STAGES ============ -->
+  <line x1="408" y1="290" x2="452" y2="290" stroke="#6b7280" stroke-width="3.5" marker-end="url(#arrow)"/>
+  <line x1="828" y1="290" x2="872" y2="290" stroke="#6b7280" stroke-width="3.5" marker-end="url(#arrow)"/>
+  <text x="430" y="276" fill="#f472b6" font-size="12" text-anchor="middle">MJPEG</text>
+  <text x="848" y="262" fill="#34d399" font-size="11" text-anchor="middle">detections</text>
+
+  <!-- ============ PRIVACY STRIP ============ -->
+  <g filter="url(#glow)">
+    <rect x="200" y="490" width="880" height="70" rx="14" fill="#0d1420" stroke="#10b981" stroke-width="2"/>
+  </g>
+  <text x="640" y="518" fill="#34d399" font-size="16" font-weight="bold" text-anchor="middle">Zero cloud. Every stage stays inside the car.</text>
+  <text x="640" y="542" fill="#9ca3af" font-size="13" text-anchor="middle">capture, perception, and decisions all run on devices you own - frames never leave the vehicle</text>
+
+  <!-- footer -->
+  <line x1="80" y1="585" x2="1200" y2="585" stroke="#1f2937" stroke-width="1.5"/>
+  <text x="640" y="608" fill="#6b7280" font-size="13" text-anchor="middle">repo roles: produce (this repo) -> perceive (stream client) -> consume (main repo)</text>
+</svg>

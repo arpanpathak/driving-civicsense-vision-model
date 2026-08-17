@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="560" viewBox="0 0 1560 560" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="1" stop-color="#0b1220"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7280"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981"/>
+    </marker>
+  </defs>
+
+  <rect width="1560" height="560" fill="url(#bg)"/>
+
+  <!-- title -->
+  <text x="780" y="58" fill="#f9fafb" font-size="34" font-weight="bold" text-anchor="middle">CivicSense, Distributed Edge Pipeline</text>
+  <text x="780" y="92" fill="#9ca3af" font-size="20" text-anchor="middle">trigger → capture → infer → alert · 100% on-device, no cloud</text>
+
+  <!-- TIER 1 : PI PICO -->
+  <rect x="25" y="170" width="280" height="200" rx="14" fill="#111827" stroke="#f59e0b" stroke-width="3"/>
+  <text x="165" y="198" fill="#f59e0b" font-size="18" font-weight="bold" text-anchor="middle">TIER 1 · TRIGGER</text>
+  <text x="165" y="228" fill="#f9fafb" font-size="20" font-weight="bold" text-anchor="middle">Pi Pico (RP2040)</text>
+  <text x="165" y="258" fill="#d1d5db" font-size="17" text-anchor="middle">PIO state machines</text>
+  <text x="165" y="284" fill="#9ca3af" font-size="17" text-anchor="middle">PIR / button / ultrasonic</text>
+  <text x="165" y="310" fill="#9ca3af" font-size="17" text-anchor="middle">power-state control</text>
+  <text x="165" y="336" fill="#9ca3af" font-size="17" text-anchor="middle">LED / buzzer feedback</text>
+
+  <!-- TIER 2 : PI ZERO -->
+  <rect x="435" y="170" width="280" height="200" rx="14" fill="#111827" stroke="#3b82f6" stroke-width="3"/>
+  <text x="575" y="198" fill="#3b82f6" font-size="18" font-weight="bold" text-anchor="middle">TIER 2 · CAPTURE &amp; STREAM</text>
+  <text x="575" y="228" fill="#f9fafb" font-size="20" font-weight="bold" text-anchor="middle">Raspberry Pi Zero 2 W</text>
+  <text x="575" y="258" fill="#d1d5db" font-size="17" text-anchor="middle">libcamera (IMX477 / IMX335)</text>
+  <text x="575" y="284" fill="#9ca3af" font-size="17" text-anchor="middle">MJPEG / H.264 encode</text>
+  <text x="575" y="310" fill="#9ca3af" font-size="17" text-anchor="middle">Rust / Go stream daemon</text>
+  <text x="575" y="336" fill="#9ca3af" font-size="17" text-anchor="middle">wake on trigger, sleep idle</text>
+
+  <!-- TIER 3 : THE BRAIN -->
+  <rect x="845" y="170" width="280" height="200" rx="14" fill="#111827" stroke="#10b981" stroke-width="3"/>
+  <text x="985" y="198" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">TIER 3 · THE BRAIN</text>
+  <text x="985" y="228" fill="#f9fafb" font-size="19" font-weight="bold" text-anchor="middle">Pi 5 + Hailo-8L / Desktop GPU</text>
+  <text x="985" y="258" fill="#d1d5db" font-size="17" text-anchor="middle">YOLOv8/v11 ONNX (INT8)</text>
+  <text x="985" y="284" fill="#9ca3af" font-size="17" text-anchor="middle">NMS → Deep SORT → Kalman</text>
+  <text x="985" y="310" fill="#9ca3af" font-size="17" text-anchor="middle">Intersection / Lane / Signal</text>
+  <text x="985" y="336" fill="#9ca3af" font-size="17" text-anchor="middle">Alert Priority Engine</text>
+
+  <!-- TIER 4 : KMP COMPANION -->
+  <rect x="1255" y="170" width="280" height="200" rx="14" fill="#111827" stroke="#a855f7" stroke-width="3"/>
+  <text x="1395" y="198" fill="#a855f7" font-size="18" font-weight="bold" text-anchor="middle">TIER 4 · COMPANION</text>
+  <text x="1395" y="228" fill="#f9fafb" font-size="20" font-weight="bold" text-anchor="middle">Kotlin Multiplatform</text>
+  <text x="1395" y="258" fill="#d1d5db" font-size="17" text-anchor="middle">Android · Jetpack Compose</text>
+  <text x="1395" y="284" fill="#9ca3af" font-size="17" text-anchor="middle">iOS · SwiftUI</text>
+  <text x="1395" y="310" fill="#9ca3af" font-size="17" text-anchor="middle">live alerts, violations, maps</text>
+  <text x="1395" y="336" fill="#9ca3af" font-size="17" text-anchor="middle">gRPC + Bluetooth mesh</text>
+
+  <!-- arrows between tiers (centered on the box midline y=270) -->
+  <line x1="313" y1="270" x2="427" y2="270" stroke="#6b7280" stroke-width="6" marker-end="url(#arrow)"/>
+  <line x1="723" y1="270" x2="837" y2="270" stroke="#6b7280" stroke-width="6" marker-end="url(#arrow)"/>
+  <line x1="1133" y1="270" x2="1247" y2="270" stroke="#6b7280" stroke-width="6" marker-end="url(#arrow)"/>
+
+  <!-- arrow labels, below the lines, fully inside the wide gaps -->
+  <text x="370" y="294" fill="#9ca3af" font-size="14" text-anchor="middle">GPIO trigger</text>
+  <text x="780" y="294" fill="#9ca3af" font-size="14" text-anchor="middle">UDP frames</text>
+  <text x="1190" y="294" fill="#9ca3af" font-size="14" text-anchor="middle">gRPC alerts</text>
+
+  <!-- dashed control channel back to pico -->
+  <path d="M 985 370 L 985 455 L 165 455 L 165 382" fill="none" stroke="#10b981" stroke-width="4" stroke-dasharray="10 8" marker-end="url(#arrowGreen)"/>
+  <text x="575" y="440" fill="#6ee7b7" font-size="15" text-anchor="middle">ack / re-trigger, control channel</text>
+
+  <!-- footer -->
+  <text x="780" y="520" fill="#6b7280" font-size="18" text-anchor="middle">every hop stays on your network, frames never leave the car</text>
+</svg>

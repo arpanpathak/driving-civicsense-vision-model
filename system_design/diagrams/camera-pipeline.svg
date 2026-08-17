@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="1" stop-color="#0b1220"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7280"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#34d399"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#60a5fa"/>
+    </marker>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="720" fill="url(#bg)"/>
+
+  <!-- title -->
+  <text x="640" y="50" fill="#f9fafb" font-size="30" font-weight="bold" text-anchor="middle">CivicSense Pi Stream - Camera Chain</text>
+  <text x="640" y="80" fill="#9ca3af" font-size="17" text-anchor="middle">IMX335 -> CSI-2 -> libcamera -> rpicam-vid -> MJPEG on stdout, all on the Pi</text>
+
+  <!-- ============ ROW 1 : hardware -> OS -> encode ============ -->
+
+  <!-- IMX335 sensor -->
+  <g filter="url(#glow)">
+    <rect x="40" y="130" width="270" height="150" rx="14" fill="#1a1609" stroke="#f59e0b" stroke-width="2.5"/>
+  </g>
+  <text x="175" y="160" fill="#f59e0b" font-size="17" font-weight="bold" text-anchor="middle">IMX335 sensor</text>
+  <text x="175" y="186" fill="#f9fafb" font-size="13.5" text-anchor="middle">Arducam 5 MP BSI CMOS</text>
+  <text x="175" y="206" fill="#9ca3af" font-size="12.5" text-anchor="middle">M12 lens - 15-pin FPC cable</text>
+  <text x="175" y="226" fill="#9ca3af" font-size="12.5" text-anchor="middle">raw Bayer + CSI-2 output</text>
+  <text x="175" y="250" fill="#6b7280" font-size="12" text-anchor="middle">5V - ~100 mA active</text>
+
+  <!-- Pi Zero 2 W -->
+  <g filter="url(#glow)">
+    <rect x="470" y="130" width="320" height="150" rx="14" fill="#0f1a2e" stroke="#3b82f6" stroke-width="2.5"/>
+  </g>
+  <text x="630" y="160" fill="#3b82f6" font-size="17" font-weight="bold" text-anchor="middle">Raspberry Pi Zero 2 W</text>
+  <text x="630" y="186" fill="#f9fafb" font-size="13.5" text-anchor="middle">CSI camera connector</text>
+  <text x="630" y="206" fill="#9ca3af" font-size="12.5" text-anchor="middle">Raspberry Pi OS + libcamera</text>
+  <text x="630" y="226" fill="#9ca3af" font-size="12.5" text-anchor="middle">kernel driver -> ISP</text>
+  <text x="630" y="250" fill="#6b7280" font-size="12" text-anchor="middle">auto-exposure - white balance - lens shading</text>
+
+  <!-- rpicam-vid -->
+  <g filter="url(#glow)">
+    <rect x="950" y="130" width="290" height="150" rx="14" fill="#0c1f18" stroke="#10b981" stroke-width="2.5"/>
+  </g>
+  <text x="1095" y="160" fill="#10b981" font-size="17" font-weight="bold" text-anchor="middle">rpicam-vid</text>
+  <text x="1095" y="186" fill="#f9fafb" font-size="13.5" text-anchor="middle">--codec mjpeg --output -</text>
+  <text x="1095" y="206" fill="#9ca3af" font-size="12.5" text-anchor="middle">MJPEG encode, 640x480 default</text>
+  <text x="1095" y="226" fill="#9ca3af" font-size="12.5" text-anchor="middle">compressed JPEG bytes on stdout</text>
+  <text x="1095" y="250" fill="#6b7280" font-size="12" text-anchor="middle">reference libcamera app</text>
+
+  <!-- row 1 arrows -->
+  <line x1="318" y1="205" x2="460" y2="205" stroke="#6b7280" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="389" y="192" fill="#9ca3af" font-size="12" text-anchor="middle">CSI-2 - 2-lane MIPI</text>
+  <line x1="798" y1="205" x2="940" y2="205" stroke="#6b7280" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="869" y="192" fill="#9ca3af" font-size="12" text-anchor="middle">encoded stream</text>
+
+  <!-- ============ ROW 2 : capture software ============ -->
+
+  <!-- camera.rs -->
+  <g filter="url(#glow)">
+    <rect x="40" y="360" width="330" height="130" rx="14" fill="#0c1f18" stroke="#10b981" stroke-width="2.5"/>
+  </g>
+  <text x="205" y="390" fill="#10b981" font-size="17" font-weight="bold" text-anchor="middle">camera.rs reader thread</text>
+  <text x="205" y="416" fill="#f9fafb" font-size="13" text-anchor="middle">extract_jpeg() - 4 KB chunk reads</text>
+  <text x="205" y="436" fill="#9ca3af" font-size="12.5" text-anchor="middle">finds complete JPEGs (FF D8 .. FF D9)</text>
+  <text x="205" y="456" fill="#9ca3af" font-size="12.5" text-anchor="middle">drops partial frames</text>
+  <text x="205" y="476" fill="#6b7280" font-size="12" text-anchor="middle">pushes newest into SharedFrame</text>
+
+  <!-- SharedFrame -->
+  <g filter="url(#glow)">
+    <rect x="480" y="360" width="330" height="130" rx="14" fill="#170f26" stroke="#8b5cf6" stroke-width="3"/>
+  </g>
+  <text x="645" y="390" fill="#8b5cf6" font-size="17" font-weight="bold" text-anchor="middle">SharedFrame</text>
+  <text x="645" y="416" fill="#f9fafb" font-size="13" text-anchor="middle">Arc&lt;Mutex&lt;Option&lt;Vec&lt;u8&gt;&gt;&gt;&gt;</text>
+  <text x="645" y="436" fill="#9ca3af" font-size="12.5" text-anchor="middle">ONE source of truth for the latest frame</text>
+  <text x="645" y="456" fill="#9ca3af" font-size="12.5" text-anchor="middle">camera WRITES - readers grab newest</text>
+  <text x="645" y="476" fill="#6b7280" font-size="12" text-anchor="middle">slow viewers miss frames, never queue</text>
+
+  <!-- http / udp -->
+  <g filter="url(#glow)">
+    <rect x="930" y="360" width="310" height="130" rx="14" fill="#0b1c22" stroke="#06b6d4" stroke-width="2.5"/>
+  </g>
+  <text x="1085" y="390" fill="#06b6d4" font-size="16" font-weight="bold" text-anchor="middle">http.rs - port 8000</text>
+  <text x="1085" y="416" fill="#f9fafb" font-size="12.5" text-anchor="middle">multipart/x-mixed-replace</text>
+  <text x="1085" y="436" fill="#9ca3af" font-size="12" text-anchor="middle">any web browser</text>
+  <text x="1085" y="456" fill="#6b7280" font-size="12" text-anchor="middle">UDP 9000 via udp.rs for the app</text>
+
+  <line x1="378" y1="425" x2="470" y2="425" stroke="#34d399" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <line x1="818" y1="425" x2="920" y2="425" stroke="#60a5fa" stroke-width="3" marker-end="url(#arrowBlue)"/>
+  <line x1="1095" y1="285" x2="1095" y2="350" stroke="#34d399" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <text x="1110" y="325" fill="#34d399" font-size="12">stdout</text>
+
+  <!-- ============ BOTTOM : setup commands ============ -->
+  <g filter="url(#glow)">
+    <rect x="60" y="540" width="1160" height="150" rx="14" fill="#0d1420" stroke="#3b82f6" stroke-width="1.5"/>
+  </g>
+  <text x="90" y="570" fill="#60a5fa" font-size="14" font-weight="bold">Setup (one time, on the Pi):</text>
+
+  <text x="90" y="600" fill="#9ca3af" font-size="13" font-family="Menlo, Consolas, monospace"># /boot/config.txt - point the CSI port at the IMX335</text>
+  <text x="90" y="622" fill="#e5e7eb" font-size="13" font-family="Menlo, Consolas, monospace">dtoverlay=arducam-pivariety</text>
+  <text x="90" y="644" fill="#e5e7eb" font-size="13" font-family="Menlo, Consolas, monospace">camera_auto_detect=1</text>
+
+  <text x="620" y="600" fill="#9ca3af" font-size="13" font-family="Menlo, Consolas, monospace"># then verify the sensor is seen</text>
+  <text x="620" y="622" fill="#e5e7eb" font-size="13" font-family="Menlo, Consolas, monospace">libcamera-hello --list-cameras</text>
+  <text x="620" y="644" fill="#9ca3af" font-size="13" font-family="Menlo, Consolas, monospace"># and stream MJPEG to the reader thread</text>
+  <text x="620" y="666" fill="#e5e7eb" font-size="13" font-family="Menlo, Consolas, monospace">rpicam-vid --codec mjpeg --output -</text>
+
+  <!-- footer -->
+  <line x1="80" y1="705" x2="1200" y2="705" stroke="#1f2937" stroke-width="1.5"/>
+  <text x="640" y="714" fill="#6b7280" font-size="13" text-anchor="middle">the reader thread hands the same bytes to HTTP and UDP - see stream-pipeline.svg</text>
+</svg>
