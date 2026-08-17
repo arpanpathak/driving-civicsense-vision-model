@@ -294,12 +294,12 @@ struct Args {
     fps: f32,
     model: String,
     conf: f32,
-    /// Occupancy threshold (%) above which a BLOCKED INTERSECTION alert
-    /// fires. Stock config default (30%) is calibrated for a narrow-FoV
-    /// dashcam; the ultra-wide KITTI lens keeps vehicle occupancy far
-    /// lower, so the demo defaults to 12%.
+    /// Occupancy threshold (%) of the forward "intersection box" region
+    /// above which a BLOCKED INTERSECTION alert fires. Matches the stock
+    /// config default (30%) — the demo does not lower it.
     occ_threshold: f32,
     /// Minimum ego speed (mph) for a blocked-intersection alert.
+    /// Matches the stock config default (15 mph).
     blocked_speed: f32,
 }
 
@@ -329,8 +329,8 @@ fn parse_args() -> Result<Args, String> {
         fps: num("fps", 15.0)?,
         model: flags.get("model").cloned().unwrap_or_else(|| "weights/yolov8n.onnx".into()),
         conf: num("conf", 0.4)?,
-        occ_threshold: num("occ", 12.0)?,
-        blocked_speed: num("blocked-speed", 5.0)?,
+        occ_threshold: num("occ", 30.0)?,
+        blocked_speed: num("blocked-speed", 15.0)?,
     })
 }
 
@@ -388,6 +388,7 @@ fn run_demo(args: &Args) -> Result<(), String> {
     let mut class_counts = HashMap::new();
     let mut srt = String::new();
     let mut srt_entries = 0u32;
+    let mut stop_sign_streak: u32 = 0;
 
     while let Some((buf, _idx)) = frame_iter() {
         let t = frame_count as f64 / args.fps as f64;
@@ -414,7 +415,19 @@ fn run_demo(args: &Args) -> Result<(), String> {
             .collect();
 
         let tracks = tracker.update(&mapped);
-        let i_alerts = intersection.analyze(&mapped, args.ego_speed, dt);
+
+        // Stop-sign confirmation: a warning needs a stable track — the sign
+        // must persist for ≥ 3 consecutive frames (same policy the README
+        // documents for cut-in warnings). A one- or two-frame flicker on an
+        // ambiguous object can't trigger a violation.
+        let sign_present = mapped.iter().any(|d| d.class_id == 0 && d.confidence >= 0.5);
+        stop_sign_streak = if sign_present { stop_sign_streak + 1 } else { 0 };
+        let mut mapped_for_alerts = mapped.clone();
+        if stop_sign_streak < 3 {
+            mapped_for_alerts.retain(|d| d.class_id != 0);
+        }
+
+        let i_alerts = intersection.analyze(&mapped_for_alerts, args.ego_speed, dt);
         let l_alerts = lane_speed.analyze(&tracks, args.ego_speed, dt);
 
         // 4. Draw everything.
@@ -511,8 +524,10 @@ fn alert_text(a: &IntersectionAlert) -> String {
         IntersectionAlert::StopSignViolation { confidence, distance_to_stop_line, ego_speed } => {
             format!("STOP SIGN VIOLATION  dist={distance_to_stop_line:.0}FT  conf={confidence:.2}  ego={ego_speed:.0}MPH")
         }
-        IntersectionAlert::BlockedIntersection { confidence, occupancy_pct, distance_to_stop_line, ego_speed } => {
-            format!("BLOCKED INTERSECTION  occ={occupancy_pct:.0}%  dist={distance_to_stop_line:.0}FT  conf={confidence:.2}  ego={ego_speed:.0}MPH")
+        IntersectionAlert::BlockedIntersection { confidence, occupancy_pct, ego_speed, .. } => {
+            // Note: no distance is shown — the analyzer does not measure a
+            // real distance to the box, only the forward-region occupancy.
+            format!("BLOCKED INTERSECTION  occ={occupancy_pct:.0}%  conf={confidence:.2}  ego={ego_speed:.0}MPH")
         }
     }
 }

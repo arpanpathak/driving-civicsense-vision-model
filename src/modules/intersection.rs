@@ -63,6 +63,16 @@ pub enum IntersectionAlert {
 //  IntersectionAnalyzer
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Forward "intersection box" region, as fractions of the frame: the centre
+/// horizontal band below the horizon — i.e. the road ahead of the ego vehicle.
+/// Only vehicles inside this region count toward blocked-intersection
+/// occupancy, so parked cars at the far left/right edges cannot trigger the
+/// alert.
+const BOX_REGION_X_MIN: f32 = 0.25;
+const BOX_REGION_X_MAX: f32 = 0.75;
+const BOX_REGION_Y_MIN: f32 = 0.30;
+const BOX_REGION_Y_MAX: f32 = 1.00;
+
 /// Analyzes intersection safety from raw YOLO detections.
 ///
 /// Call [`analyze()`](IntersectionAnalyzer::analyze) once per frame with the
@@ -126,8 +136,8 @@ impl IntersectionAnalyzer {
     ///
     /// # Alert logic (blocked intersection)
     /// 1. Filter detections for vehicle classes (3, 4, 5).
-    /// 2. Compute the sum of bounding-box areas as a percentage of the
-    ///    total frame area.
+    /// 2. Measure how much of the forward "intersection box" region (centre
+    ///    band of the frame, below the horizon) is covered by those vehicles.
     /// 3. If `occupancy > blocked_occupancy_threshold` **and**
     ///    `ego_speed >= blocked_intersection_speed`, emit `BlockedIntersection`.
     pub fn analyze(
@@ -192,9 +202,28 @@ impl IntersectionAnalyzer {
             return;
         }
 
-        let total_area: f32 = (self.frame_width * self.frame_height) as f32;
-        let occupied_area: f32 = vehicles.iter().map(|d| (d.x2 - d.x1) * (d.y2 - d.y1)).sum();
-        let occupancy_pct = ((occupied_area / total_area) * 100.0).clamp(0.0, 100.0);
+        let (fw, fh) = (self.frame_width as f32, self.frame_height as f32);
+        let (rx1, ry1) = (fw * BOX_REGION_X_MIN, fh * BOX_REGION_Y_MIN);
+        let (rx2, ry2) = (fw * BOX_REGION_X_MAX, fh * BOX_REGION_Y_MAX);
+        let region_area = (rx2 - rx1) * (ry2 - ry1);
+
+        let occupied_area: f32 = vehicles
+            .iter()
+            .map(|v| {
+                let cx = (v.x1 + v.x2) / 2.0;
+                let cy = (v.y1 + v.y2) / 2.0;
+                if cx < rx1 || cx > rx2 || cy < ry1 || cy > ry2 {
+                    return 0.0;
+                }
+                let ox1 = v.x1.max(rx1);
+                let oy1 = v.y1.max(ry1);
+                let ox2 = v.x2.min(rx2);
+                let oy2 = v.y2.min(ry2);
+                ((ox2 - ox1) * (oy2 - oy1)).max(0.0)
+            })
+            .sum();
+
+        let occupancy_pct = (occupied_area / region_area * 100.0).clamp(0.0, 100.0);
 
         if occupancy_pct > self.config.blocked_occupancy_threshold
             && ego_speed >= self.config.blocked_intersection_speed
@@ -249,20 +278,41 @@ mod tests {
         assert!(alerts.is_empty());
     }
 
-    /// Two large vehicle detections covering most of the frame → blocked
-    /// intersection alert expected.
+    /// Two large vehicles covering the forward "intersection box" region →
+    /// blocked intersection alert expected.
     #[test]
     fn test_intersection_occupancy_detection() {
         let cfg = Config::default();
         let mut analyzer = IntersectionAnalyzer::new(&cfg, 1280, 720);
+        // Both boxes sit inside the forward region (x: 320-960, y: 216-720).
         let dets = vec![
-            make_det(3, 0.0, 0.0, 640.0, 360.0, 0.9),
-            make_det(3, 640.0, 0.0, 1280.0, 360.0, 0.9),
+            make_det(3, 400.0, 216.0, 800.0, 720.0, 0.9),
+            make_det(3, 800.0, 216.0, 1000.0, 720.0, 0.9),
         ];
         let alerts = analyzer.analyze(&dets, 20.0, 0.033);
         let blocked = alerts
             .iter()
             .any(|a| matches!(a, IntersectionAlert::BlockedIntersection { .. }));
         assert!(blocked, "Expected BlockedIntersection alert");
+    }
+
+    /// Large vehicles parked at the far left/right edges (outside the forward
+    /// region) must NOT trigger a blocked-intersection alert.
+    #[test]
+    fn test_edge_parked_cars_do_not_block() {
+        let cfg = Config::default();
+        let mut analyzer = IntersectionAnalyzer::new(&cfg, 1280, 720);
+        // Centers at x=100 and x=1180 — both outside the region (320-960).
+        let dets = vec![
+            make_det(3, 0.0, 0.0, 200.0, 720.0, 0.9),
+            make_det(3, 1080.0, 0.0, 1280.0, 720.0, 0.9),
+        ];
+        let alerts = analyzer.analyze(&dets, 20.0, 0.033);
+        assert!(
+            alerts
+                .iter()
+                .all(|a| !matches!(a, IntersectionAlert::BlockedIntersection { .. })),
+            "Edge vehicles must not count toward occupancy"
+        );
     }
 }
