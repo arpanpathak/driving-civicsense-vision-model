@@ -1,0 +1,429 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1600" viewBox="0 0 1560 1600" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#eef2f7"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrowUp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/>
+    </marker>
+    <marker id="arrowDown" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="1560" height="1600" fill="url(#bg)"/>
+
+  <!-- ============ TITLE ============ -->
+  <text x="780" y="46" fill="#0f172a" font-size="30" font-weight="bold" text-anchor="middle">CivicSense CNN Architecture - YOLOv8n Detector (nc = 7)</text>
+  <text x="780" y="76" fill="#64748b" font-size="17" text-anchor="middle">yolov8n.pt - imgsz 640 x 640 - C2f backbone + SPPF - PAN neck - 3-scale anchor-free heads - 8400 predictions</text>
+
+  <!-- ============ COLUMN HEADERS ============ -->
+  <text x="290" y="122" fill="#2563eb" font-size="15" font-weight="bold" text-anchor="middle">BACKBONE - feature extraction</text>
+  <text x="795" y="122" fill="#ea580c" font-size="15" font-weight="bold" text-anchor="middle">NECK - PAN multi-scale fusion</text>
+  <text x="1285" y="122" fill="#16a34a" font-size="15" font-weight="bold" text-anchor="middle">HEADS - per-scale prediction</text>
+
+  <!-- ============================================================ -->
+  <!-- ============ COLUMN 1 : BACKBONE (YOLOv8n) ============ -->
+  <!-- ============================================================ -->
+
+  <!-- INPUT -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="150" width="280" height="64" rx="6" fill="#334155" stroke="#1e293b" stroke-width="2"/>
+    <polygon points="340,150 364,134 364,198 340,214" fill="#1e293b"/>
+    <polygon points="60,150 84,134 364,134 340,150" fill="#475569"/>
+  </g>
+  <g fill="#cbd5e1">
+    <circle cx="82" cy="178" r="2.5"/><circle cx="100" cy="178" r="2.5"/><circle cx="118" cy="178" r="2.5"/><circle cx="136" cy="178" r="2.5"/><circle cx="154" cy="178" r="2.5"/>
+    <circle cx="82" cy="192" r="2.5"/><circle cx="100" cy="192" r="2.5"/><circle cx="118" cy="192" r="2.5"/><circle cx="136" cy="192" r="2.5"/><circle cx="154" cy="192" r="2.5"/>
+    <circle cx="82" cy="185" r="2.5"/><circle cx="100" cy="185" r="2.5"/><circle cx="118" cy="185" r="2.5"/><circle cx="136" cy="185" r="2.5"/><circle cx="154" cy="185" r="2.5"/>
+  </g>
+  <text x="248" y="188" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle" font-family="Menlo, Consolas, monospace">640x640x3 RGB</text>
+  <text x="380" y="176" fill="#1e293b" font-size="15" font-weight="bold">Input frame</text>
+  <text x="380" y="196" fill="#64748b" font-size="12.5">dashcam / simulator frame</text>
+  <text x="380" y="212" fill="#94a3b8" font-size="12">letterboxed to 640^2, no crop</text>
+
+  <!-- CONV 320x16 -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="250" width="280" height="64" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+    <polygon points="340,250 364,234 364,298 340,314" fill="#1e40af"/>
+    <polygon points="60,250 84,234 364,234 340,250" fill="#3b82f6"/>
+  </g>
+  <g fill="#f8fafc"><circle cx="78" cy="279" r="3.5"/><circle cx="78" cy="286" r="3.5"/></g>
+  <text x="215" y="288" fill="#ffffff" font-size="15" font-weight="bold" text-anchor="middle" font-family="Menlo, Consolas, monospace">320x320x16</text>
+  <text x="380" y="276" fill="#1e293b" font-size="15" font-weight="bold">Conv 3x3, stride 2</text>
+  <text x="380" y="296" fill="#64748b" font-size="12.5">16 kernels - 3x3x3 each</text>
+  <text x="380" y="312" fill="#94a3b8" font-size="12">BN + SiLU activation</text>
+  <line x1="200" y1="218" x2="200" y2="244" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="212" y="236" fill="#94a3b8" font-size="11">/2</text>
+
+  <!-- CONV 160x32 -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="350" width="280" height="64" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+    <polygon points="340,350 364,334 364,398 340,414" fill="#1e40af"/>
+    <polygon points="60,350 84,334 364,334 340,350" fill="#3b82f6"/>
+  </g>
+  <g fill="#f8fafc"><circle cx="78" cy="375" r="3.5"/><circle cx="78" cy="382" r="3.5"/><circle cx="78" cy="389" r="3.5"/></g>
+  <text x="215" y="388" fill="#ffffff" font-size="15" font-weight="bold" text-anchor="middle" font-family="Menlo, Consolas, monospace">160x160x32</text>
+  <text x="380" y="376" fill="#1e293b" font-size="15" font-weight="bold">Conv 3x3, stride 2</text>
+  <text x="380" y="396" fill="#64748b" font-size="12.5">32 kernels - 3x3x16 each</text>
+  <text x="380" y="412" fill="#94a3b8" font-size="12">BN + SiLU activation</text>
+  <line x1="200" y1="318" x2="200" y2="344" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="212" y="336" fill="#94a3b8" font-size="11">/2</text>
+
+  <!-- C2F x3 160x32 -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="450" width="280" height="64" rx="6" fill="#0d9488" stroke="#0f766e" stroke-width="2"/>
+    <polygon points="340,450 364,434 364,498 340,514" fill="#115e59"/>
+    <polygon points="60,450 84,434 364,434 340,450" fill="#14b8a6"/>
+  </g>
+  <g fill="#f8fafc"><circle cx="78" cy="475" r="3.5"/><circle cx="78" cy="482" r="3.5"/><circle cx="78" cy="489" r="3.5"/></g>
+  <text x="215" y="488" fill="#ffffff" font-size="15" font-weight="bold" text-anchor="middle" font-family="Menlo, Consolas, monospace">160x160x32</text>
+  <text x="380" y="476" fill="#1e293b" font-size="15" font-weight="bold">C2f x3</text>
+  <text x="380" y="496" fill="#64748b" font-size="12.5">2-layer bottleneck, residual concat</text>
+  <text x="380" y="512" fill="#94a3b8" font-size="12">depth 3 (0.33 x 9)</text>
+  <line x1="200" y1="418" x2="200" y2="444" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- CONV 80x64 -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="550" width="280" height="64" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+    <polygon points="340,550 364,534 364,598 340,614" fill="#1e40af"/>
+    <polygon points="60,550 84,534 364,534 340,550" fill="#3b82f6"/>
+  </g>
+  <g fill="#f8fafc"><circle cx="78" cy="572" r="3.5"/><circle cx="78" cy="579" r="3.5"/><circle cx="78" cy="586" r="3.5"/><circle cx="78" cy="593" r="3.5"/></g>
+  <text x="215" y="588" fill="#ffffff" font-size="15" font-weight="bold" text-anchor="middle" font-family="Menlo, Consolas, monospace">80x80x64</text>
+  <text x="380" y="576" fill="#1e293b" font-size="15" font-weight="bold">Conv 3x3, stride 2</text>
+  <text x="380" y="596" fill="#64748b" font-size="12.5">64 kernels - 3x3x32 each</text>
+  <text x="380" y="612" fill="#94a3b8" font-size="12">BN + SiLU - P3 level</text>
+  <line x1="200" y1="518" x2="200" y2="544" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="212" y="536" fill="#94a3b8" font-size="11">/2</text>
+
+  <!-- C2F x6 80x64 -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="650" width="280" height="64" rx="6" fill="#0d9488" stroke="#0f766e" stroke-width="2"/>
+    <polygon points="340,650 364,634 364,698 340,714" fill="#115e59"/>
+    <polygon points="60,650 84,634 364,634 340,650" fill="#14b8a6"/>
+  </g>
+  <g fill="#f8fafc"><circle cx="78" cy="672" r="3.5"/><circle cx="78" cy="679" r="3.5"/><circle cx="78" cy="686" r="3.5"/><circle cx="78" cy="693" r="3.5"/></g>
+  <text x="215" y="688" fill="#ffffff" font-size="15" font-weight="bold" text-anchor="middle" font-family="Menlo, Consolas, monospace">80x80x64</text>
+  <text x="380" y="676" fill="#1e293b" font-size="15" font-weight="bold">C2f x6</text>
+  <text x="380" y="696" fill="#64748b" font-size="12.5">six stacked bottlenecks</text>
+  <text x="380" y="712" fill="#94a3b8" font-size="12">depth 6 (0.33 x 18)</text>
+  <line x1="200" y1="618" x2="200" y2="644" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- CONV 40x128 -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="750" width="280" height="64" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+    <polygon points="340,750 364,734 364,798 340,814" fill="#1e40af"/>
+    <polygon points="60,750 84,734 364,734 340,750" fill="#3b82f6"/>
+  </g>
+  <g fill="#f8fafc"><circle cx="78" cy="768" r="3.5"/><circle cx="78" cy="775" r="3.5"/><circle cx="78" cy="782" r="3.5"/><circle cx="78" cy="789" r="3.5"/><circle cx="78" cy="796" r="3.5"/></g>
+  <text x="215" y="788" fill="#ffffff" font-size="15" font-weight="bold" text-anchor="middle" font-family="Menlo, Consolas, monospace">40x40x128</text>
+  <text x="380" y="776" fill="#1e293b" font-size="15" font-weight="bold">Conv 3x3, stride 2</text>
+  <text x="380" y="796" fill="#64748b" font-size="12.5">128 kernels - 3x3x64 each</text>
+  <text x="380" y="812" fill="#94a3b8" font-size="12">BN + SiLU - P4 level</text>
+  <line x1="200" y1="718" x2="200" y2="744" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="212" y="736" fill="#94a3b8" font-size="11">/2</text>
+
+  <!-- C2F x6 40x128 -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="850" width="280" height="64" rx="6" fill="#0d9488" stroke="#0f766e" stroke-width="2"/>
+    <polygon points="340,850 364,834 364,898 340,914" fill="#115e59"/>
+    <polygon points="60,850 84,834 364,834 340,850" fill="#14b8a6"/>
+  </g>
+  <g fill="#f8fafc"><circle cx="78" cy="868" r="3.5"/><circle cx="78" cy="875" r="3.5"/><circle cx="78" cy="882" r="3.5"/><circle cx="78" cy="889" r="3.5"/><circle cx="78" cy="896" r="3.5"/></g>
+  <text x="215" y="888" fill="#ffffff" font-size="15" font-weight="bold" text-anchor="middle" font-family="Menlo, Consolas, monospace">40x40x128</text>
+  <text x="380" y="876" fill="#1e293b" font-size="15" font-weight="bold">C2f x6</text>
+  <text x="380" y="896" fill="#64748b" font-size="12.5">six stacked bottlenecks</text>
+  <text x="380" y="912" fill="#94a3b8" font-size="12">depth 6 (0.33 x 18)</text>
+  <line x1="200" y1="818" x2="200" y2="844" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- CONV 20x256 -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="950" width="280" height="64" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+    <polygon points="340,950 364,934 364,998 340,1014" fill="#1e40af"/>
+    <polygon points="60,950 84,934 364,934 340,950" fill="#3b82f6"/>
+  </g>
+  <g fill="#f8fafc"><circle cx="78" cy="964" r="3.5"/><circle cx="78" cy="971" r="3.5"/><circle cx="78" cy="978" r="3.5"/><circle cx="78" cy="985" r="3.5"/><circle cx="78" cy="992" r="3.5"/><circle cx="78" cy="999" r="3.5"/></g>
+  <text x="215" y="988" fill="#ffffff" font-size="15" font-weight="bold" text-anchor="middle" font-family="Menlo, Consolas, monospace">20x20x256</text>
+  <text x="380" y="976" fill="#1e293b" font-size="15" font-weight="bold">Conv 3x3, stride 2</text>
+  <text x="380" y="996" fill="#64748b" font-size="12.5">256 kernels - 3x3x128 each</text>
+  <text x="380" y="1012" fill="#94a3b8" font-size="12">BN + SiLU - P5 level</text>
+  <line x1="200" y1="918" x2="200" y2="944" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="212" y="936" fill="#94a3b8" font-size="11">/2</text>
+
+  <!-- C2F x3 20x256 -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="1050" width="280" height="64" rx="6" fill="#0d9488" stroke="#0f766e" stroke-width="2"/>
+    <polygon points="340,1050 364,1034 364,1098 340,1114" fill="#115e59"/>
+    <polygon points="60,1050 84,1034 364,1034 340,1050" fill="#14b8a6"/>
+  </g>
+  <g fill="#f8fafc"><circle cx="78" cy="1064" r="3.5"/><circle cx="78" cy="1071" r="3.5"/><circle cx="78" cy="1078" r="3.5"/><circle cx="78" cy="1085" r="3.5"/><circle cx="78" cy="1092" r="3.5"/><circle cx="78" cy="1099" r="3.5"/></g>
+  <text x="215" y="1088" fill="#ffffff" font-size="15" font-weight="bold" text-anchor="middle" font-family="Menlo, Consolas, monospace">20x20x256</text>
+  <text x="380" y="1076" fill="#1e293b" font-size="15" font-weight="bold">C2f x3</text>
+  <text x="380" y="1096" fill="#64748b" font-size="12.5">three stacked bottlenecks</text>
+  <text x="380" y="1112" fill="#94a3b8" font-size="12">depth 3 (0.33 x 9)</text>
+  <line x1="200" y1="1018" x2="200" y2="1044" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- SPPF -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="1130" width="280" height="64" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="2"/>
+    <polygon points="340,1130 364,1114 364,1178 340,1194" fill="#5b21b6"/>
+    <polygon points="60,1130 84,1114 364,1114 340,1130" fill="#8b5cf6"/>
+  </g>
+  <g fill="#f8fafc"><circle cx="78" cy="1144" r="3.5"/><circle cx="78" cy="1151" r="3.5"/><circle cx="78" cy="1158" r="3.5"/><circle cx="78" cy="1165" r="3.5"/><circle cx="78" cy="1172" r="3.5"/><circle cx="78" cy="1179" r="3.5"/></g>
+  <text x="215" y="1168" fill="#ffffff" font-size="15" font-weight="bold" text-anchor="middle" font-family="Menlo, Consolas, monospace">20x20x256</text>
+  <text x="380" y="1156" fill="#1e293b" font-size="15" font-weight="bold">SPPF</text>
+  <text x="380" y="1174" fill="#64748b" font-size="12.5">spatial pyramid pooling - fast</text>
+  <text x="380" y="1190" fill="#94a3b8" font-size="12">parallel 5x5 max-pool branches</text>
+  <line x1="200" y1="1118" x2="200" y2="1124" stroke="#475569" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- ============================================================ -->
+  <!-- ============ COLUMN 2 : PAN NECK ============ -->
+  <!-- ============================================================ -->
+
+  <!-- P3 lane -->
+  <rect x="620" y="628" width="150" height="44" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="695" y="645" fill="#9a3412" font-size="12.5" font-weight="bold" text-anchor="middle">P3 - 80x80x64</text>
+  <text x="695" y="661" fill="#c2410c" font-size="11" text-anchor="middle" font-family="Menlo, Consolas, monospace">stride 8 - small</text>
+  <circle cx="830" cy="650" r="13" fill="#ffffff" stroke="#ea580c" stroke-width="2.5"/>
+  <text x="830" y="655" fill="#c2410c" font-size="15" font-weight="bold" text-anchor="middle">+</text>
+  <rect x="880" y="628" width="130" height="44" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  <text x="945" y="654" fill="#15803d" font-size="12.5" font-weight="bold" text-anchor="middle">P3_out</text>
+  <line x1="770" y1="650" x2="817" y2="650" stroke="#ea580c" stroke-width="2" marker-end="url(#arrowOrange)"/>
+  <line x1="843" y1="650" x2="872" y2="650" stroke="#16a34a" stroke-width="2" marker-end="url(#arrowGreen)"/>
+
+  <!-- P4 lane -->
+  <rect x="620" y="828" width="150" height="44" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="695" y="845" fill="#9a3412" font-size="12.5" font-weight="bold" text-anchor="middle">P4 - 40x40x128</text>
+  <text x="695" y="861" fill="#c2410c" font-size="11" text-anchor="middle" font-family="Menlo, Consolas, monospace">stride 16 - mid</text>
+  <circle cx="830" cy="850" r="13" fill="#ffffff" stroke="#ea580c" stroke-width="2.5"/>
+  <text x="830" y="855" fill="#c2410c" font-size="15" font-weight="bold" text-anchor="middle">+</text>
+  <rect x="880" y="828" width="130" height="44" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  <text x="945" y="854" fill="#15803d" font-size="12.5" font-weight="bold" text-anchor="middle">P4_out</text>
+  <line x1="770" y1="850" x2="817" y2="850" stroke="#ea580c" stroke-width="2" marker-end="url(#arrowOrange)"/>
+  <line x1="843" y1="850" x2="872" y2="850" stroke="#16a34a" stroke-width="2" marker-end="url(#arrowGreen)"/>
+
+  <!-- P5 lane -->
+  <rect x="620" y="1028" width="150" height="44" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="695" y="1045" fill="#9a3412" font-size="12.5" font-weight="bold" text-anchor="middle">P5 - 20x20x256</text>
+  <text x="695" y="1061" fill="#c2410c" font-size="11" text-anchor="middle" font-family="Menlo, Consolas, monospace">stride 32 - large</text>
+  <circle cx="830" cy="1050" r="13" fill="#ffffff" stroke="#ea580c" stroke-width="2.5"/>
+  <text x="830" y="1055" fill="#c2410c" font-size="15" font-weight="bold" text-anchor="middle">+</text>
+  <rect x="880" y="1028" width="130" height="44" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  <text x="945" y="1054" fill="#15803d" font-size="12.5" font-weight="bold" text-anchor="middle">P5_out</text>
+  <line x1="770" y1="1050" x2="817" y2="1050" stroke="#ea580c" stroke-width="2" marker-end="url(#arrowOrange)"/>
+  <line x1="843" y1="1050" x2="872" y2="1050" stroke="#16a34a" stroke-width="2" marker-end="url(#arrowGreen)"/>
+
+  <!-- backbone -> lanes -->
+  <line x1="364" y1="662" x2="612" y2="650" stroke="#ea580c" stroke-width="2.5" marker-end="url(#arrowOrange)"/>
+  <line x1="364" y1="862" x2="612" y2="850" stroke="#ea580c" stroke-width="2.5" marker-end="url(#arrowOrange)"/>
+  <line x1="364" y1="1142" x2="612" y2="1050" stroke="#ea580c" stroke-width="2.5" marker-end="url(#arrowOrange)"/>
+
+  <!-- top-down path (left spine x=570) -->
+  <!-- top-down: up arrows in the gap between lane boxes (x=760) -->
+  <line x1="760" y1="828" x2="760" y2="672" stroke="#ea580c" stroke-width="3" marker-end="url(#arrowUp)"/>
+  <line x1="760" y1="1028" x2="760" y2="872" stroke="#ea580c" stroke-width="3" marker-end="url(#arrowUp)"/>
+
+  <!-- bottom-up: down arrows in the gap between out boxes (x=900) -->
+  <line x1="900" y1="672" x2="900" y2="828" stroke="#ea580c" stroke-width="3" marker-end="url(#arrowDown)"/>
+  <line x1="900" y1="872" x2="900" y2="1028" stroke="#ea580c" stroke-width="3" marker-end="url(#arrowDown)"/>
+
+  <!-- direction legend -->
+  <text x="640" y="1110" fill="#c2410c" font-size="12" font-weight="bold">TOP-DOWN: x2 upsample + concat (semantic context)</text>
+  <text x="640" y="1130" fill="#c2410c" font-size="12" font-weight="bold">BOTTOM-UP: 3x3 conv s2 + concat (spatial detail)</text>
+
+  <!-- ============================================================ -->
+  <!-- ============ COLUMN 3 : DETECTION HEADS ============ -->
+  <!-- ============================================================ -->
+
+  <!-- HEAD P3 -->
+  <g filter="url(#shadow)">
+    <rect x="1080" y="600" width="440" height="150" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  </g>
+  <text x="1100" y="622" fill="#15803d" font-size="13" font-weight="bold">Head - P3 (80x80 grid)</text>
+  <circle cx="1106" cy="650" r="6" fill="#16a34a"/><circle cx="1106" cy="668" r="6" fill="#16a34a"/><circle cx="1106" cy="686" r="6" fill="#16a34a"/>
+  <text x="1112" y="712" fill="#94a3b8" font-size="10">features</text>
+  <g filter="url(#shadow)">
+    <rect x="1130" y="636" width="62" height="56" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  </g>
+  <text x="1161" y="658" fill="#15803d" font-size="11" text-anchor="middle" font-weight="bold">1x1</text>
+  <text x="1161" y="674" fill="#15803d" font-size="10" text-anchor="middle">conv</text>
+  <line x1="1192" y1="650" x2="1226" y2="650" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="1192" y1="664" x2="1226" y2="670" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="1192" y1="678" x2="1226" y2="690" stroke="#94a3b8" stroke-width="1.5"/>
+  <rect x="1230" y="636" width="70" height="76" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="1265" y="626" fill="#1d4ed8" font-size="10" text-anchor="middle" font-weight="bold">box - 4</text>
+  <circle cx="1265" cy="652" r="6" fill="#2563eb"/><circle cx="1265" cy="672" r="6" fill="#2563eb"/><circle cx="1265" cy="692" r="6" fill="#2563eb"/><circle cx="1265" cy="700" r="6" fill="#2563eb"/>
+  <text x="1265" y="722" fill="#64748b" font-size="9.5" text-anchor="middle">cx cy w h</text>
+  <rect x="1310" y="636" width="170" height="88" rx="6" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="1395" y="626" fill="#6d28d9" font-size="10" text-anchor="middle" font-weight="bold">cls - 7 classes</text>
+  <circle cx="1322" cy="652" r="6" fill="#7c3aed"/><circle cx="1346" cy="652" r="6" fill="#7c3aed"/><circle cx="1370" cy="652" r="6" fill="#7c3aed"/><circle cx="1394" cy="652" r="6" fill="#7c3aed"/><circle cx="1418" cy="652" r="6" fill="#7c3aed"/><circle cx="1442" cy="652" r="6" fill="#7c3aed"/><circle cx="1466" cy="652" r="6" fill="#7c3aed"/>
+  <text x="1395" y="682" fill="#64748b" font-size="9" text-anchor="middle">stop - light - xwalk</text>
+  <text x="1395" y="698" fill="#64748b" font-size="9" text-anchor="middle">veh - truck - bus - zone</text>
+  <text x="1300" y="742" fill="#475569" font-size="11" text-anchor="middle">-> 80x80 x 11 channels - 6400 anchors</text>
+  <line x1="1010" y1="650" x2="1072" y2="650" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- HEAD P4 -->
+  <g filter="url(#shadow)">
+    <rect x="1080" y="800" width="440" height="150" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  </g>
+  <text x="1100" y="822" fill="#15803d" font-size="13" font-weight="bold">Head - P4 (40x40 grid)</text>
+  <circle cx="1106" cy="850" r="6" fill="#16a34a"/><circle cx="1106" cy="868" r="6" fill="#16a34a"/><circle cx="1106" cy="886" r="6" fill="#16a34a"/>
+  <text x="1112" y="912" fill="#94a3b8" font-size="10">features</text>
+  <g filter="url(#shadow)">
+    <rect x="1130" y="836" width="62" height="56" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  </g>
+  <text x="1161" y="858" fill="#15803d" font-size="11" text-anchor="middle" font-weight="bold">1x1</text>
+  <text x="1161" y="874" fill="#15803d" font-size="10" text-anchor="middle">conv</text>
+  <line x1="1192" y1="850" x2="1226" y2="850" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="1192" y1="864" x2="1226" y2="870" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="1192" y1="878" x2="1226" y2="890" stroke="#94a3b8" stroke-width="1.5"/>
+  <rect x="1230" y="836" width="70" height="76" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="1265" y="826" fill="#1d4ed8" font-size="10" text-anchor="middle" font-weight="bold">box - 4</text>
+  <circle cx="1265" cy="852" r="6" fill="#2563eb"/><circle cx="1265" cy="872" r="6" fill="#2563eb"/><circle cx="1265" cy="892" r="6" fill="#2563eb"/><circle cx="1265" cy="900" r="6" fill="#2563eb"/>
+  <text x="1265" y="922" fill="#64748b" font-size="9.5" text-anchor="middle">cx cy w h</text>
+  <rect x="1310" y="836" width="170" height="88" rx="6" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="1395" y="826" fill="#6d28d9" font-size="10" text-anchor="middle" font-weight="bold">cls - 7 classes</text>
+  <circle cx="1322" cy="852" r="6" fill="#7c3aed"/><circle cx="1346" cy="852" r="6" fill="#7c3aed"/><circle cx="1370" cy="852" r="6" fill="#7c3aed"/><circle cx="1394" cy="852" r="6" fill="#7c3aed"/><circle cx="1418" cy="852" r="6" fill="#7c3aed"/><circle cx="1442" cy="852" r="6" fill="#7c3aed"/><circle cx="1466" cy="852" r="6" fill="#7c3aed"/>
+  <text x="1395" y="882" fill="#64748b" font-size="9" text-anchor="middle">stop - light - xwalk</text>
+  <text x="1395" y="898" fill="#64748b" font-size="9" text-anchor="middle">veh - truck - bus - zone</text>
+  <text x="1300" y="942" fill="#475569" font-size="11" text-anchor="middle">-> 40x40 x 11 channels - 1600 anchors</text>
+  <line x1="1010" y1="850" x2="1072" y2="850" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- HEAD P5 -->
+  <g filter="url(#shadow)">
+    <rect x="1080" y="1000" width="440" height="150" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  </g>
+  <text x="1100" y="1022" fill="#15803d" font-size="13" font-weight="bold">Head - P5 (20x20 grid)</text>
+  <circle cx="1106" cy="1050" r="6" fill="#16a34a"/><circle cx="1106" cy="1068" r="6" fill="#16a34a"/><circle cx="1106" cy="1086" r="6" fill="#16a34a"/>
+  <text x="1112" y="1112" fill="#94a3b8" font-size="10">features</text>
+  <g filter="url(#shadow)">
+    <rect x="1130" y="1036" width="62" height="56" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  </g>
+  <text x="1161" y="1058" fill="#15803d" font-size="11" text-anchor="middle" font-weight="bold">1x1</text>
+  <text x="1161" y="1074" fill="#15803d" font-size="10" text-anchor="middle">conv</text>
+  <line x1="1192" y1="1050" x2="1226" y2="1050" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="1192" y1="1064" x2="1226" y2="1070" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="1192" y1="1078" x2="1226" y2="1090" stroke="#94a3b8" stroke-width="1.5"/>
+  <rect x="1230" y="1036" width="70" height="76" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="1265" y="1026" fill="#1d4ed8" font-size="10" text-anchor="middle" font-weight="bold">box - 4</text>
+  <circle cx="1265" cy="1052" r="6" fill="#2563eb"/><circle cx="1265" cy="1072" r="6" fill="#2563eb"/><circle cx="1265" cy="1092" r="6" fill="#2563eb"/><circle cx="1265" cy="1100" r="6" fill="#2563eb"/>
+  <text x="1265" y="1122" fill="#64748b" font-size="9.5" text-anchor="middle">cx cy w h</text>
+  <rect x="1310" y="1036" width="170" height="88" rx="6" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="1395" y="1026" fill="#6d28d9" font-size="10" text-anchor="middle" font-weight="bold">cls - 7 classes</text>
+  <circle cx="1322" cy="1052" r="6" fill="#7c3aed"/><circle cx="1346" cy="1052" r="6" fill="#7c3aed"/><circle cx="1370" cy="1052" r="6" fill="#7c3aed"/><circle cx="1394" cy="1052" r="6" fill="#7c3aed"/><circle cx="1418" cy="1052" r="6" fill="#7c3aed"/><circle cx="1442" cy="1052" r="6" fill="#7c3aed"/><circle cx="1466" cy="1052" r="6" fill="#7c3aed"/>
+  <text x="1395" y="1082" fill="#64748b" font-size="9" text-anchor="middle">stop - light - xwalk</text>
+  <text x="1395" y="1098" fill="#64748b" font-size="9" text-anchor="middle">veh - truck - bus - zone</text>
+  <text x="1300" y="1142" fill="#475569" font-size="11" text-anchor="middle">-> 20x20 x 11 channels - 400 anchors</text>
+  <line x1="1010" y1="1050" x2="1072" y2="1050" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- totals line -->
+  <text x="1300" y="1178" fill="#334155" font-size="12" font-weight="bold" text-anchor="middle">Anchor-free (no objectness) - ONNX output [1, 11, 8400] = 6400 + 1600 + 400 predictions</text>
+
+  <!-- ============================================================ -->
+  <!-- ============ BOTTOM BAND : KERNEL / NEURON DETAIL ============ -->
+  <!-- ============================================================ -->
+
+  <rect x="40" y="1220" width="1480" height="290" rx="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="780" y="1256" fill="#0f172a" font-size="19" font-weight="bold" text-anchor="middle">One 3x3 conv layer, close up - a kernel is a tiny neuron bank</text>
+  <text x="780" y="1278" fill="#64748b" font-size="13" text-anchor="middle">stride s = 1 - padding p = 1 - one input channel shown for clarity</text>
+
+  <!-- input feature map -->
+  <text x="120" y="1310" fill="#1e293b" font-size="13" font-weight="bold">Input feature map</text>
+  <g>
+    <rect x="70" y="1320" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/><rect x="96" y="1320" width="26" height="26" fill="#bfdbfe" stroke="#93c5fd"/><rect x="122" y="1320" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/><rect x="148" y="1320" width="26" height="26" fill="#93c5fd" stroke="#93c5fd"/><rect x="174" y="1320" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/>
+    <rect x="70" y="1346" width="26" height="26" fill="#bfdbfe" stroke="#93c5fd"/><rect x="96" y="1346" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/><rect x="122" y="1346" width="26" height="26" fill="#93c5fd" stroke="#93c5fd"/><rect x="148" y="1346" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/><rect x="174" y="1346" width="26" height="26" fill="#bfdbfe" stroke="#93c5fd"/>
+    <rect x="70" y="1372" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/><rect x="96" y="1372" width="26" height="26" fill="#93c5fd" stroke="#93c5fd"/><rect x="122" y="1372" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/><rect x="148" y="1372" width="26" height="26" fill="#bfdbfe" stroke="#93c5fd"/><rect x="174" y="1372" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/>
+    <rect x="70" y="1398" width="26" height="26" fill="#93c5fd" stroke="#93c5fd"/><rect x="96" y="1398" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/><rect x="122" y="1398" width="26" height="26" fill="#bfdbfe" stroke="#93c5fd"/><rect x="148" y="1398" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/><rect x="174" y="1398" width="26" height="26" fill="#93c5fd" stroke="#93c5fd"/>
+    <rect x="70" y="1424" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/><rect x="96" y="1424" width="26" height="26" fill="#93c5fd" stroke="#93c5fd"/><rect x="122" y="1424" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/><rect x="148" y="1424" width="26" height="26" fill="#bfdbfe" stroke="#93c5fd"/><rect x="174" y="1424" width="26" height="26" fill="#dbeafe" stroke="#93c5fd"/>
+  </g>
+  <rect x="96" y="1346" width="78" height="78" fill="none" stroke="#2563eb" stroke-width="3"/>
+  <text x="135" y="1470" fill="#475569" font-size="11.5" text-anchor="middle">5x5 activations - 3x3 receptive window</text>
+
+  <text x="290" y="1400" fill="#475569" font-size="32" font-weight="bold" text-anchor="middle">x</text>
+  <text x="290" y="1423" fill="#94a3b8" font-size="12" text-anchor="middle">element-wise</text>
+
+  <!-- 3x3 kernel -->
+  <text x="400" y="1342" fill="#1e293b" font-size="13" font-weight="bold">Kernel (weights)</text>
+  <g>
+    <rect x="320" y="1352" width="34" height="34" fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/><rect x="354" y="1352" width="34" height="34" fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/><rect x="388" y="1352" width="34" height="34" fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/>
+    <rect x="320" y="1386" width="34" height="34" fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/><rect x="354" y="1386" width="34" height="34" fill="#2563eb" stroke="#2563eb" stroke-width="2"/><rect x="388" y="1386" width="34" height="34" fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/>
+    <rect x="320" y="1420" width="34" height="34" fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/><rect x="354" y="1420" width="34" height="34" fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/><rect x="388" y="1420" width="34" height="34" fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/>
+  </g>
+  <text x="337" y="1374" fill="#1e40af" font-size="13" text-anchor="middle" font-family="Menlo, Consolas, monospace">w11</text>
+  <text x="371" y="1374" fill="#1e40af" font-size="13" text-anchor="middle" font-family="Menlo, Consolas, monospace">w12</text>
+  <text x="405" y="1374" fill="#1e40af" font-size="13" text-anchor="middle" font-family="Menlo, Consolas, monospace">w13</text>
+  <text x="337" y="1408" fill="#1e40af" font-size="13" text-anchor="middle" font-family="Menlo, Consolas, monospace">w21</text>
+  <text x="371" y="1408" fill="#ffffff" font-size="13" font-weight="bold" text-anchor="middle" font-family="Menlo, Consolas, monospace">w22</text>
+  <text x="405" y="1408" fill="#1e40af" font-size="13" text-anchor="middle" font-family="Menlo, Consolas, monospace">w23</text>
+  <text x="337" y="1442" fill="#1e40af" font-size="13" text-anchor="middle" font-family="Menlo, Consolas, monospace">w31</text>
+  <text x="371" y="1442" fill="#1e40af" font-size="13" text-anchor="middle" font-family="Menlo, Consolas, monospace">w32</text>
+  <text x="405" y="1442" fill="#1e40af" font-size="13" text-anchor="middle" font-family="Menlo, Consolas, monospace">w33</text>
+  <text x="371" y="1474" fill="#475569" font-size="11.5" text-anchor="middle">3x3xC_in shared weights - w22 = current centre</text>
+
+  <text x="490" y="1400" fill="#475569" font-size="32" font-weight="bold" text-anchor="middle">+ b</text>
+  <text x="490" y="1423" fill="#94a3b8" font-size="12" text-anchor="middle">bias</text>
+
+  <!-- output feature map -->
+  <text x="582" y="1352" fill="#1e293b" font-size="13" font-weight="bold">Output activations</text>
+  <g>
+    <rect x="540" y="1362" width="28" height="28" fill="#dcfce7" stroke="#86efac"/><rect x="568" y="1362" width="28" height="28" fill="#bbf7d0" stroke="#86efac"/><rect x="596" y="1362" width="28" height="28" fill="#dcfce7" stroke="#86efac"/>
+    <rect x="540" y="1390" width="28" height="28" fill="#bbf7d0" stroke="#86efac"/><rect x="568" y="1390" width="28" height="28" fill="#16a34a" stroke="#16a34a" stroke-width="3"/><rect x="596" y="1390" width="28" height="28" fill="#bbf7d0" stroke="#86efac"/>
+    <rect x="540" y="1418" width="28" height="28" fill="#dcfce7" stroke="#86efac"/><rect x="568" y="1418" width="28" height="28" fill="#bbf7d0" stroke="#86efac"/><rect x="596" y="1418" width="28" height="28" fill="#dcfce7" stroke="#86efac"/>
+  </g>
+  <text x="582" y="1462" fill="#475569" font-size="11.5" text-anchor="middle">same shape - one value per position</text>
+
+  <!-- neuron mini-network -->
+  <text x="820" y="1310" fill="#1e293b" font-size="13" font-weight="bold">Neuron view of a kernel</text>
+  <g>
+    <circle cx="760" cy="1338" r="6" fill="#cbd5e1" stroke="#64748b"/><circle cx="780" cy="1333" r="6" fill="#cbd5e1" stroke="#64748b"/><circle cx="800" cy="1338" r="6" fill="#cbd5e1" stroke="#64748b"/>
+    <circle cx="760" cy="1358" r="6" fill="#cbd5e1" stroke="#64748b"/><circle cx="780" cy="1353" r="6" fill="#cbd5e1" stroke="#64748b"/><circle cx="800" cy="1358" r="6" fill="#cbd5e1" stroke="#64748b"/>
+    <circle cx="760" cy="1378" r="6" fill="#cbd5e1" stroke="#64748b"/><circle cx="780" cy="1373" r="6" fill="#cbd5e1" stroke="#64748b"/><circle cx="800" cy="1378" r="6" fill="#cbd5e1" stroke="#64748b"/>
+    <g stroke="#94a3b8" stroke-width="1.3">
+      <line x1="806" y1="1338" x2="870" y2="1358"/><line x1="806" y1="1353" x2="870" y2="1358"/><line x1="806" y1="1368" x2="870" y2="1358"/>
+      <line x1="780" y1="1333" x2="870" y2="1358"/><line x1="780" y1="1353" x2="870" y2="1358"/><line x1="780" y1="1373" x2="870" y2="1358"/>
+      <line x1="754" y1="1338" x2="870" y2="1358"/><line x1="754" y1="1358" x2="870" y2="1358"/><line x1="754" y1="1378" x2="870" y2="1358"/>
+    </g>
+    <circle cx="876" cy="1358" r="10" fill="#16a34a"/>
+    <text x="876" y="1362" fill="#ffffff" font-size="11" text-anchor="middle">Σ</text>
+  </g>
+  <text x="740" y="1420" fill="#475569" font-size="11.5" text-anchor="middle">9 spatial inputs - shared kernel</text>
+  <text x="740" y="1438" fill="#475569" font-size="11.5" text-anchor="middle">weights = one output neuron</text>
+
+  <!-- formula + notes -->
+  <text x="1000" y="1310" fill="#1e293b" font-size="13" font-weight="bold">What a Conv2D actually computes</text>
+  <text x="1000" y="1338" fill="#0f172a" font-size="14" font-family="Menlo, Consolas, monospace">out(i,j,k) = b[k] + <tspan font-family="DejaVu Serif, Georgia, Times New Roman, serif" font-style="italic">∑</tspan><tspan dy="5" font-size="9.5">m,n</tspan><tspan dy="-5"> W[k,m,n]</tspan> · x[i·s+m, j·s+n]</text>
+  <text x="1000" y="1364" fill="#64748b" font-size="12.5">sum over the receptive field, across every input channel</text>
+  <text x="1000" y="1400" fill="#1e293b" font-size="12.5" font-weight="bold">- Weight sharing:</text>
+  <text x="1000" y="1420" fill="#64748b" font-size="12.5">one kernel is reused at every spatial position  - </text>
+  <text x="1000" y="1438" fill="#64748b" font-size="12.5">translation equivariance, flat parameter count.</text>
+  <text x="1000" y="1468" fill="#1e293b" font-size="12.5" font-weight="bold">- Receptive field grows per stage:</text>
+  <text x="1000" y="1484" fill="#64748b" font-size="12.5">3x3 -> 5x5 -> 7x7 ... each conv widens what a head</text>
+  <text x="1000" y="1502" fill="#64748b" font-size="12.5">neuron sees: P5 sees whole objects, P3 keeps edges.</text>
+
+  <!-- class legend chips -->
+  <g>
+    <rect x="40" y="1540" width="1480" height="2" fill="#e2e8f0"/>
+    <text x="60" y="1566" fill="#334155" font-size="12.5" font-weight="bold">7-class vocabulary (classes.rs):</text>
+    <rect x="390" y="1552" width="120" height="26" rx="13" fill="#fee2e2"/><text x="450" y="1569" fill="#b91c1c" font-size="12" text-anchor="middle">stop_sign - 0</text>
+    <rect x="520" y="1552" width="120" height="26" rx="13" fill="#fef3c7"/><text x="580" y="1569" fill="#b45309" font-size="12" text-anchor="middle">traffic_light - 1</text>
+    <rect x="650" y="1552" width="120" height="26" rx="13" fill="#dbeafe"/><text x="710" y="1569" fill="#1d4ed8" font-size="12" text-anchor="middle">crosswalk - 2</text>
+    <rect x="780" y="1552" width="120" height="26" rx="13" fill="#dcfce7"/><text x="840" y="1569" fill="#15803d" font-size="12" text-anchor="middle">vehicle - 3</text>
+    <rect x="910" y="1552" width="120" height="26" rx="13" fill="#cffafe"/><text x="970" y="1569" fill="#0e7490" font-size="12" text-anchor="middle">truck - 4</text>
+    <rect x="1040" y="1552" width="120" height="26" rx="13" fill="#ede9fe"/><text x="1100" y="1569" fill="#6d28d9" font-size="12" text-anchor="middle">bus - 5</text>
+    <rect x="1170" y="1552" width="150" height="26" rx="13" fill="#fce7f3"/><text x="1245" y="1569" fill="#be185d" font-size="12" text-anchor="middle">intersection_zone - 6</text>
+  </g>
+</svg>

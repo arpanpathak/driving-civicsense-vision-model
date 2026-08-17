@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="700" viewBox="0 0 1060 700" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#64748b"/>
+    </marker>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f5f3ff"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1060" height="700" rx="12" fill="#fafafd"/>
+
+  <text x="530" y="42" text-anchor="middle" font-size="26" font-weight="700" fill="#0f172a">CivicSense Ground-Truth Manifest Pipeline</text>
+  <text x="530" y="66" text-anchor="middle" font-size="14" fill="#64748b">how field records become a versioned, CI-validated manifest the validator scores</text>
+
+  <!-- Row 1: collection -->
+  <g>
+    <rect x="60" y="100" width="280" height="80" rx="10" fill="url(#card)" stroke="#cbd5e1"/>
+    <text x="200" y="128" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">In-vehicle capture</text>
+    <text x="200" y="148" text-anchor="middle" font-size="11" fill="#64748b">dashcam + OBD-II + GNSS</text>
+    <text x="200" y="164" text-anchor="middle" font-size="11" fill="#94a3b8">SPaT via V2I when available</text>
+
+    <rect x="390" y="100" width="280" height="80" rx="10" fill="url(#card)" stroke="#cbd5e1"/>
+    <text x="530" y="128" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">Snapshot builder</text>
+    <text x="530" y="148" text-anchor="middle" font-size="11" fill="#64748b">syncs ego + detections + signal</text>
+    <text x="530" y="164" text-anchor="middle" font-size="11" fill="#94a3b8">one record per event window</text>
+
+    <rect x="720" y="100" width="280" height="80" rx="10" fill="url(#card)" stroke="#cbd5e1"/>
+    <text x="860" y="128" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">Human verdict</text>
+    <text x="860" y="148" text-anchor="middle" font-size="11" fill="#64748b">outcome + expected WarningLevel</text>
+    <text x="860" y="164" text-anchor="middle" font-size="11" fill="#94a3b8">annotated before any scoring</text>
+  </g>
+
+  <line x1="200" y1="180" x2="350" y2="222" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="530" y1="180" x2="530" y2="222" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="860" y1="180" x2="710" y2="222" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 2: manifest -->
+  <rect x="180" y="227" width="700" height="92" rx="12" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="530" y="254" text-anchor="middle" font-size="15" font-weight="700" fill="#6d28d9">1. Versioned manifest - validation/ground-truth/manifest.json</text>
+  <text x="530" y="276" text-anchor="middle" font-size="11.5" fill="#7c5a44">id - timestamp - ego{lat, lon, speed, heading, distance_to_stop_line}</text>
+  <text x="530" y="296" text-anchor="middle" font-size="11.5" fill="#7c5a44">light - time_to_red - detections[] - outcome - expected_level</text>
+
+  <line x1="430" y1="319" x2="360" y2="349" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="630" y1="319" x2="700" y2="349" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 3: validate + score -->
+  <rect x="110" y="353" width="380" height="96" rx="12" fill="url(#card)" stroke="#2563eb" stroke-width="2"/>
+  <text x="300" y="382" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">2. Batch validator</text>
+  <text x="300" y="404" text-anchor="middle" font-size="12" fill="#3b82f6">civicsense-data validate</text>
+  <text x="300" y="424" text-anchor="middle" font-size="11.5" fill="#64748b">schema, ranges, class ids, timestamps</text>
+
+  <rect x="570" y="353" width="380" height="96" rx="12" fill="url(#card)" stroke="#ea580c" stroke-width="2"/>
+  <text x="760" y="382" text-anchor="middle" font-size="15" font-weight="700" fill="#c2410c">3. Score engine</text>
+  <text x="760" y="404" text-anchor="middle" font-size="12" fill="#ea580c">evaluate_safety vs expected_level</text>
+  <text x="760" y="424" text-anchor="middle" font-size="11.5" fill="#64748b">per-class TP / FP / FN / TN</text>
+
+  <line x1="492" y1="401" x2="566" y2="401" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 4: outcome -->
+  <rect x="290" y="486" width="480" height="86" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="530" y="512" text-anchor="middle" font-size="14" font-weight="700" fill="#15803d">4. Accepted records</text>
+  <text x="530" y="534" text-anchor="middle" font-size="11.5" fill="#4ade80">passed CI validation on every push to main</text>
+  <text x="530" y="554" text-anchor="middle" font-size="11.5" fill="#64748b">ground truth the model is graded against - only as honest as its data</text>
+
+  <line x1="530" y1="449" x2="530" y2="481" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 5: guarantees -->
+  <g>
+    <rect x="100" y="600" width="250" height="56" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <text x="225" y="626" text-anchor="middle" font-size="13" font-weight="700" fill="#1d4ed8">single source of truth</text>
+    <text x="225" y="644" text-anchor="middle" font-size="11" fill="#64748b">schema lives in ground_truth.rs</text>
+
+    <rect x="380" y="600" width="250" height="56" rx="12" fill="#fefce8" stroke="#ca8a04" stroke-width="2"/>
+    <text x="505" y="626" text-anchor="middle" font-size="13" font-weight="700" fill="#a16207">human-first labelling</text>
+    <text x="505" y="644" text-anchor="middle" font-size="11" fill="#64748b">verdicts locked before scoring</text>
+
+    <rect x="660" y="600" width="300" height="56" rx="12" fill="#fdf4ff" stroke="#a855f7" stroke-width="2"/>
+    <text x="810" y="626" text-anchor="middle" font-size="13" font-weight="700" fill="#7e22ce">CI-enforced integrity</text>
+    <text x="810" y="644" text-anchor="middle" font-size="11" fill="#64748b">invalid record fails the pipeline build</text>
+  </g>
+</svg>

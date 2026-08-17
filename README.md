@@ -75,6 +75,7 @@ The paper formalises the intersection "dilemma zone" with five theorems (each pr
 
 - **Read the paper** -> [arpanpathak.github.io/driving-civicsense-vision-model/](https://arpanpathak.github.io/driving-civicsense-vision-model/)
 - **Proofs appendix** -> [arpanpathak.github.io/driving-civicsense-vision-model/appendix.html](https://arpanpathak.github.io/driving-civicsense-vision-model/appendix.html)
+- **System design** (architecture, CNN, data pipelines, hardware) -> [system_design/](system_design/) · [System-Design.pdf](system_design/System-Design.pdf)
 - **PDF** -> [research_paper/paper.pdf](research_paper/paper.pdf)
 - **LaTeX source** -> [research_paper/paper.tex](research_paper/paper.tex)
 

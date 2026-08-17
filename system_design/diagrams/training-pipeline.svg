@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="700" viewBox="0 0 1060 700" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#64748b"/>
+    </marker>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1060" height="700" rx="12" fill="#f8fafc"/>
+
+  <text x="530" y="42" text-anchor="middle" font-size="26" font-weight="700" fill="#0f172a">CivicSense Training Data Pipeline</text>
+  <text x="530" y="66" text-anchor="middle" font-size="14" fill="#64748b">raw sources -> aggregated, verified 7-class YOLO layout -> what the CNN in cnn-architecture.svg trains on</text>
+
+  <!-- Row 1: five source chips -->
+  <g>
+    <rect x="30"  y="100" width="184" height="78" rx="10" fill="url(#card)" stroke="#cbd5e1"/>
+    <text x="122" y="126" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">COCO</text>
+    <text x="122" y="146" text-anchor="middle" font-size="11" fill="#64748b">1.4M images, 80 classes</text>
+    <text x="122" y="162" text-anchor="middle" font-size="11" fill="#94a3b8">CC BY 4.0</text>
+
+    <rect x="236" y="100" width="184" height="78" rx="10" fill="url(#card)" stroke="#cbd5e1"/>
+    <text x="328" y="126" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">BDD100K</text>
+    <text x="328" y="146" text-anchor="middle" font-size="11" fill="#64748b">100k dashcam frames</text>
+    <text x="328" y="162" text-anchor="middle" font-size="11" fill="#94a3b8">NC-SA 4.0</text>
+
+    <rect x="442" y="100" width="184" height="78" rx="10" fill="url(#card)" stroke="#cbd5e1"/>
+    <text x="534" y="126" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">UA-DETRAC</text>
+    <text x="534" y="146" text-anchor="middle" font-size="11" fill="#64748b">140k traffic frames</text>
+    <text x="534" y="162" text-anchor="middle" font-size="11" fill="#94a3b8">urban + highway</text>
+
+    <rect x="648" y="100" width="184" height="78" rx="10" fill="url(#card)" stroke="#cbd5e1"/>
+    <text x="740" y="126" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">CARLA + SUMO</text>
+    <text x="740" y="146" text-anchor="middle" font-size="11" fill="#64748b">sim ground truth</text>
+    <text x="740" y="162" text-anchor="middle" font-size="11" fill="#94a3b8">perfect labels, rare scenes</text>
+
+    <rect x="854" y="100" width="176" height="78" rx="10" fill="url(#card)" stroke="#cbd5e1"/>
+    <text x="942" y="126" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">Field captures</text>
+    <text x="942" y="146" text-anchor="middle" font-size="11" fill="#64748b">dashcam / phone clips</text>
+    <text x="942" y="162" text-anchor="middle" font-size="11" fill="#94a3b8">this repo's own seeds</text>
+  </g>
+
+  <!-- arrows sources -> aggregate -->
+  <line x1="122" y1="178" x2="220" y2="220" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="534" y1="178" x2="530" y2="220" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="942" y1="178" x2="840" y2="220" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 2: aggregation -->
+  <rect x="210" y="225" width="640" height="86" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="530" y="252" text-anchor="middle" font-size="16" font-weight="700" fill="#1d4ed8">1. Aggregate &amp; remap classes</text>
+  <text x="530" y="274" text-anchor="middle" font-size="12" fill="#3b82f6">aggregate_coco.py - aggregate_bdd100k.py</text>
+  <text x="530" y="294" text-anchor="middle" font-size="11.5" fill="#64748b">80+ upstream classes -> 7 CivicSense classes - drop images with zero usable labels</text>
+
+  <line x1="530" y1="311" x2="530" y2="340" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 3: normalise + split + verify (3 boxes) -->
+  <g>
+    <rect x="60" y="345" width="280" height="86" rx="12" fill="url(#card)" stroke="#0d9488" stroke-width="2"/>
+    <text x="200" y="372" text-anchor="middle" font-size="15" font-weight="700" fill="#0f766e">2. Normalise boxes</text>
+    <text x="200" y="394" text-anchor="middle" font-size="11.5" fill="#64748b">xywh -> 0..1, YOLO .txt</text>
+    <text x="200" y="412" text-anchor="middle" font-size="11.5" fill="#94a3b8">class_id in [0, 7)</text>
+
+    <rect x="390" y="345" width="280" height="86" rx="12" fill="url(#card)" stroke="#ea580c" stroke-width="2"/>
+    <text x="530" y="372" text-anchor="middle" font-size="15" font-weight="700" fill="#c2410c">3. Split 90 / 10</text>
+    <text x="530" y="394" text-anchor="middle" font-size="11.5" fill="#64748b">stratified by class + scene</text>
+    <text x="530" y="412" text-anchor="middle" font-size="11.5" fill="#94a3b8">train / val, reproducible seed</text>
+
+    <rect x="720" y="345" width="280" height="86" rx="12" fill="url(#card)" stroke="#7c3aed" stroke-width="2"/>
+    <text x="860" y="372" text-anchor="middle" font-size="15" font-weight="700" fill="#6d28d9">4. Verify layout</text>
+    <text x="860" y="394" text-anchor="middle" font-size="11.5" fill="#64748b">civicsense-data validate</text>
+    <text x="860" y="412" text-anchor="middle" font-size="11.5" fill="#94a3b8">schema + label semantics</text>
+  </g>
+
+  <line x1="200" y1="431" x2="300" y2="500" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="530" y1="431" x2="530" y2="500" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="860" y1="431" x2="760" y2="500" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 4: final layout -->
+  <rect x="290" y="505" width="480" height="86" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="530" y="532" text-anchor="middle" font-size="16" font-weight="700" fill="#15803d">datasets/training/ - ready to train</text>
+  <text x="530" y="554" text-anchor="middle" font-size="12" fill="#4ade80">images/{train,val} - labels/{train,val}</text>
+  <text x="530" y="574" text-anchor="middle" font-size="12" fill="#64748b">one .txt per image - dataset.yaml for the trainer</text>
+
+  <!-- 7-class chips -->
+  <g>
+    <rect x="40" y="620" width="980" height="2" fill="#e2e8f0"/>
+    <text x="60" y="650" fill="#334155" font-size="12" font-weight="600">Class vocabulary (classes.rs):</text>
+    <rect x="250" y="636" width="100" height="24" rx="12" fill="#fee2e2"/><text x="300" y="652" fill="#b91c1c" font-size="11" text-anchor="middle">stop_sign</text>
+    <rect x="356" y="636" width="118" height="24" rx="12" fill="#fef3c7"/><text x="415" y="652" fill="#b45309" font-size="11" text-anchor="middle">traffic_light</text>
+    <rect x="480" y="636" width="100" height="24" rx="12" fill="#dbeafe"/><text x="530" y="652" fill="#1d4ed8" font-size="11" text-anchor="middle">crosswalk</text>
+    <rect x="586" y="636" width="90" height="24" rx="12" fill="#dcfce7"/><text x="631" y="652" fill="#15803d" font-size="11" text-anchor="middle">vehicle</text>
+    <rect x="682" y="636" width="86" height="24" rx="12" fill="#cffafe"/><text x="725" y="652" fill="#0e7490" font-size="11" text-anchor="middle">truck</text>
+    <rect x="774" y="636" width="80" height="24" rx="12" fill="#ede9fe"/><text x="814" y="652" fill="#6d28d9" font-size="11" text-anchor="middle">bus</text>
+    <rect x="860" y="636" width="150" height="24" rx="12" fill="#fce7f3"/><text x="935" y="652" fill="#be185d" font-size="11" text-anchor="middle">intersection_zone</text>
+  </g>
+</svg>
