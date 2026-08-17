@@ -85,7 +85,7 @@
 }
 
 % ------------------------------------------------------------------
-\title{Deterministic Intersection Blockage Prediction:\\A Kinematic Framework with Formal Proofs and a Modular Implementation --- Pseudocode Edition}
+\title{Deterministic Intersection Blockage Prediction:\\A Kinematic Framework with Mathematical Proofs and a Modular Implementation --- Pseudocode Edition}
 \author{\IEEEauthorblockN{Arpan Pathak}
 \IEEEauthorblockA{Driving CivicSense Research}}
 \date{}
@@ -102,7 +102,7 @@ on kinematic constraints. The system ingests a sliding window of video frames
 from a forward-facing camera, applies object detection to obtain physical
 measurements (ego speed, stop-line distance, lead-vehicle state), and
 evaluates six single-responsibility criteria on those estimates. Each criterion is
-expressed as a theorem with a constructive proof; the complete formal
+expressed as a theorem with a constructive proof; the complete mathematical
 development is given in Appendix~\ref{app:proofs}. The implementation is
 written in idiomatic Rust, adhering to SOLID principles, utilising exhaustive
 pattern matching, and requiring zero external dependencies for its core
@@ -110,14 +110,14 @@ logic. The decision pipeline is a severity-ordered composition of
 single-responsibility rules evaluated in $O(n)$ time per frame. The
 system operates in real time, is fully interpretable, and is suitable for
 deployment in ISO~26262-compliant automotive systems. The implementation
-is verified by exhaustive enumeration over $15{,}840$ bounded states and a
-Monte Carlo simulation of $10{,}000$ random intersection approaches with
-perfect agreement against the theorem conditions.
+is evaluated by exhaustive enumeration over $15{,}840$ discretised states and
+by a Monte Carlo simulation of $10{,}000$ random intersection approaches,
+both in exact agreement with the theorem conditions.
 \end{abstract}
 
 \begin{IEEEkeywords}
 intersection blockage, dilemma zone, kinematic safety, driver assistance,
-deterministic decision making, Rust, formal verification
+deterministic decision making, Rust, mathematical proofs
 \end{IEEEkeywords}
 
 \section{Introduction}
@@ -133,7 +133,7 @@ before they commit to an intersection. However, the prevailing paradigm
 relies on end-to-end deep learning trained on hundreds of hours of manually
 annotated video. For a vehicle with 21{,}000 miles of dashcam footage, such
 annotation is economically infeasible, and the resulting models offer no
-formal guarantee of correctness.
+guarantee of correctness.
 
 This paper proposes an alternative: a mathematically grounded system that
 requires zero training for the decision layer (the perception layer still
@@ -156,7 +156,7 @@ The principal contributions are:
       decision criteria (Theorems~\ref{thm:stopfeas}--\ref{thm:cutin}) and a
       Lipschitz continuity guarantee (Theorem~\ref{thm:lipschitz}) that
       bounds the effect of sensor noise on the decision boundary.
-\item A complete, self-contained formal appendix containing every proof
+\item A complete, self-contained mathematical appendix containing every proof
       together with supporting lemmas and corollaries
       (Appendix~\ref{app:proofs}).
 \item A modular Rust implementation in which each criterion is encapsulated
@@ -164,8 +164,8 @@ The principal contributions are:
       severity-ordered functional pipeline (Section~\ref{sec:arch}),
       including a class-aware monocular depth prior and a distributional
       model of driver reaction time.
-\item A synthetic verification suite with exhaustive enumeration over
-      $15{,}840$ states and a Monte Carlo simulation of $10{,}000$ random
+\item A synthetic evaluation suite with exhaustive enumeration over
+      $15{,}840$ discretised states and a Monte Carlo simulation of $10{,}000$ random
       intersection approaches (Section~\ref{sec:verif}), plus a quantitative
       comparison against three fixed-threshold baselines
       (Table~\ref{tab:baselines}).
@@ -178,7 +178,7 @@ Section~\ref{sec:kinematics} derives the kinematic model and states seven
 theorems.
 Section~\ref{sec:arch} describes the system architecture and its Rust
 implementation.
-Section~\ref{sec:verif} presents verification scenarios.
+Section~\ref{sec:verif} presents evaluation scenarios.
 Section~\ref{sec:discussion} discusses limitations and safety engineering
 considerations, and Section~\ref{sec:conclusion} concludes.
 
@@ -193,7 +193,7 @@ signal timing (e.g., all-red clearance intervals) rather than by in-vehicle
 warning, and the design space of green-extension and all-red systems is
 reviewed in~\cite{zegeer1978}. Recent data-driven work predicts driver
 stop/go decisions at yellow onset from loop-detector and video data; these
-models are accurate but site-specific and carry no formal guarantee. This
+models are accurate but site-specific and carry no guarantee. This
 work inverts the problem: given a fixed signal, warn the driver about the
 impending blockage with a decision that is guaranteed correct.
 
@@ -224,7 +224,7 @@ example, estimates bird's-eye occupancy from a camera rig; it is trained on
 hundreds of hours of driving data, and its occupancy estimates carry no
 per-frame correctness guarantee, which is precisely the gap that a
 deterministic decision layer fills. These methods are flexible but require
-large annotated corpora, are difficult to audit, and do not provide formal
+large annotated corpora, are difficult to audit, and do not provide
 guarantees. Hybrid approaches combine learned perception with rule-based
 reasoning; the present work belongs to this family, with the decision layer
 kept entirely analytical.
@@ -951,7 +951,7 @@ centroids, and a single-frame jitter can simulate a spurious turn signal on a
 stationary parked car. The implementation therefore enforces a minimum
 observation window of $k_{\min} = 3$ consecutive frames before the cut-in rule
 fires, and caps the lateral speed at $v_{\mathrm{lat}}^{\max} = 4.0$~m/s
-(above which the detection is treated as an artifact). The formal guarantee
+(above which the detection is treated as an artifact). The mathematical guarantee
 of Theorem~\ref{thm:cutin} is conditional on the lateral-speed estimate being
 within this bound and on the track persisting for $k_{\min}$ frames; outside
 this envelope the rule degrades gracefully to silence rather than issuing a
@@ -1093,7 +1093,7 @@ connection to the Jetson),
 decision engine modules listed here, with the exhaustive test suite of
 Section~\ref{sec:verif}, live in the main repository; the end-to-end rig on
 vehicle hardware is this streaming ecosystem. In this paper the perception
-layer is deliberately treated as an oracle: the formal guarantees are
+layer is deliberately treated as an oracle: the mathematical guarantees are
 conditional on its outputs, and an end-to-end perception error model, with
 covariance propagation through the kinematics, is explicitly future work
 (Section~\ref{sec:discussion}).
@@ -1134,17 +1134,25 @@ severity so that the first matching rule is always the most urgent one.
 
 
 
-\section{Verification}
+\section{Evaluation}
 \label{sec:verif}
 
-Because the decision engine is deterministic, its behaviour can be verified
+Because the decision engine is deterministic, its behaviour can be evaluated
 exhaustively on a finite set of canonical scenes. Table~\ref{tab:scenarios}
 enumerates representative test vectors together with the rule that fires and
 the expected warning level. Each row is an executable test case: the
 functions of Section~\ref{sec:arch} return exactly the stated level.
 
+\emph{On terminology.} The guarantees of this paper are conventional
+mathematical proofs (Appendix~\ref{app:proofs}), written and checked by hand
+rather than by a proof assistant, and the evaluation below proceeds by
+exhaustive enumeration over a discretised grid of the bounded input space,
+together with Monte Carlo sampling. We therefore use ``evaluation'' rather
+than ``formal verification'': no proof assistant or model checker is used,
+and none is claimed.
+
 \begin{table}[t]
-\caption{Canonical verification scenarios (constants of
+\caption{Canonical evaluation scenarios (constants of
 Table~\ref{tab:notation}).}
 \label{tab:scenarios}
 \centering
@@ -1175,7 +1183,7 @@ engine is $O(n)$ per frame, where $n$ is the number of detections. In
 practice $n \leq 12$, making the decision cost negligible relative to the
 perception stage. The overall per-frame complexity is dominated by the
 object detector. Because the engine is a pure function over a bounded input
-space, it is verified by exhaustive enumeration: the companion test suite
+space, it is exhaustively evaluated: the companion test suite
 (\texttt{tests/verification.rs}) evaluates $15{,}840$ states spanning the
 light, time-to-red, speed, distance, and detection pattern dimensions, and
 asserts the eight canonical scenarios of Table~\ref{tab:scenarios}, red-light
@@ -1229,7 +1237,7 @@ $\ve$ (m/s) & $\ab = 4.0$ & $\ab = 3.0$ & $\ab = 2.0$ \\
 \end{table}
 
 \subsection{Field evaluation data}
-The verification suite (Table~\ref{tab:scenarios}) is deterministic and
+The evaluation suite (Table~\ref{tab:scenarios}) is deterministic and
 executable, but a field campaign is the natural next step, and the
 conditional form of every theorem dictates its requirements: the sensor
 suite must make the assumptions true. Table~\ref{tab:sensors} lists
@@ -1303,7 +1311,7 @@ visible in code.
 
 \paragraph{Safety engineering.} Determinism is a central property for
 ISO~26262-style arguments: identical inputs always produce identical
-outputs, which permits exhaustive verification and reproducible test
+outputs, which permits exhaustive evaluation and reproducible test
 campaigns. All constants in Table~\ref{tab:notation} are either
 standardised or configurable, and the proofs in
 Appendix~\ref{app:proofs} establish that the rules fire exactly when the
@@ -1326,7 +1334,7 @@ warning is annoying; a missed blockage can be fatal.
 2 & Perception & Bounding-box jitter & $\pm 1.5$~m $\approx 100$~ms; a confidence score is not a formal bound \\
 3 & Decision & Lead-vehicle motion & leader deceleration $\leq 0.4g$ (Remark~\ref{rem:leadbound}) \\
 4 & HMI & Trust erosion & false positives get ignored; dynamic threshold by reaction time \\
-5 & Perception & Occlusion & stop line hidden; outside the formal scope \\
+5 & Perception & Occlusion & stop line hidden; outside the model's scope \\
 6 & Decision & Road friction & grip fixed at $4.0$~\si{m/s^2} \\
 \bottomrule
 \end{tabular}
@@ -1345,7 +1353,7 @@ affects, and its explicit operational bound.
   estimates, and a confidence score is not a formal bound. A bounding-box
   jitter of $\pm 1.5$~m at $14$~m/s shifts the arrival-time estimate by
   roughly $100$~ms, which can flip a safe decision into a blocked one. The
-  formal results therefore hold for the given inputs, not for the unobserved
+  mathematical results therefore hold for the given inputs, not for the unobserved
   ground truth.
 \item \textbf{Lead-vehicle motion.} Theorem~\ref{thm:follow} is conditional
   on a bounded leader deceleration (Remark~\ref{rem:leadbound}); the
@@ -1356,13 +1364,15 @@ affects, and its explicit operational bound.
   false negatives, and future work targets a dynamic threshold adapted to the
   driver's reaction time, with warning intensity modulated by confidence.
 \item \textbf{Occlusion.} A large vehicle can hide the stop line or the lead
-  vehicle entirely; such detection gaps lie outside the formal scope.
+  vehicle entirely; such detection gaps lie outside the model's scope.
 \item \textbf{Road friction.} Assumption~\ref{asm:braking} fixes grip at
   $4.0$~\si{m/s^2}; wet or icy surfaces reduce it, and the stopping envelope
   must be re-tuned for the local condition.
 \end{enumerate}
 
-\paragraph{Scope of the formal results.} The proofs establish properties of
+\paragraph{Scope of the mathematical results.} The proofs are conventional
+mathematical proofs, written and checked by hand rather than by a proof
+assistant, and establish properties of
 the decision logic given exact inputs. They do not bound perception error,
 signal-timing uncertainty, or actuator performance. Each theorem is a
 conditional statement: if the inputs satisfy the assumptions, the output is
@@ -1417,7 +1427,7 @@ re-tuned for wet or icy conditions. A tailgating follower is a different
 control problem: the brake decision is recall-first for the ego vehicle and
 its leader (Theorem~\ref{thm:follow}), and rear-end protection requires
 following-distance awareness outside the decision logic. Finally, we agree
-with the guardian-angel framing: the system is a formally verified safety
+with the guardian-angel framing: the system is a mathematically derived safety
 envelope that vetoes unsafe suggestions, and proving the upstream vision
 pipeline, through interval or conformal bounds on detector
 outputs~\cite{vovk2005}, is the natural next step.
@@ -1430,7 +1440,7 @@ $\ds \geq \ve(\tred-\epsilon)-\Li$ (clear), monotone in both variables.
 Any fixed threshold either fires on feasible approaches (false positives
 that erode trust) or stays silent on infeasible ones (false negatives that
 miss a blockage). Table~\ref{tab:baselines} quantifies this over the same
-$10{,}000$ random scenes used for Monte Carlo verification, comparing
+$10{,}000$ random scenes used for Monte Carlo evaluation, comparing
 three fixed-threshold policies against the kinematic rule. Each fixed
 threshold is tuned to a different operating point, but none can
 simultaneously eliminate both false positives and false negatives; the
@@ -1457,7 +1467,7 @@ Warn if $\ve > 12$~m/s \emph{or} $\ds < 15$~m & 1\,610 & 2\,134 & Disjunctive th
 \end{table*}
 
 \paragraph{Ethics and safety.} The system issues advisory warnings only; the
-driver retains full control, and the formal guarantees concern the warning
+driver retains full control, and the mathematical guarantees concern the warning
 decision, not the vehicle's motion. False positives are a trust hazard
 (Section~\ref{sec:discussion}) and are minimised by construction: the
 severity-ordered pipeline fires the most severe applicable rule, and the
@@ -1506,7 +1516,7 @@ sensor suite of Table~\ref{tab:sensors}, together with simulation in SUMO
 or CARLA~\cite{lopez2018,dosovitskiy2017}, with randomised intersection
 approaches, reporting precision, recall, and latency against the two
 baselines of Section~\ref{sec:verif}, complementing the exhaustive
-verification suite.
+evaluation suite.
 
 
 \section{Implementation Pseudocode}
@@ -1677,7 +1687,7 @@ and rendered at
 \section{Complete Mathematical Proofs}
 \label{app:proofs}
 
-This appendix develops the formal results of Section~\ref{sec:kinematics}
+This appendix develops the mathematical results of Section~\ref{sec:kinematics}
 self-contained. We first prove supporting lemmas, then restate and prove each
 theorem in full. Throughout, time is measured in seconds, distances in
 metres, speeds in \si{m/s}, and accelerations in \si{m/s^2}. We assume the
@@ -1686,11 +1696,13 @@ motion is governed by $\ddot{x} = a(t)$ with $|a(t)| \leq \ab$ and an
 actuation delay $\tr$ during which $a(t) = 0$.
 
 \paragraph{Scope of the proofs.}
-Every result below is a conditional statement: given exact inputs that
+The proofs below are conventional mathematical proofs, written and checked
+by hand rather than by a proof assistant. Every result is a conditional
+statement: given exact inputs that
 satisfy the stated assumptions, the conclusion follows. The proofs do not
 bound perception error, signal-timing uncertainty, or actuator performance,
 and they do not assert that the measured inputs equal the ground truth. The
-formal guarantee therefore covers the decision logic itself, not the
+mathematical guarantee therefore covers the decision logic itself, not the
 perception chain that feeds it.
 
 \subsection{Supporting Lemmas}

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Deterministic Intersection Blockage Prediction | Driving CivicSense Research</title>
-<meta name="description" content="A deterministic, formally proven kinematic framework for predicting intersection blockage, with a modular Rust implementation.">
+<meta name="description" content="A deterministic, mathematically proven kinematic framework for predicting intersection blockage, with a modular Rust implementation.">
 <link rel="stylesheet" href="assets/style.css">
 <script>
 window.MathJax = {
@@ -45,7 +45,7 @@ window.MathJaxFallback = true;
   <header class="paper-header">
     <div class="kicker">Peer-review draft &middot; 11 August 2026</div>
     <h1>Deterministic Intersection Blockage Prediction:<br>
-        A Kinematic Framework with Formal Proofs and a Modular Rust Implementation</h1>
+        A Kinematic Framework with Mathematical Proofs and a Modular Rust Implementation</h1>
     <div class="authors">Arpan Pathak</div>
     <div class="affil">Driving CivicSense Research</div>
     <div class="tagline">
@@ -69,22 +69,22 @@ window.MathJaxFallback = true;
     this work presents a deterministic framework based exclusively on kinematic
     constraints. The system ingests a sliding window of video frames from a
     forward-facing camera, applies object detection to obtain physical measurements,
-    and evaluates six formally derived criteria. Each criterion is expressed as a
-    theorem with a constructive proof; the complete formal development is given in
+    and evaluates six mathematically derived criteria. Each criterion is expressed as a
+    theorem with a constructive proof; the complete mathematical development is given in
     the <a href="appendix.html">Proofs Appendix</a>. The implementation is written in
     idiomatic Rust, adhering to SOLID principles, utilising exhaustive pattern
     matching, and requiring zero external dependencies for its core logic. The
     decision pipeline is a severity-ordered composition of single-responsibility
     rules evaluated in $O(n)$ time per frame. The system operates in real
     time, is fully interpretable, and is suitable for deployment in
-    ISO&nbsp;26262-compliant automotive systems. The implementation is verified
-    by exhaustive enumeration over 15,840 bounded states and a Monte Carlo
-    simulation of 10,000 random intersection approaches with perfect agreement
+    ISO&nbsp;26262-compliant automotive systems. The implementation is evaluated
+    by exhaustive enumeration over 15,840 discretised states and by a Monte Carlo
+    simulation of 10,000 random intersection approaches, both in exact agreement
     against the theorem conditions.</p>
   </div>
 
   <p class="keywords"><b>Index terms&nbsp;:</b> intersection blockage, dilemma zone, kinematic safety,
-  driver assistance, deterministic decision making, Rust, formal verification</p>
+  driver assistance, deterministic decision making, Rust, mathematical proofs</p>
 
   <nav class="toc">
     <div class="toc-title">Contents</div>
@@ -104,7 +104,7 @@ window.MathJaxFallback = true;
         </ol>
       </li>
       <li><a href="#s5">System Architecture</a></li>
-      <li><a href="#s6">Verification</a></li>
+      <li><a href="#s6">Evaluation</a></li>
       <li><a href="#s7">Discussion</a></li>
       <li><a href="#s8">Conclusion</a></li>
       <li><a href="#refs">References</a></li>
@@ -124,7 +124,7 @@ window.MathJaxFallback = true;
     an intersection. However, the prevailing paradigm relies on end-to-end deep
     learning trained on hundreds of hours of manually annotated video. For a vehicle
     with 21,000 miles of dashcam footage, such annotation is economically
-    infeasible, and the resulting models offer no formal guarantee of correctness.</p>
+    infeasible, and the resulting models offer no guarantee of correctness.</p>
     <p>This paper proposes an alternative: a <b>mathematically grounded,
     zero-training system</b>. The perception layer (a YOLO-based object detector)
     supplies physical estimates: ego speed, distance to the stop line,
@@ -144,14 +144,14 @@ window.MathJaxFallback = true;
           decision criteria (Theorems&nbsp;2&ndash;6) and a Lipschitz continuity
           guarantee (Theorem&nbsp;7) that bounds the effect of sensor noise on
           the decision boundary.</li>
-      <li>A complete, self-contained formal appendix containing every proof together
+      <li>A complete, self-contained mathematical appendix containing every proof together
           with supporting lemmas and corollaries (<a href="appendix.html">Appendix&nbsp;A</a>).</li>
       <li>A modular Rust implementation in which each criterion is encapsulated in a
           single-responsibility function and composed through a severity-ordered
           functional pipeline (Section&nbsp;V), including a class-aware monocular
           depth prior and a distributional model of driver reaction time.</li>
-      <li>A synthetic verification suite with exhaustive enumeration over
-          15,840 states and a Monte Carlo simulation of 10,000 random
+      <li>A synthetic evaluation suite with exhaustive enumeration over
+          15,840 discretised states and a Monte Carlo simulation of 10,000 random
           intersection approaches (Section&nbsp;VI), plus a quantitative
           comparison against three fixed-threshold baselines
           (Table&nbsp;VI).</li>
@@ -171,7 +171,7 @@ window.MathJaxFallback = true;
     <a href="https://scholar.google.com/scholar?q=%22Green-extension+systems+at+high-speed+intersections%22"
     target="_blank" rel="noopener">Zegeer and Deen&nbsp;[15]</a>. Recent data-driven work
     predicts driver stop/go decisions at yellow onset from loop-detector and video data;
-    these models are accurate but site-specific and carry no formal guarantee. This work
+    these models are accurate but site-specific and carry no guarantee. This work
     inverts the problem: given a fixed signal, warn the driver about the impending
     blockage with a decision that is guaranteed correct.</p>
     <p>In the vehicle safety literature,
@@ -204,7 +204,7 @@ window.MathJaxFallback = true;
     of driving data, and its occupancy estimates carry no per-frame correctness
     guarantee, which is precisely the gap that a deterministic decision layer fills.
     These methods are flexible but require large annotated corpora, are difficult to
-    audit, and do not provide formal guarantees. Hybrid approaches combine learned
+    audit, and do not provide guarantees. Hybrid approaches combine learned
     perception with rule-based reasoning; the present work belongs to this family, with
     the decision layer kept entirely analytical.</p>
     <p>Finally, the use of the Rust language for safety-critical embedded software is well
@@ -688,7 +688,7 @@ window.MathJaxFallback = true;
       a stationary parked car. The implementation therefore enforces a minimum
       observation window of $k_{\min} = 3$ consecutive frames before the cut-in
       rule fires, and caps the lateral speed at $v_{\mathrm{lat}}^{\max} = 4.0$&nbsp;m/s
-      (above which the detection is treated as an artifact). The formal guarantee
+      (above which the detection is treated as an artifact). The mathematical guarantee
       of Theorem&nbsp;6 is conditional on the lateral-speed estimate being within
       this bound and on the track persisting for $k_{\min}$ frames; outside this
       envelope the rule degrades gracefully to silence rather than issuing a false
@@ -1150,18 +1150,25 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
 </pre>
   </section>
 
-  <!-- ================= VI. VERIFICATION ================= -->
+  <!-- ================= VI. EVALUATION ================= -->
   <section id="s6">
-    <h2 class="sec"><span class="no">VI.</span> Verification</h2>
-    <p>Because the decision engine is deterministic, its behaviour can be verified
+    <h2 class="sec"><span class="no">VI.</span> Evaluation</h2>
+    <p>Because the decision engine is deterministic, its behaviour can be evaluated
     exhaustively on a finite set of canonical scenes. Table&nbsp;II enumerates
     representative test vectors together with the rule that fires and the expected
     warning level. Each row is an executable test case: the functions of
     Section&nbsp;V return exactly the stated level.</p>
 
+    <p><i>On terminology.</i> The guarantees of this paper are conventional
+    mathematical proofs (<a href="appendix.html">Appendix&nbsp;A</a>), written and checked by hand
+    rather than by a proof assistant, and the evaluation below proceeds by exhaustive
+    enumeration over a discretised grid of the bounded input space, together with Monte
+    Carlo sampling. We therefore use &ldquo;evaluation&rdquo; rather than &ldquo;formal
+    verification&rdquo;: no proof assistant or model checker is used, and none is claimed.</p>
+
     <div class="table-wrap">
     <table>
-      <caption><b>Table II.</b> Canonical verification scenarios (constants of
+      <caption><b>Table II.</b> Canonical evaluation scenarios (constants of
       Table&nbsp;I).</caption>
       <thead><tr><th>#</th><th>Scene summary</th><th>Firing rule</th><th>Expected level</th></tr></thead>
       <tbody>
@@ -1194,8 +1201,8 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
     $O(n)$ per frame, where $n$ is the number of detections. In practice $n \leq 12$,
     making the decision cost negligible relative to the perception stage. The overall
     per-frame complexity is dominated by the object detector. Because the engine is a
-    pure function over a bounded input space, it is verified by exhaustive
-    enumeration: the companion test suite (<code>tests/verification.rs</code>)
+    pure function over a bounded input space, it is exhaustively evaluated: the
+    companion test suite (<code>tests/verification.rs</code>)
     evaluates 15,840 states spanning the light, time-to-red, speed, distance, and
     detection-pattern dimensions, and asserts the eight canonical scenarios, red-light
     dominance, dilemma-zone criticality, severity ordering, and the monotonicity of
@@ -1242,7 +1249,7 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
     </div>
 
     <h3 class="sub">Field evaluation data</h3>
-    <p>The verification suite (Table&nbsp;II) is deterministic and executable, but a
+    <p>The evaluation suite (Table&nbsp;II) is deterministic and executable, but a
     field campaign is the natural next step, and the conditional form of every theorem
     dictates its requirements: the sensor suite must make the assumptions true. The
     table below lists recommended modalities, their typical accuracy, and their role.
@@ -1310,7 +1317,7 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
 
     <p><b>Safety engineering.</b> Determinism is a central property for
     ISO&nbsp;26262-style arguments: identical inputs always produce identical outputs,
-    which permits exhaustive verification and reproducible test campaigns. All
+    which permits exhaustive evaluation and reproducible test campaigns. All
     constants in Table&nbsp;I are either standardised or configurable, and the proofs
     in <a href="appendix.html">Appendix&nbsp;A</a> establish that the rules fire
     exactly when the corresponding kinematic condition holds. There is no
@@ -1328,7 +1335,7 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
         <tr><td>&#9888;&#65039; 2</td><td><span class="tag warning">Perception</span></td><td>Bounding-box jitter</td><td>&#177;1.5&nbsp;m &#8776; 100&nbsp;ms; a confidence score is not a formal bound</td></tr>
         <tr><td>&#9888;&#65039; 3</td><td><span class="tag warning">Decision</span></td><td>Lead-vehicle motion</td><td>leader deceleration &#8804; 0.4g (remark in Section&nbsp;IV-E)</td></tr>
         <tr><td>&#9888;&#65039; 4</td><td><span class="tag warning">HMI</span></td><td>Trust erosion</td><td>false positives get ignored; dynamic threshold by reaction time</td></tr>
-        <tr><td>&#9888;&#65039; 5</td><td><span class="tag warning">Perception</span></td><td>Occlusion</td><td>stop line hidden; outside the formal scope</td></tr>
+        <tr><td>&#9888;&#65039; 5</td><td><span class="tag warning">Perception</span></td><td>Occlusion</td><td>stop line hidden; outside the model's scope</td></tr>
         <tr><td>&#9888;&#65039; 6</td><td><span class="tag warning">Decision</span></td><td>Road friction</td><td>grip fixed at 4.0&nbsp;m/s&#178;</td></tr>
       </tbody>
     </table>
@@ -1353,7 +1360,7 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
     network outputs are point estimates, and a confidence score is not a formal
     bound. A bounding-box jitter of $\pm 1.5$&nbsp;m at $14$&nbsp;m/s shifts the
     arrival-time estimate by roughly $100$&nbsp;ms, which can flip a safe decision
-    into a blocked one. The formal results therefore hold for the given inputs,
+    into a blocked one. The mathematical results therefore hold for the given inputs,
     not for the unobserved ground truth.</p>
       </div>
       <div class="thm remark vuln-item">
@@ -1373,7 +1380,7 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
         <span class="head">&#9888;&#65039; 5. Occlusion.</span>
         <p>A large
     vehicle can hide the stop line or the lead vehicle entirely; such detection
-    gaps lie outside the formal scope.</p>
+    gaps lie outside the model's scope.</p>
       </div>
       <div class="thm remark vuln-item">
         <span class="head">&#9888;&#65039; 6. Road friction.</span>
@@ -1383,7 +1390,9 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
       </div>
     </div>
 
-    <p><b>Scope of the formal results.</b> The proofs establish properties of the
+    <p><b>Scope of the mathematical results.</b> The proofs are conventional
+    mathematical proofs (written and checked by hand, not by a proof assistant) and
+    establish properties of the
     decision logic given exact inputs. They do not bound perception error,
     signal-timing uncertainty, or actuator performance. Each theorem is a
     conditional statement: if the inputs satisfy the assumptions, the output is
@@ -1435,7 +1444,7 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
     different control problem: the brake decision is recall-first for the ego vehicle
     and its leader (Theorem&nbsp;4), and rear-end protection requires
     following-distance awareness outside the decision logic. Finally, we agree with
-    the guardian-angel framing: the system is a formally verified safety envelope that
+    the guardian-angel framing: the system is a mathematically derived safety envelope that
     vetoes unsafe suggestions, and proving the upstream vision pipeline, through
     interval or conformal bounds on detector outputs, is the natural next step.</p>
 
@@ -1446,7 +1455,7 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
     (clear), monotone in both variables. Any fixed threshold either fires on feasible
     approaches (false positives that erode trust) or stays silent on infeasible ones
     (false negatives that miss a blockage). Table&nbsp;VI quantifies this over the
-    same 10,000 random scenes used for Monte Carlo verification, comparing three
+    same 10,000 random scenes used for Monte Carlo evaluation, comparing three
     fixed-threshold policies against the kinematic rule. Each fixed threshold is
     tuned to a different operating point, but none can simultaneously eliminate both
     false positives and false negatives; the kinematic rule achieves zero of both
@@ -1469,7 +1478,7 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
     </table>
 
     <p><b>Ethics and safety.</b> The system issues advisory warnings only; the driver
-    retains full control, and the formal guarantees concern the warning decision, not
+    retains full control, and the mathematical guarantees concern the warning decision, not
     the vehicle's motion. False positives are a trust hazard and are minimised by
     construction: the severity-ordered pipeline fires the most severe applicable rule,
     and the recall-first threshold policy keeps false negatives at zero within the
@@ -1510,7 +1519,7 @@ rust-version = &quot;<span class="num">1.85</span>&quot;
     temperature sensors; (iii)&nbsp;extension of the rule set to vulnerable road users
     and multi-lane crossing scenes; and (iv)&nbsp;a simulation-based evaluation
     campaign in SUMO or CARLA with randomised intersection approaches and baseline
-    comparison, complementing the exhaustive verification suite.</p>
+    comparison, complementing the exhaustive evaluation suite.</p>
   </section>
 
   <!-- ================= VIII. CONCLUSION ================= -->

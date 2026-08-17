@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Appendix A: Complete Mathematical Proofs | Driving CivicSense Research</title>
-<meta name="description" content="Complete formal proofs for the deterministic intersection blockage prediction framework.">
+<meta name="description" content="Complete mathematical proofs for the deterministic intersection blockage prediction framework.">
 <link rel="stylesheet" href="assets/style.css">
 <script>
 window.MathJax = {
@@ -54,18 +54,20 @@ window.MathJaxFallback = true;
 
   <div class="abstract">
     <span class="label">About this appendix</span>
-    <p>This appendix develops the formal results of Section&nbsp;IV of the main paper
+    <p>This appendix develops the mathematical results of Section&nbsp;IV of the main paper
     self-contained. We first prove supporting lemmas, then restate and prove each
     theorem in full. Throughout, time is measured in seconds, distances in metres,
     speeds in m/s, and accelerations in m/s$^2$. We assume the kinematic model of
     Assumptions&nbsp;1&ndash;3: longitudinal motion is governed by
     $\ddot{x} = a(t)$ with $|a(t)| \leq a_b$ and an actuation delay $t_r$ during which
     $a(t) = 0$.</p>
-    <p><b>Scope of the proofs.</b> Every result below is a conditional statement:
+    <p><b>Scope of the proofs.</b> The proofs are conventional mathematical
+    proofs, written and checked by hand rather than by a proof assistant. Every
+    result below is a conditional statement:
     given exact inputs that satisfy the stated assumptions, the conclusion follows.
     The proofs do not bound perception error, signal-timing uncertainty, or actuator
     performance, and they do not assert that the measured inputs equal the ground
-    truth. The formal guarantee therefore covers the decision logic itself, not the
+    truth. The mathematical guarantee therefore covers the decision logic itself, not the
     perception chain that feeds it.</p>
   </div>
 
