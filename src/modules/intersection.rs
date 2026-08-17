@@ -174,8 +174,11 @@ impl IntersectionAnalyzer {
     /// 1. Filter detections for vehicle classes (3, 4, 5).
     /// 2. Measure how much of the forward "intersection box" region (centre
     ///    band of the frame, below the horizon) is covered by those vehicles.
-    /// 3. If `occupancy > blocked_occupancy_threshold` **and**
-    ///    `ego_speed >= blocked_intersection_speed`, emit `BlockedIntersection`.
+    ///    Forward congestion is a speed-independent measurement, so no ego
+    ///    speed gate is applied — the alert describes the road ahead, not the
+    ///    driver's behaviour.
+    /// 3. If `occupancy > blocked_occupancy_threshold`, emit
+    ///    `BlockedIntersection` (the box is full now).
     /// 4. Else, if occupancy is above `filling_occupancy_threshold` and still
     ///    rising faster than `occupancy_rise_rate`, emit the predictive
     ///    `IntersectionFilling` warning ("it will be blocked by the time you
@@ -284,10 +287,6 @@ impl IntersectionAnalyzer {
         };
         self.prev_occupancy = Some(smoothed);
 
-        if ego_speed < self.config.blocked_intersection_speed {
-            return;
-        }
-
         // Hysteresis: enter BLOCKED above the full threshold, stay active
         // until occupancy drops BLOCKED_EXIT_MARGIN below it, so the alert
         // does not flicker between BLOCKED and FILLING at the boundary.
@@ -296,10 +295,6 @@ impl IntersectionAnalyzer {
             && occupancy_pct > self.config.blocked_occupancy_threshold - BLOCKED_EXIT_MARGIN;
         let is_blocked = enter || stay;
         self.blocked_active = is_blocked;
-
-        if ego_speed < self.config.blocked_intersection_speed {
-            return;
-        }
 
         if is_blocked {
             alerts.push(IntersectionAlert::BlockedIntersection {
@@ -429,6 +424,26 @@ mod tests {
         assert!(a3.is_empty());
         let a4 = analyzer.analyze(&frame(35.0), 20.0, 0.1); // back above → blocked again
         assert!(a4.iter().any(|a| matches!(a, IntersectionAlert::BlockedIntersection { .. })));
+    }
+
+    /// Forward congestion is a speed-independent measurement: it must fire
+    /// even with ego speed 0, because camera-only footage has no reliable
+    /// ego speed and the alert describes the road ahead, not a "violation".
+    #[test]
+    fn test_congestion_fires_without_ego_speed() {
+        let cfg = Config::default();
+        let mut analyzer = IntersectionAnalyzer::new(&cfg, 1280, 720);
+        let dets = vec![
+            make_det(3, 400.0, 216.0, 800.0, 720.0, 0.9),
+            make_det(3, 800.0, 216.0, 1000.0, 720.0, 0.9),
+        ];
+        let alerts = analyzer.analyze(&dets, 0.0, 0.1);
+        assert!(
+            alerts
+                .iter()
+                .any(|a| matches!(a, IntersectionAlert::BlockedIntersection { .. })),
+            "congestion alert must not depend on ego speed"
+        );
     }
 
     /// Large vehicles parked at the far left/right edges (outside the forward

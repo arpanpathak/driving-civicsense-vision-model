@@ -31,8 +31,16 @@ use civicsense::modules::intersection::IntersectionAlert;
 use civicsense::modules::intersection::IntersectionAnalyzer;
 use civicsense::modules::lane_speed::{LaneSpeedAlert, LaneSpeedAnalyzer};
 use civicsense::tracking::deep_sort::MultiObjectTracker;
+use civicsense::utils::geometry;
 use civicsense::utils::visualization;
 use civicsense::video;
+
+/// Lateral speed (px/s) above which a tracked vehicle is considered to be
+/// crossing the forward region (e.g. running an intersection), and the
+/// hysteresis exit below which it is no longer crossing. Calibrated on the
+/// public-domain intersection clip, where the crossing SUV peaks at ~290 px/s.
+const CROSSING_VX_ENTER: f32 = 180.0;
+const CROSSING_VX_EXIT: f32 = 100.0;
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  COCO-80 vocabulary (YOLO output order)
@@ -396,6 +404,9 @@ fn run_demo(args: &Args) -> Result<(), String> {
     let mut srt = String::new();
     let mut srt_entries = 0u32;
     let mut stop_sign_streak: u32 = 0;
+    // Track centroid history for the "vehicle crossing ahead" detector.
+    let mut prev_centroids: HashMap<u64, (f32, f32)> = HashMap::new();
+    let mut crossing_active = false;
 
     while let Some((buf, _idx)) = frame_iter() {
         let t = frame_count as f64 / args.fps as f64;
@@ -423,18 +434,12 @@ fn run_demo(args: &Args) -> Result<(), String> {
 
         let tracks = tracker.update(&mapped);
 
-        // Stop-sign confirmation: a warning needs a stable track — the sign
-        // must persist for ≥ 3 consecutive frames (same policy the README
-        // documents for cut-in warnings). A one- or two-frame flicker on an
-        // ambiguous object can't trigger a violation.
+        // Stop-sign confirmation: only report a stop sign once it persists
+        // for >= 3 consecutive frames (a 1-2 frame flicker is not a sign).
         let sign_present = mapped.iter().any(|d| d.class_id == 0 && d.confidence >= 0.5);
         stop_sign_streak = if sign_present { stop_sign_streak + 1 } else { 0 };
-        let mut mapped_for_alerts = mapped.clone();
-        if stop_sign_streak < 3 {
-            mapped_for_alerts.retain(|d| d.class_id != 0);
-        }
 
-        let i_alerts = intersection.analyze(&mapped_for_alerts, args.ego_speed, dt);
+        let i_alerts = intersection.analyze(&mapped, args.ego_speed, dt);
         let l_alerts = lane_speed.analyze(&tracks, args.ego_speed, dt);
 
         // 4. Draw everything.
@@ -457,56 +462,102 @@ fn run_demo(args: &Args) -> Result<(), String> {
             draw_text(&mut viz, frame_w, frame_h, tx1 as u32, ty1 as u32, &format!("ID {}", tr.track_id), (255, 165, 0), 1);
         }
 
-        // Alert banner + text.
-        let mut banner_msg = String::new();
-        if !i_alerts.is_empty() {
-            // Pick the banner label so the strip is colour-coded correctly
-            // (draw_alert_text colours "STOP"/"BLOCKED" red, "MERGE" orange,
-            // anything else yellow).
-            let critical = if i_alerts
+        // 5. Alert assembly. Camera-only footage cannot provide ego speed,
+        //    signal timing, or stop-line geometry, so NO "violation" claims
+        //    are made and no simulated speed is shown. Alerts describe only
+        //    what the footage can actually support:
+        //      - STOP SIGN AHEAD          (detection + pinhole distance)
+        //      - VEHICLE CROSSING AHEAD   (lateral sweep across the forward box)
+        //      - FORWARD CONGESTION       (forward-box occupancy, speed-free)
+        //      - CONGESTION FILLING       (occupancy rising, predictive)
+        let mut alerts_now: Vec<String> = Vec::new();
+
+        // Stop sign ahead: detection + distance only.
+        if stop_sign_streak >= 3 {
+            if let Some(sign) = mapped
                 .iter()
-                .any(|a| matches!(a, IntersectionAlert::StopSignViolation { .. }))
+                .filter(|d| d.class_id == 0 && d.confidence >= 0.5)
+                .max_by(|a, b| a.confidence.partial_cmp(&b.confidence).unwrap_or(std::cmp::Ordering::Equal))
             {
-                "STOP SIGN VIOLATION"
-            } else if i_alerts
-                .iter()
-                .any(|a| matches!(a, IntersectionAlert::BlockedIntersection { .. }))
+                let pw = (sign.x2 - sign.x1).abs();
+                if pw >= 1.0 {
+                    let dist = geometry::estimate_distance(pw, 0.75, cfg.camera.focal_length).clamp(1.0, 200.0);
+                    alerts_now.push(format!("STOP SIGN AHEAD  dist={dist:.0}FT"));
+                }
+            }
+        }
+
+        // Vehicle crossing ahead: a LARGE tracked vehicle sweeping laterally
+        // across the forward region (e.g. someone running the intersection).
+        // The box-size gate rejects ego-motion perspective drift of distant
+        // cars and roadside parked cars being passed; a vehicle actually
+        // crossing your path is close and fills a large part of the view.
+        let (fw, fh) = (frame_w as f32, frame_h as f32);
+        for tr in tracks.iter().filter(|t| t.is_confirmed) {
+            let (bx1, by1, bx2, by2) = tr.bbox;
+            let cx = (bx1 + bx2) / 2.0;
+            let cy = (by1 + by2) / 2.0;
+            if cx >= fw * 0.25
+                && cx <= fw * 0.75
+                && cy >= fh * 0.25
+                && (bx2 - bx1).abs() > 300.0
             {
-                "BLOCKED INTERSECTION"
+                if let Some(&(pcx, _)) = prev_centroids.get(&tr.track_id) {
+                    let vx = (cx - pcx) / dt; // px/s
+                    if vx.abs() > CROSSING_VX_ENTER {
+                        crossing_active = true;
+                    } else if vx.abs() < CROSSING_VX_EXIT {
+                        crossing_active = false;
+                    }
+                }
+                prev_centroids.insert(tr.track_id, (cx, cy));
+            }
+        }
+        if crossing_active {
+            alerts_now.push("VEHICLE CROSSING AHEAD".to_string());
+        }
+
+        // Forward congestion from the analyzer (relabeled, speed-free).
+        for a in &i_alerts {
+            match a {
+                IntersectionAlert::StopSignViolation { .. } => {} // superseded by STOP SIGN AHEAD
+                IntersectionAlert::BlockedIntersection { occupancy_pct, .. } => {
+                    alerts_now.push(format!("FORWARD CONGESTION  occ={occupancy_pct:.0}%"));
+                }
+                IntersectionAlert::IntersectionFilling { occupancy_pct, rise_rate_pct_s, .. } => {
+                    alerts_now.push(format!("CONGESTION FILLING  occ={occupancy_pct:.0}%  rising={rise_rate_pct_s:.0}%/S"));
+                }
+            }
+        }
+        for a in &l_alerts {
+            alerts_now.push(alert_text_lane(a));
+        }
+
+        if !alerts_now.is_empty() {
+            // Banner label picks the most severe so the strip is colour-coded
+            // correctly (draw_alert_text colours STOP/BLOCKED/CROSSING red,
+            // MERGE orange, anything else yellow).
+            let banner = if alerts_now.iter().any(|s| s.contains("CROSSING")) {
+                "VEHICLE CROSSING AHEAD"
+            } else if alerts_now.iter().any(|s| s.contains("STOP SIGN")) {
+                "STOP SIGN AHEAD"
+            } else if alerts_now.iter().any(|s| s.contains("FORWARD CONGESTION")) {
+                "FORWARD CONGESTION"
             } else {
-                "INTERSECTION FILLING"
+                "CONGESTION FILLING"
             };
-            visualization::draw_alert_text(&mut viz, frame_w, frame_h, critical);
-            banner_msg.push_str(
-                &i_alerts
-                    .iter()
-                    .map(|a| alert_text(a))
-                    .collect::<Vec<_>>()
-                    .join(" | "),
-            );
-        }
-        if !l_alerts.is_empty() {
-            visualization::draw_alert_text(&mut viz, frame_w, frame_h, "MERGE RIGHT REMINDER");
-            if !banner_msg.is_empty() {
-                banner_msg.push_str(" | ");
-            }
-            banner_msg.push_str(&l_alerts.iter().map(alert_text_lane).collect::<Vec<_>>().join(" | "));
-        }
-        if !banner_msg.is_empty() {
-            draw_text(&mut viz, frame_w, frame_h, 4, 6, &banner_msg, (255, 255, 255), 1);
-            for a in i_alerts {
-                *alert_counts.entry(alert_text(&a)).or_insert(0) += 1;
-                push_srt(&mut srt, &mut srt_entries, t, &alert_text(&a));
-            }
-            for a in l_alerts {
-                *alert_counts.entry(alert_text_lane(&a)).or_insert(0) += 1;
-                push_srt(&mut srt, &mut srt_entries, t, &alert_text_lane(&a));
+            visualization::draw_alert_text(&mut viz, frame_w, frame_h, banner);
+            let msg = alerts_now.join(" | ");
+            draw_text(&mut viz, frame_w, frame_h, 4, 6, &msg, (255, 255, 255), 1);
+            for m in &alerts_now {
+                *alert_counts.entry(m.clone()).or_insert(0) += 1;
+                push_srt(&mut srt, &mut srt_entries, t, m);
             }
         }
 
         // Status line at the bottom.
         let status = format!(
-            "CIVICSENSE | {} | FRAME {} | {:.1}S | EGO {:.0} MPH | {} DET",
+            "CIVICSENSE | {} | FRAME {} | {:.1}S | SIM EGO {:.0} MPH | {} DET",
             clip_label,
             frame_count + 1,
             t,
@@ -531,22 +582,6 @@ fn run_demo(args: &Args) -> Result<(), String> {
     log::info!("Detection totals: {class_counts:?}");
     log::info!("Alert totals: {alert_counts:?}");
     Ok(())
-}
-
-fn alert_text(a: &IntersectionAlert) -> String {
-    match a {
-        IntersectionAlert::StopSignViolation { confidence, distance_to_stop_line, ego_speed } => {
-            format!("STOP SIGN VIOLATION  dist={distance_to_stop_line:.0}FT  conf={confidence:.2}  ego={ego_speed:.0}MPH")
-        }
-        IntersectionAlert::BlockedIntersection { confidence, occupancy_pct, ego_speed, .. } => {
-            // Note: no distance is shown — the analyzer does not measure a
-            // real distance to the box, only the forward-region occupancy.
-            format!("BLOCKED INTERSECTION  occ={occupancy_pct:.0}%  conf={confidence:.2}  ego={ego_speed:.0}MPH")
-        }
-        IntersectionAlert::IntersectionFilling { occupancy_pct, rise_rate_pct_s, ego_speed } => {
-            format!("INTERSECTION FILLING  occ={occupancy_pct:.0}%  rising={rise_rate_pct_s:.0}%/S  ego={ego_speed:.0}MPH")
-        }
-    }
 }
 
 fn alert_text_lane(a: &LaneSpeedAlert) -> String {

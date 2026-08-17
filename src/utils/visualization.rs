@@ -215,7 +215,7 @@ pub fn draw_detections(
 /// Never panics.
 pub fn draw_alert_text(frame: &mut [u8], width: u32, height: u32, text: &str) {
     let alert_color = match text {
-        t if t.contains("STOP") || t.contains("BLOCKED") => (255, 0, 0),
+        t if t.contains("STOP") || t.contains("BLOCKED") || t.contains("CROSSING") => (255, 0, 0),
         t if t.contains("MERGE") => (255, 165, 0),
         _ => (255, 255, 0),
     };
