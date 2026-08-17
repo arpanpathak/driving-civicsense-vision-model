@@ -146,10 +146,10 @@ predicts `4 box coords + 7 class scores` (11 channels, no objectness) at
 
 The full layer-by-layer diagram (neurons, kernels, tensor shapes) is hosted in
 the [data pack repo](https://github.com/arpanpathak/driving-civic-sense-data-crowd)
-(`assets/cnn-architecture.svg`, checked out here via the `datasets` submodule):
+(`assets/cnn-architecture.svg`):
 
 <p align="center">
-  <img src="datasets/assets/cnn-architecture.svg" alt="CivicSense YOLOv8n architecture: C2f backbone, SPPF, PAN neck, 3 anchor-free detection heads" width="900"/>
+  <img src="https://raw.githubusercontent.com/arpanpathak/driving-civic-sense-data-crowd/main/assets/cnn-architecture.svg" alt="CivicSense YOLOv8n architecture: C2f backbone, SPPF, PAN neck, 3 anchor-free detection heads" width="900"/>
 </p>
 
 ---
