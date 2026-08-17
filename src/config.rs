@@ -169,6 +169,21 @@ pub struct IntersectionConfig {
     /// lenses keep occupancy far lower and need a smaller threshold.
     pub blocked_occupancy_threshold: f32,
 
+    /// Forward-region occupancy (%) above which a rising occupancy trend
+    /// triggers a predictive "intersection filling" alert — a warning that
+    /// the box ahead is filling up and may be blocked by the time the ego
+    /// vehicle arrives.
+    ///
+    /// Default: `18.0` % (must be below `blocked_occupancy_threshold`).
+    pub filling_occupancy_threshold: f32,
+
+    /// How fast the forward-region occupancy must be rising (percentage
+    /// points per second) for the filling alert to fire.
+    ///
+    /// Default: `10.0` %/s — a decisive upward trend (e.g. a vehicle
+    /// approaching fast), not a slow drift.
+    pub occupancy_rise_rate: f32,
+
     /// Distance in meters from the stop line at which a blocked-intersection
     /// alert becomes relevant.
     ///
@@ -265,6 +280,8 @@ impl Default for IntersectionConfig {
             stop_sign_warning_speed: 10.0,
             blocked_intersection_speed: 15.0,
             blocked_occupancy_threshold: 30.0,
+            filling_occupancy_threshold: 18.0,
+            occupancy_rise_rate: 10.0,
             blocked_distance_to_stop: 30.0,
             grid_resolution: 0.5,
             grid_ahead_distance: 20.0,

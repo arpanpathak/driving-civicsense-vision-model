@@ -39,11 +39,12 @@ runs/
 .env
 .env.local
 
-# ── Demo artifacts (large / regenerable: source video, frames, output) ──
+# ── Demo artifacts (large / regenerable: source videos, frames, output) ──
 /demo/kitti_inference_vid.mp4
 /demo/frames/
 /demo/output/
 /demo/run_log.txt
+/demo/clips/
 
 # ── LaTeX (research paper) ──────────────────────────
 research_paper/*.aux

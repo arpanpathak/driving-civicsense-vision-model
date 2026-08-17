@@ -412,11 +412,26 @@ impl Pipeline {
         );
 
         if !intersection_alerts.is_empty() {
+            // Pick the banner label so the strip is colour-coded correctly
+            // (draw_alert_text colours "STOP"/"BLOCKED" red, others yellow).
+            let banner = if intersection_alerts
+                .iter()
+                .any(|a| matches!(a, IntersectionAlert::StopSignViolation { .. }))
+            {
+                "STOP SIGN VIOLATION"
+            } else if intersection_alerts
+                .iter()
+                .any(|a| matches!(a, IntersectionAlert::BlockedIntersection { .. }))
+            {
+                "BLOCKED INTERSECTION"
+            } else {
+                "INTERSECTION FILLING"
+            };
             visualization::draw_alert_text(
                 &mut viz,
                 self.frame_width,
                 self.frame_height,
-                "STOP SIGN VIOLATION",
+                banner,
             );
         }
         if !lane_alerts.is_empty() {
@@ -572,6 +587,18 @@ fn log_intersection_alerts(alerts: &[IntersectionAlert]) {
                     confidence,
                     occupancy_pct,
                     distance_to_stop_line,
+                    ego_speed
+                );
+            }
+            IntersectionAlert::IntersectionFilling {
+                occupancy_pct,
+                rise_rate_pct_s,
+                ego_speed,
+            } => {
+                log::warn!(
+                    "INTERSECTION FILLING (may be blocked)! occupancy={:.1}%, rising={:.1}%/s, speed={:.1}mph",
+                    occupancy_pct,
+                    rise_rate_pct_s,
                     ego_speed
                 );
             }

@@ -57,6 +57,22 @@ pub enum IntersectionAlert {
         /// Current ego-vehicle speed (mph).
         ego_speed: f32,
     },
+
+    /// Predictive warning: the forward box is filling up fast — it will
+    /// likely be blocked by the time the ego vehicle arrives, so it should
+    /// not commit. Emitted when occupancy is above
+    /// `filling_occupancy_threshold` and still rising faster than
+    /// `occupancy_rise_rate`, but not yet past `blocked_occupancy_threshold`.
+    IntersectionFilling {
+        /// Smoothed forward-region occupancy (0 – 100 %).
+        occupancy_pct: f32,
+
+        /// Current rise rate of occupancy (percentage points per second).
+        rise_rate_pct_s: f32,
+
+        /// Current ego-vehicle speed (mph).
+        ego_speed: f32,
+    },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -72,6 +88,12 @@ const BOX_REGION_X_MIN: f32 = 0.25;
 const BOX_REGION_X_MAX: f32 = 0.75;
 const BOX_REGION_Y_MIN: f32 = 0.30;
 const BOX_REGION_Y_MAX: f32 = 1.00;
+
+/// Hysteresis margin (percentage points) below `blocked_occupancy_threshold`:
+/// once a blocked alert is active it stays active until occupancy drops this
+/// far below the threshold, preventing flicker between BLOCKED and FILLING as
+/// occupancy oscillates around the boundary.
+const BLOCKED_EXIT_MARGIN: f32 = 8.0;
 
 /// Analyzes intersection safety from raw YOLO detections.
 ///
@@ -95,6 +117,17 @@ pub struct IntersectionAnalyzer {
 
     /// Camera focal length in pixels (from camera config).
     focal_length: f32,
+
+    /// Low-pass-filtered forward-region occupancy (%) from the previous
+    /// frame, used to compute the occupancy rise rate for the predictive
+    /// filling alert. `None` until the first frame is seen.
+    prev_occupancy: Option<f32>,
+
+    /// Whether a BLOCKED alert is currently active (hysteresis latch).
+    blocked_active: bool,
+
+    /// Smoothing factor for the occupancy low-pass filter (0.0 – 1.0).
+    occupancy_alpha: f32,
 }
 
 impl IntersectionAnalyzer {
@@ -113,6 +146,9 @@ impl IntersectionAnalyzer {
             frame_width,
             frame_height,
             focal_length: config.camera.focal_length,
+            prev_occupancy: None,
+            blocked_active: false,
+            occupancy_alpha: 0.3,
         }
     }
 
@@ -140,16 +176,19 @@ impl IntersectionAnalyzer {
     ///    band of the frame, below the horizon) is covered by those vehicles.
     /// 3. If `occupancy > blocked_occupancy_threshold` **and**
     ///    `ego_speed >= blocked_intersection_speed`, emit `BlockedIntersection`.
+    /// 4. Else, if occupancy is above `filling_occupancy_threshold` and still
+    ///    rising faster than `occupancy_rise_rate`, emit the predictive
+    ///    `IntersectionFilling` warning ("it will be blocked by the time you
+    ///    get there").
     pub fn analyze(
         &mut self,
         detections: &[Detection],
         ego_speed: f32,
         dt_secs: f32,
     ) -> Vec<IntersectionAlert> {
-        let _ = dt_secs;
         let mut alerts = Vec::new();
         self.check_stop_signs(detections, ego_speed, &mut alerts);
-        self.check_blocked_intersection(detections, ego_speed, &mut alerts);
+        self.check_blocked_intersection(detections, ego_speed, dt_secs, &mut alerts);
         alerts
     }
 
@@ -186,21 +225,31 @@ impl IntersectionAnalyzer {
         }
     }
 
-    /// Check for blocked intersection: high occupancy by vehicles ahead.
+    /// Check for blocked intersection: the road ahead is full of vehicles.
+    ///
+    /// Only vehicles whose centre lies inside the forward "intersection box"
+    /// region (the centre horizontal band of the frame, below the horizon)
+    /// count toward occupancy, and their boxes are clipped to that region.
+    /// Parked cars at the far left/right edges therefore cannot inflate the
+    /// reading, so the alert reflects how packed the road *ahead* is.
+    ///
+    /// Two-stage logic:
+    /// - occupancy already above `blocked_occupancy_threshold` →
+    ///   `BlockedIntersection` (the box is full now);
+    /// - occupancy above `filling_occupancy_threshold` and still rising
+    ///   faster than `occupancy_rise_rate` → `IntersectionFilling`
+    ///   (predictive: it will be blocked by the time the ego arrives).
     fn check_blocked_intersection(
-        &self,
+        &mut self,
         detections: &[Detection],
         ego_speed: f32,
+        dt_secs: f32,
         alerts: &mut Vec<IntersectionAlert>,
     ) {
         let vehicles: Vec<&Detection> = detections
             .iter()
             .filter(|d| (3..=5).contains(&d.class_id) && d.confidence > 0.4)
             .collect();
-
-        if vehicles.is_empty() {
-            return;
-        }
 
         let (fw, fh) = (self.frame_width as f32, self.frame_height as f32);
         let (rx1, ry1) = (fw * BOX_REGION_X_MIN, fh * BOX_REGION_Y_MIN);
@@ -225,13 +274,46 @@ impl IntersectionAnalyzer {
 
         let occupancy_pct = (occupied_area / region_area * 100.0).clamp(0.0, 100.0);
 
-        if occupancy_pct > self.config.blocked_occupancy_threshold
-            && ego_speed >= self.config.blocked_intersection_speed
-        {
+        // Trend: low-pass smooth occupancy and compute the rise rate (%/s).
+        let (smoothed, rise_rate) = match self.prev_occupancy {
+            Some(prev) if dt_secs > 0.001 => {
+                let sm = self.occupancy_alpha * occupancy_pct + (1.0 - self.occupancy_alpha) * prev;
+                (sm, (sm - prev) / dt_secs)
+            }
+            _ => (occupancy_pct, 0.0),
+        };
+        self.prev_occupancy = Some(smoothed);
+
+        if ego_speed < self.config.blocked_intersection_speed {
+            return;
+        }
+
+        // Hysteresis: enter BLOCKED above the full threshold, stay active
+        // until occupancy drops BLOCKED_EXIT_MARGIN below it, so the alert
+        // does not flicker between BLOCKED and FILLING at the boundary.
+        let enter = occupancy_pct > self.config.blocked_occupancy_threshold;
+        let stay = self.blocked_active
+            && occupancy_pct > self.config.blocked_occupancy_threshold - BLOCKED_EXIT_MARGIN;
+        let is_blocked = enter || stay;
+        self.blocked_active = is_blocked;
+
+        if ego_speed < self.config.blocked_intersection_speed {
+            return;
+        }
+
+        if is_blocked {
             alerts.push(IntersectionAlert::BlockedIntersection {
                 confidence: occupancy_pct / 100.0,
                 occupancy_pct,
                 distance_to_stop_line: self.config.blocked_distance_to_stop,
+                ego_speed,
+            });
+        } else if smoothed > self.config.filling_occupancy_threshold
+            && rise_rate > self.config.occupancy_rise_rate
+        {
+            alerts.push(IntersectionAlert::IntersectionFilling {
+                occupancy_pct: smoothed,
+                rise_rate_pct_s: rise_rate,
                 ego_speed,
             });
         }
@@ -294,6 +376,59 @@ mod tests {
             .iter()
             .any(|a| matches!(a, IntersectionAlert::BlockedIntersection { .. }));
         assert!(blocked, "Expected BlockedIntersection alert");
+    }
+
+    /// Occupancy rising toward (but not yet past) the full threshold triggers
+    /// the predictive `IntersectionFilling` warning — "it will be blocked by
+    /// the time you get there".
+    #[test]
+    fn test_rising_occupancy_triggers_filling_alert() {
+        let cfg = Config::default();
+        let mut analyzer = IntersectionAnalyzer::new(&cfg, 1280, 720);
+        // dt = 0.1 s (10 fps). Occupancy of the forward region rises
+        // 15% -> 22% -> 25% over three frames.
+        let frame = |occ_pct: f32| -> Vec<Detection> {
+            // region area = (960-320)*(720-216) = 322560 px
+            let w = occ_pct / 100.0 * 322560.0 / 504.0;
+            vec![make_det(3, 400.0, 216.0, 400.0 + w, 720.0, 0.9)]
+        };
+
+        let a1 = analyzer.analyze(&frame(15.0), 20.0, 0.1);
+        assert!(a1.is_empty(), "15% occupancy must be quiet");
+        let a2 = analyzer.analyze(&frame(22.0), 20.0, 0.1);
+        assert!(a2.is_empty(), "smoothed occupancy still below filling threshold");
+        let a3 = analyzer.analyze(&frame(25.0), 20.0, 0.1);
+        assert!(
+            a3.iter()
+                .any(|a| matches!(a, IntersectionAlert::IntersectionFilling { .. })),
+            "rising occupancy should emit the predictive filling alert"
+        );
+        assert!(
+            a3.iter()
+                .all(|a| !matches!(a, IntersectionAlert::BlockedIntersection { .. })),
+            "below the full threshold there must be no BLOCKED alert"
+        );
+    }
+
+    /// Once BLOCKED is active, occupancy dipping below the full threshold but
+    /// above the hysteresis exit margin keeps the alert active (no flicker).
+    #[test]
+    fn test_blocked_alert_has_hysteresis() {
+        let cfg = Config::default();
+        let mut analyzer = IntersectionAnalyzer::new(&cfg, 1280, 720);
+        let frame = |occ_pct: f32| -> Vec<Detection> {
+            let w = occ_pct / 100.0 * 322560.0 / 504.0;
+            vec![make_det(3, 400.0, 216.0, 400.0 + w, 720.0, 0.9)]
+        };
+
+        let a1 = analyzer.analyze(&frame(35.0), 20.0, 0.1); // 35% > 30% → blocked
+        assert!(a1.iter().any(|a| matches!(a, IntersectionAlert::BlockedIntersection { .. })));
+        let a2 = analyzer.analyze(&frame(26.0), 20.0, 0.1); // dips to 26% (> 22%) → still blocked
+        assert!(a2.iter().any(|a| matches!(a, IntersectionAlert::BlockedIntersection { .. })));
+        let a3 = analyzer.analyze(&frame(10.0), 20.0, 0.1); // drops to 10% → cleared
+        assert!(a3.is_empty());
+        let a4 = analyzer.analyze(&frame(35.0), 20.0, 0.1); // back above → blocked again
+        assert!(a4.iter().any(|a| matches!(a, IntersectionAlert::BlockedIntersection { .. })));
     }
 
     /// Large vehicles parked at the far left/right edges (outside the forward

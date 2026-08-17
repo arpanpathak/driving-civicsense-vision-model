@@ -383,6 +383,13 @@ fn run_demo(args: &Args) -> Result<(), String> {
 
     let dt = 1.0 / args.fps;
 
+    // Short label for the status line, taken from the input directory name.
+    let clip_label = std::path::Path::new(&args.input)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("SOURCE")
+        .to_uppercase();
+
     let mut frame_count: u64 = 0;
     let mut alert_counts = HashMap::new();
     let mut class_counts = HashMap::new();
@@ -454,14 +461,20 @@ fn run_demo(args: &Args) -> Result<(), String> {
         let mut banner_msg = String::new();
         if !i_alerts.is_empty() {
             // Pick the banner label so the strip is colour-coded correctly
-            // (draw_alert_text colours "STOP"/"BLOCKED" red, "MERGE" orange).
+            // (draw_alert_text colours "STOP"/"BLOCKED" red, "MERGE" orange,
+            // anything else yellow).
             let critical = if i_alerts
                 .iter()
                 .any(|a| matches!(a, IntersectionAlert::StopSignViolation { .. }))
             {
                 "STOP SIGN VIOLATION"
-            } else {
+            } else if i_alerts
+                .iter()
+                .any(|a| matches!(a, IntersectionAlert::BlockedIntersection { .. }))
+            {
                 "BLOCKED INTERSECTION"
+            } else {
+                "INTERSECTION FILLING"
             };
             visualization::draw_alert_text(&mut viz, frame_w, frame_h, critical);
             banner_msg.push_str(
@@ -493,7 +506,8 @@ fn run_demo(args: &Args) -> Result<(), String> {
 
         // Status line at the bottom.
         let status = format!(
-            "CIVICSENSE | KITTI | FRAME {} | {:.1}S | EGO {:.0} MPH | {} DET",
+            "CIVICSENSE | {} | FRAME {} | {:.1}S | EGO {:.0} MPH | {} DET",
+            clip_label,
             frame_count + 1,
             t,
             args.ego_speed,
@@ -528,6 +542,9 @@ fn alert_text(a: &IntersectionAlert) -> String {
             // Note: no distance is shown — the analyzer does not measure a
             // real distance to the box, only the forward-region occupancy.
             format!("BLOCKED INTERSECTION  occ={occupancy_pct:.0}%  conf={confidence:.2}  ego={ego_speed:.0}MPH")
+        }
+        IntersectionAlert::IntersectionFilling { occupancy_pct, rise_rate_pct_s, ego_speed } => {
+            format!("INTERSECTION FILLING  occ={occupancy_pct:.0}%  rising={rise_rate_pct_s:.0}%/S  ego={ego_speed:.0}MPH")
         }
     }
 }

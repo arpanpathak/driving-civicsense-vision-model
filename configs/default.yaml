@@ -33,6 +33,8 @@ intersection:
   stop_sign_warning_speed: 10        # mph
   blocked_intersection_speed: 15     # mph
   blocked_occupancy_threshold: 30   # % of frame area
+  filling_occupancy_threshold: 18   # % of frame area (predictive)
+  occupancy_rise_rate: 10           # % occupancy per second (predictive)
   blocked_distance_to_stop: 30       # feet
   grid_resolution: 0.5               # meters/cell
   grid_ahead_distance: 20            # meters
