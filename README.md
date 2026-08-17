@@ -108,31 +108,12 @@ All variants process **100% on-device**. No cloud upload. No subscription.
 
 ## Architecture
 
-```
-=====================================================================
-                     DRIVING-CIVICSENSE PIPELINE                     
-=====================================================================
+The runtime flow - frame, detect, track, reason, alert - runs entirely
+on-device:
 
-  [Camera Frame]
-       |
-  [YOLOv8/v11 ONNX] ---> [NMS] ---> [Detections]
-       |
-  [Deep SORT Tracker] ---> [Kalman Filter] ---> [Tracks]
-       |
-  +--------------------+  +---------------------------+  +----------------------------+
-  | Intersection       |  | Lane Speed                |  | Turn Signal / Lane         |
-  | Module             |  | Module                    |  | Change Module              |
-  |  * Stop sign       |  |  * Lane assignment        |  |  * Amber light detection   |
-  |  * Occupancy       |  |  * Relative velocity      |  |  * Lateral motion track    |
-  |  * Deceleration    |  |  * Hysteresis timer       |  |  * Multi-lane cut detect   |
-  +---------+----------+  +-------------+-------------+  +--------------+-------------+
-           |                             |                             |
-  +--------------------------------------------------------------------+
-  | Alert Priority Engine                                              |
-  |   -> Voice / Haptic / LED / Beacon                                |
-  +--------------------------------------------------------------------+
-=====================================================================
-```
+<p align="center">
+  <img src="assets/pipeline-flow.svg" alt="CivicSense runtime pipeline: camera frame -> YOLOv8n ONNX -> NMS -> detections -> Deep SORT + Kalman -> tracks -> intersection/lane/turn-signal modules -> alert priority engine -> voice/haptic/LED/beacon" width="1000"/>
+</p>
 
 ### Model architecture (YOLOv8n)
 

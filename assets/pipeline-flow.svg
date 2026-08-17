@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="820" viewBox="0 0 1500 820" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="1" stop-color="#0b1220"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7280"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#60a5fa"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#34d399"/>
+    </marker>
+    <marker id="arrowPink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f472b6"/>
+    </marker>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <rect width="1500" height="820" fill="url(#bg)"/>
+
+  <!-- title -->
+  <text x="750" y="50" fill="#f9fafb" font-size="30" font-weight="bold" text-anchor="middle">CivicSense Runtime Pipeline</text>
+  <text x="750" y="80" fill="#9ca3af" font-size="17" text-anchor="middle">frame -&gt; detect -&gt; track -&gt; reason -&gt; alert, every stage on-device</text>
+
+  <!-- ============ 1 - PERCEPTION ============ -->
+  <text x="60" y="106" fill="#3b82f6" font-size="15" font-weight="bold">1 - PERCEPTION</text>
+
+  <g filter="url(#glow)">
+    <rect x="120" y="118" width="250" height="86" rx="12" fill="#0f1a2e" stroke="#3b82f6" stroke-width="2.5"/>
+  </g>
+  <text x="245" y="154" fill="#60a5fa" font-size="15" font-weight="bold" text-anchor="middle">Camera Frame</text>
+  <text x="245" y="176" fill="#9ca3af" font-size="12.5" text-anchor="middle">1280x720 - 30 fps</text>
+
+  <g filter="url(#glow)">
+    <rect x="470" y="118" width="280" height="86" rx="12" fill="#0f1a2e" stroke="#3b82f6" stroke-width="2.5"/>
+  </g>
+  <text x="610" y="154" fill="#60a5fa" font-size="15" font-weight="bold" text-anchor="middle">YOLOv8n ONNX (INT8)</text>
+  <text x="610" y="176" fill="#9ca3af" font-size="12.5" text-anchor="middle">640x640 letterbox - ort runtime</text>
+
+  <g filter="url(#glow)">
+    <rect x="850" y="118" width="190" height="86" rx="12" fill="#0f1a2e" stroke="#3b82f6" stroke-width="2.5"/>
+  </g>
+  <text x="945" y="154" fill="#60a5fa" font-size="15" font-weight="bold" text-anchor="middle">NMS</text>
+  <text x="945" y="176" fill="#9ca3af" font-size="12.5" text-anchor="middle">IoU 0.45 - conf 0.5</text>
+
+  <g filter="url(#glow)">
+    <rect x="1140" y="118" width="280" height="86" rx="12" fill="#0c1f18" stroke="#10b981" stroke-width="2.5"/>
+  </g>
+  <text x="1280" y="154" fill="#34d399" font-size="15" font-weight="bold" text-anchor="middle">Detections</text>
+  <text x="1280" y="176" fill="#9ca3af" font-size="12.5" text-anchor="middle">7 classes - bbox + score</text>
+
+  <line x1="378" y1="161" x2="460" y2="161" stroke="#6b7280" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="758" y1="161" x2="840" y2="161" stroke="#6b7280" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="1048" y1="161" x2="1130" y2="161" stroke="#6b7280" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- ============ 2 - TRACKING ============ -->
+  <text x="60" y="284" fill="#0d9488" font-size="15" font-weight="bold">2 - TRACKING</text>
+
+  <g filter="url(#glow)">
+    <rect x="200" y="296" width="300" height="86" rx="12" fill="#0c1f18" stroke="#10b981" stroke-width="2.5"/>
+  </g>
+  <text x="350" y="332" fill="#34d399" font-size="15" font-weight="bold" text-anchor="middle">Deep SORT Tracker</text>
+  <text x="350" y="354" fill="#9ca3af" font-size="12.5" text-anchor="middle">appearance + motion association</text>
+
+  <g filter="url(#glow)">
+    <rect x="580" y="296" width="300" height="86" rx="12" fill="#0c1f18" stroke="#10b981" stroke-width="2.5"/>
+  </g>
+  <text x="730" y="332" fill="#34d399" font-size="15" font-weight="bold" text-anchor="middle">Kalman Filter</text>
+  <text x="730" y="354" fill="#9ca3af" font-size="12.5" text-anchor="middle">velocity + position smoothing</text>
+
+  <g filter="url(#glow)">
+    <rect x="960" y="296" width="300" height="86" rx="12" fill="#0c1f18" stroke="#10b981" stroke-width="2.5"/>
+  </g>
+  <text x="1110" y="332" fill="#34d399" font-size="15" font-weight="bold" text-anchor="middle">Tracks</text>
+  <text x="1110" y="354" fill="#9ca3af" font-size="12.5" text-anchor="middle">stable ids - lane assignment</text>
+
+  <line x1="508" y1="339" x2="570" y2="339" stroke="#6b7280" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="888" y1="339" x2="950" y2="339" stroke="#6b7280" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- detections -> deep sort -->
+  <line x1="1280" y1="208" x2="1280" y2="258" stroke="#34d399" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <line x1="1280" y1="258" x2="350" y2="258" stroke="#34d399" stroke-width="2" stroke-dasharray="6 6"/>
+  <line x1="350" y1="258" x2="350" y2="288" stroke="#34d399" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <text x="1100" y="250" fill="#34d399" font-size="12" text-anchor="middle">detections feed the tracker</text>
+
+  <!-- ============ 3 - REASONING ============ -->
+  <text x="60" y="464" fill="#a855f7" font-size="15" font-weight="bold">3 - REASONING</text>
+
+  <g filter="url(#glow)">
+    <rect x="120" y="476" width="400" height="120" rx="12" fill="#170f26" stroke="#a855f7" stroke-width="2.5"/>
+  </g>
+  <text x="320" y="510" fill="#c084fc" font-size="16" font-weight="bold" text-anchor="middle">Intersection Module</text>
+  <text x="320" y="534" fill="#d1d5db" font-size="12.5" text-anchor="middle">stop sign - occupancy grid</text>
+  <text x="320" y="554" fill="#9ca3af" font-size="12.5" text-anchor="middle">deceleration planning</text>
+  <text x="320" y="574" fill="#9ca3af" font-size="12.5" text-anchor="middle">time-to-red kinematics</text>
+
+  <g filter="url(#glow)">
+    <rect x="550" y="476" width="400" height="120" rx="12" fill="#170f26" stroke="#a855f7" stroke-width="2.5"/>
+  </g>
+  <text x="750" y="510" fill="#c084fc" font-size="16" font-weight="bold" text-anchor="middle">Lane Speed Module</text>
+  <text x="750" y="534" fill="#d1d5db" font-size="12.5" text-anchor="middle">lane assignment - relative velocity</text>
+  <text x="750" y="554" fill="#9ca3af" font-size="12.5" text-anchor="middle">hysteresis timer</text>
+  <text x="750" y="574" fill="#9ca3af" font-size="12.5" text-anchor="middle">courtesy speed differential</text>
+
+  <g filter="url(#glow)">
+    <rect x="980" y="476" width="400" height="120" rx="12" fill="#170f26" stroke="#a855f7" stroke-width="2.5"/>
+  </g>
+  <text x="1180" y="510" fill="#c084fc" font-size="16" font-weight="bold" text-anchor="middle">Turn Signal / Lane Change</text>
+  <text x="1180" y="534" fill="#d1d5db" font-size="12.5" text-anchor="middle">amber light detection</text>
+  <text x="1180" y="554" fill="#9ca3af" font-size="12.5" text-anchor="middle">lateral motion tracking</text>
+  <text x="1180" y="574" fill="#9ca3af" font-size="12.5" text-anchor="middle">multi-lane cut detection</text>
+
+  <!-- tracks -> modules -->
+  <line x1="1110" y1="386" x2="1110" y2="436" stroke="#c084fc" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="1110" y1="436" x2="320" y2="436" stroke="#c084fc" stroke-width="2" stroke-dasharray="6 6"/>
+  <line x1="320" y1="436" x2="320" y2="468" stroke="#c084fc" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="320" y1="436" x2="750" y2="436" stroke="#c084fc" stroke-width="2" stroke-dasharray="6 6"/>
+  <line x1="750" y1="436" x2="750" y2="468" stroke="#c084fc" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="750" y1="436" x2="1180" y2="436" stroke="#c084fc" stroke-width="2" stroke-dasharray="6 6"/>
+  <line x1="1180" y1="436" x2="1180" y2="468" stroke="#c084fc" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="700" y="428" fill="#c084fc" font-size="12" text-anchor="middle">tracks feed every module</text>
+
+  <!-- ============ 4 - ACTION ============ -->
+  <text x="60" y="628" fill="#f59e0b" font-size="15" font-weight="bold">4 - ACTION</text>
+
+  <g filter="url(#glow)">
+    <rect x="330" y="640" width="840" height="90" rx="14" fill="#1a1609" stroke="#f59e0b" stroke-width="3"/>
+  </g>
+  <text x="750" y="674" fill="#fbbf24" font-size="18" font-weight="bold" text-anchor="middle">Alert Priority Engine</text>
+  <text x="750" y="698" fill="#d1d5db" font-size="13" text-anchor="middle">fuses module verdicts into one prioritized alert</text>
+
+  <line x1="320" y1="600" x2="320" y2="632" stroke="#6b7280" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="750" y1="600" x2="750" y2="632" stroke="#6b7280" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="1180" y1="600" x2="1180" y2="632" stroke="#6b7280" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="320" y1="600" x2="1180" y2="600" stroke="#6b7280" stroke-width="2" stroke-dasharray="6 6"/>
+
+  <!-- outputs -->
+  <g filter="url(#glow)">
+    <rect x="210" y="742" width="240" height="52" rx="26" fill="#0d1b33" stroke="#3b82f6" stroke-width="2"/>
+  </g>
+  <text x="330" y="773" fill="#60a5fa" font-size="14" font-weight="bold" text-anchor="middle">Voice</text>
+
+  <g filter="url(#glow)">
+    <rect x="490" y="742" width="240" height="52" rx="26" fill="#1a1609" stroke="#f59e0b" stroke-width="2"/>
+  </g>
+  <text x="610" y="773" fill="#fbbf24" font-size="14" font-weight="bold" text-anchor="middle">Haptic</text>
+
+  <g filter="url(#glow)">
+    <rect x="770" y="742" width="240" height="52" rx="26" fill="#240d18" stroke="#ec4899" stroke-width="2"/>
+  </g>
+  <text x="890" y="773" fill="#f472b6" font-size="14" font-weight="bold" text-anchor="middle">LED</text>
+
+  <g filter="url(#glow)">
+    <rect x="1050" y="742" width="240" height="52" rx="26" fill="#0c1f18" stroke="#10b981" stroke-width="2"/>
+  </g>
+  <text x="1170" y="773" fill="#34d399" font-size="14" font-weight="bold" text-anchor="middle">Beacon</text>
+
+  <line x1="330" y1="730" x2="330" y2="740" stroke="#f472b6" stroke-width="3" marker-end="url(#arrowPink)"/>
+  <line x1="610" y1="730" x2="610" y2="740" stroke="#f472b6" stroke-width="3" marker-end="url(#arrowPink)"/>
+  <line x1="890" y1="730" x2="890" y2="740" stroke="#f472b6" stroke-width="3" marker-end="url(#arrowPink)"/>
+  <line x1="1170" y1="730" x2="1170" y2="740" stroke="#f472b6" stroke-width="3" marker-end="url(#arrowPink)"/>
+</svg>
