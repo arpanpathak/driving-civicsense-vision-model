@@ -1,8 +1,8 @@
 //! YOLOv8 / YOLOv11 ONNX object detector.
 //!
 //! Loads an ONNX model via `ort`, pre-processes frames (letterbox, normalize,
-//! HWC->CHW), runs inference, and post-processes (grid decode, sigmoid,
-//! confidence filter, NMS, scale to original dimensions).
+//! HWC->CHW), runs inference, and post-processes (decode baked DFL boxes +
+//! sigmoid class scores, confidence filter, NMS, scale to original dimensions).
 //!
 //! ## Graceful degradation
 //!
@@ -193,39 +193,36 @@ fn non_max_suppression(mut candidates: Vec<BBox>, iou_threshold: f32) -> Vec<BBo
 //  Grid / stride helpers for YOLOv8 decoding
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Pre-computed anchor grid for YOLOv8 output decoding.
+/// Pre-computed anchor-count metadata for YOLOv8 output decoding.
 ///
-/// YOLOv8 produces predictions at three strides (8, 16, 32). For a 640x640
-/// input this yields 80x80 + 40x40 + 20x20 = 8400 anchors.
+/// The Ultralytics ONNX export produces predictions at three strides
+/// (8, 16, 32). For a 640x640 input this yields
+/// 80x80 + 40x40 + 20x20 = 8400 predictions.
 struct AnchorGrid {
-    anchors: Vec<(f32, f32, f32)>,
     num_predictions: usize,
 }
 
 impl AnchorGrid {
     fn new(input_size: u32) -> Self {
-        let anchors: Vec<_> = [8u32, 16, 32]
+        let num_predictions: usize = [8u32, 16, 32]
             .iter()
-            .flat_map(|&stride| {
+            .map(|&stride| {
                 let grid = input_size / stride;
-                (0..grid).flat_map(move |gy| {
-                    (0..grid).map(move |gx| (gx as f32, gy as f32, stride as f32))
-                })
+                (grid * grid) as usize
             })
-            .collect();
-        let n = anchors.len();
-        Self {
-            anchors,
-            num_predictions: n,
-        }
+            .sum();
+        Self { num_predictions }
     }
 
     /// Decode raw YOLOv8 output tensor into candidate bounding boxes.
     ///
-    /// The model output is `[1, 4 + num_classes, num_predictions]` in CHW
-    /// (channel-major) layout.  Each anchor produces a bounding box
-    /// (cx, cy, w, h) at channels 0-3, and class logits at channels 4+.
-    #[allow(clippy::too_many_arguments)] // decode is a pure low-level box decoder
+    /// The Ultralytics ONNX export (the format `scripts/download_test_model.sh`
+    /// fetches) bakes the DFL box decode and class sigmoid into the graph.
+    /// Each prediction is therefore already decoded: channels 0-3 hold a box
+    /// `(cx, cy, w, h)` in model-input pixel space, and channels 4+ hold
+    /// sigmoid-activated class probabilities. No grid offsets or sigmoid are
+    /// applied here — values are read as-is and mapped from letterbox space
+    /// back to the original frame.
     fn decode(
         &self,
         output: &[f32],
@@ -239,18 +236,18 @@ impl AnchorGrid {
     ) -> Vec<BBox> {
         let stride = self.num_predictions;
 
-        self.anchors
-            .iter()
-            .enumerate()
-            .filter_map(|(i, &(gx, gy, s))| {
-                let cx = (sigmoid(output[i]) * 2.0 - 0.5 + gx) * s;
-                let cy = (sigmoid(output[stride + i]) * 2.0 - 0.5 + gy) * s;
-                let w = (sigmoid(output[2 * stride + i]) * 2.0).powi(2) * s;
-                let h = (sigmoid(output[3 * stride + i]) * 2.0).powi(2) * s;
+        (0..self.num_predictions)
+            .filter_map(|i| {
+                let cx = output[i];
+                let cy = output[stride + i];
+                let w = output[2 * stride + i];
+                let h = output[3 * stride + i];
 
                 let (best_class, best_conf) = (0..num_classes)
-                    .map(|c| (c as u32, sigmoid(output[(4 + c) * stride + i])))
-                    .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+                    .map(|c| (c as u32, output[(4 + c) * stride + i]))
+                    .max_by(|(_, a), (_, b)| {
+                        a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal)
+                    })
                     .unwrap_or((0, 0.0));
 
                 (best_conf >= conf_threshold).then_some((
@@ -273,15 +270,6 @@ impl AnchorGrid {
             })
             .collect()
     }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Sigmoid
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// Logistic sigmoid: `1 / (1 + exp(-x))`.
-fn sigmoid(x: f32) -> f32 {
-    1.0 / (1.0 + (-x).exp())
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -484,6 +472,48 @@ mod tests {
     fn test_anchor_grid_size() {
         let grid = AnchorGrid::new(640);
         assert_eq!(grid.num_predictions, 8400);
+    }
+
+    /// Regression test for the baked-decode ONNX export format.
+    ///
+    /// Channels 0-3 carry an already-decoded box `(cx, cy, w, h)` in
+    /// model-input pixel space and channels 4+ carry sigmoid-activated class
+    /// probabilities (no grid offsets, no extra sigmoid).
+    #[test]
+    fn test_decode_baked_export_format() {
+        // 640 input -> 8400 predictions, 2 classes -> 6 channels per anchor.
+        let grid = AnchorGrid::new(640);
+        let n = grid.num_predictions;
+        let num_classes = 2;
+        let mut output = vec![0.0f32; (4 + num_classes) * n];
+
+        // Anchor 100: box (cx=50, cy=60, w=20, h=10), class 1 @ 0.9.
+        let i = 100;
+        output[i] = 50.0; // cx
+        output[n + i] = 60.0; // cy
+        output[2 * n + i] = 20.0; // w
+        output[3 * n + i] = 10.0; // h
+        output[(4 + 1) * n + i] = 0.9; // class 1 probability
+
+        let boxes = grid.decode(
+            &output,
+            num_classes,
+            0.5, // conf threshold
+            640,
+            640,
+            1.0, // scale
+            0.0, // pad_x
+            0.0, // pad_y
+        );
+
+        assert_eq!(boxes.len(), 1, "exactly one box should pass the threshold");
+        let b = &boxes[0];
+        assert_eq!(b.class_id, 1);
+        assert!((b.confidence - 0.9).abs() < 1e-6);
+        assert!((b.x1 - 40.0).abs() < 1e-4);
+        assert!((b.y1 - 55.0).abs() < 1e-4);
+        assert!((b.x2 - 60.0).abs() < 1e-4);
+        assert!((b.y2 - 65.0).abs() < 1e-4);
     }
 
     #[test]

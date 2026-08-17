@@ -2,7 +2,7 @@
 set -euo pipefail
 
 MODEL_DIR="weights"
-MODEL_URL="https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8n.onnx"
+MODEL_URL="https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8n.onnx"
 MODEL_PATH="${MODEL_DIR}/yolov8n.onnx"
 
 mkdir -p "$MODEL_DIR"

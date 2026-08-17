@@ -128,8 +128,8 @@ impl IntersectionAnalyzer {
     /// 1. Filter detections for vehicle classes (3, 4, 5).
     /// 2. Compute the sum of bounding-box areas as a percentage of the
     ///    total frame area.
-    /// 3. If `occupancy > 30%` **and** `ego_speed >= blocked_intersection_speed`,
-    ///    emit `BlockedIntersection`.
+    /// 3. If `occupancy > blocked_occupancy_threshold` **and**
+    ///    `ego_speed >= blocked_intersection_speed`, emit `BlockedIntersection`.
     pub fn analyze(
         &mut self,
         detections: &[Detection],
@@ -196,7 +196,9 @@ impl IntersectionAnalyzer {
         let occupied_area: f32 = vehicles.iter().map(|d| (d.x2 - d.x1) * (d.y2 - d.y1)).sum();
         let occupancy_pct = ((occupied_area / total_area) * 100.0).clamp(0.0, 100.0);
 
-        if occupancy_pct > 30.0 && ego_speed >= self.config.blocked_intersection_speed {
+        if occupancy_pct > self.config.blocked_occupancy_threshold
+            && ego_speed >= self.config.blocked_intersection_speed
+        {
             alerts.push(IntersectionAlert::BlockedIntersection {
                 confidence: occupancy_pct / 100.0,
                 occupancy_pct,

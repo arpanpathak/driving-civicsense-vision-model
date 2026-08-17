@@ -162,6 +162,13 @@ pub struct IntersectionConfig {
     /// Default: `15.0` mph.
     pub blocked_intersection_speed: f32,
 
+    /// Vehicle occupancy (as a % of frame area) above which the forward
+    /// view counts as a blocked intersection.
+    ///
+    /// Default: `30.0` %. Calibrated for a narrow-FoV dashcam; ultra-wide
+    /// lenses keep occupancy far lower and need a smaller threshold.
+    pub blocked_occupancy_threshold: f32,
+
     /// Distance in meters from the stop line at which a blocked-intersection
     /// alert becomes relevant.
     ///
@@ -257,6 +264,7 @@ impl Default for IntersectionConfig {
             stop_sign_warning_distance: 50.0,
             stop_sign_warning_speed: 10.0,
             blocked_intersection_speed: 15.0,
+            blocked_occupancy_threshold: 30.0,
             blocked_distance_to_stop: 30.0,
             grid_resolution: 0.5,
             grid_ahead_distance: 20.0,
