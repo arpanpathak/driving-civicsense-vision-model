@@ -1,4 +1,4 @@
-# System Design — Driving CivicSense Vision Model
+# System Design: Driving CivicSense Vision Model
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue?style=flat-square)](../LICENSE)
 [![Paper](https://img.shields.io/badge/Paper-Intersection%20Blockage-8A2BE2?style=flat-square)](https://arpanpathak.github.io/driving-civicsense-vision-model/)
@@ -8,8 +8,8 @@
 
 A **camera-only, edge-native AI system** that detects vehicles, tracks them across
 lanes, reasons about the *dilemma zone* and blocked-box scenarios with a deterministic
-kinematic decision engine, and issues prioritized warnings — **entirely on-device, with
-zero cloud dependency**. No video ever leaves the vehicle.
+kinematic decision engine, and issues prioritized warnings. **Entirely on-device, with
+zero cloud dependency.** No video ever leaves the vehicle.
 
 - **PDF of this document:** [System-Design.pdf](System-Design.pdf)
 - **Diagram sources:** [`diagrams/`](diagrams/) (SVG + rendered PNG for every figure)
@@ -36,14 +36,14 @@ who want to use commodity parts.
 
 ## 1. Architecture overview
 
-The system is a closed loop of three stages — **produce → perceive → consume** — running
+The system is a closed loop of three stages, **produce → perceive → consume**, running
 entirely inside the vehicle. A camera produces a video stream, the on-device perception
 layer turns it into tracked detections, and the decision layer consumes those tracks to
 issue alerts.
 
-<img src="diagrams/full-pipeline.png" alt="End-to-end pipeline: produce (Pi stream) → perceive (stream client) → consume (CivicSense), zero cloud" width="840"/>
+<img src="diagrams/full-pipeline.png" alt="End-to-end pipeline: produce (Pi stream), perceive (stream client), consume (CivicSense), zero cloud" width="100%"/>
 
-*Figure 1 — End-to-end system: capture, perception, and decision all stay in the vehicle.*
+*Figure 1. End-to-end system: capture, perception, and decision all stay in the vehicle.*
 
 | Stage | Component | Responsibility |
 |---|---|---|
@@ -58,20 +58,20 @@ issue alerts.
 The runtime is a fixed, four-stage dataflow: **frame → detect → track → reason → alert**.
 Every stage runs on device; nothing is deferred to a server.
 
-<img src="diagrams/pipeline-flow.png" alt="Runtime pipeline: perception (YOLOv8n INT8 + NMS) → tracking (Deep SORT + Kalman) → reasoning (intersection, lane, cut-in) → action (voice/haptic/LED/beacon)" width="880"/>
+<img src="diagrams/pipeline-flow.png" alt="Runtime pipeline: perception (YOLOv8n INT8 + NMS), tracking (Deep SORT + Kalman), reasoning (intersection, lane, cut-in), action (voice, haptic, LED, beacon)" width="100%"/>
 
-*Figure 2 — The on-device runtime pipeline.*
+*Figure 2. The on-device runtime pipeline.*
 
-1. **Perception** — A 1280×720 camera frame is letterboxed to 640×640 and passed through
+1. **Perception.** A 1280×720 camera frame is letterboxed to 640×640 and passed through
    YOLOv8n (ONNX Runtime, INT8 quantised, 7 classes). NMS (IoU 0.45, conf 0.5) collapses
    overlapping boxes into clean detections.
-2. **Tracking** — Deep SORT associates detections across frames by appearance + motion;
+2. **Tracking.** Deep SORT associates detections across frames by appearance + motion;
    a Kalman filter smooths position and velocity, producing stable track IDs with lane
    assignment. The filter also estimates **lateral speed**, which the cut-in rule consumes.
-3. **Reasoning** — three parallel modules — **Intersection**, **Lane speed**, and
-   **Turn-signal / lane change** — each emit constraint violations. The modules are pure
+3. **Reasoning.** Three parallel modules, **Intersection**, **Lane speed**, and
+   **Turn-signal / lane change**, each emit constraint violations. The modules are pure
    functions over the tracked state; the kinematics are closed-form and proven.
-4. **Action** — the **Alert Priority Engine** fuses module verdicts into exactly one
+4. **Action.** The **Alert Priority Engine** fuses module verdicts into exactly one
    severity-ordered warning and drives the output channels.
 
 ---
@@ -82,17 +82,17 @@ Detection is a small, efficient YOLOv8n architecture tuned to the seven classes 
 matter for intersection discipline: stop sign, traffic light, crosswalk, vehicle, truck,
 bus, and intersection zone.
 
-<img src="diagrams/cnn-architecture.png" alt="YOLOv8n architecture: C2f backbone with SPPF, PAN neck, 3 anchor-free detection heads, 7 classes, 8400 predictions" width="640"/>
+<img src="diagrams/cnn-architecture.png" alt="YOLOv8n architecture: C2f backbone with SPPF, PAN neck, 3 anchor-free detection heads, 7 classes, 8400 predictions" width="100%"/>
 
-*Figure 3 — YOLOv8n detector: C2f backbone + SPPF → PAN neck → 3 anchor-free heads.*
+*Figure 3. YOLOv8n detector: C2f backbone + SPPF, PAN neck, 3 anchor-free heads.*
 
-- **Backbone** — CSP (C2f) blocks with an SPPF layer downsample the 640×640×3 input to
+- **Backbone.** CSP (C2f) blocks with an SPPF layer downsample the 640×640×3 input to
   three multi-scale feature maps (P3/P4/P5, strides 8/16/32).
-- **Neck** — the PAN (Path Aggregation Network) fuses semantic context (top-down) with
+- **Neck.** The PAN (Path Aggregation Network) fuses semantic context (top-down) with
   spatial detail (bottom-up) across scales.
-- **Heads** — three anchor-free heads, one per scale, output box coordinates plus class
+- **Heads.** Three anchor-free heads, one per scale, output box coordinates plus class
   probabilities: **8,400 predictions per frame**.
-- **Deployment** — INT8-quantised ONNX, executed by the pure-Rust **Candle** runtime on
+- **Deployment.** INT8-quantised ONNX, executed by the pure-Rust **Candle** runtime on
   the streaming client, or ONNX Runtime on the Jetson. No Python in the loop.
 
 ---
@@ -106,8 +106,8 @@ proved in the companion paper, and the pipeline fires the most severe applicable
 The rules run in fixed severity order, so the first match wins:
 
 ```
-rule_light → rule_dilemma → rule_lead → rule_cutin → rule_stale
-(red/yellow) (stop vs clear)  (leader)   (lane change)   (advisory)
+rule_light -> rule_dilemma -> rule_lead -> rule_cutin -> rule_stale
+(red/yellow)  (stop vs clear)  (leader)    (lane change)   (advisory)
 ```
 
 | Rule | Trigger (kinematic criterion) | Level |
@@ -123,11 +123,11 @@ produce identical outputs, it is **O(n)** per frame with n ≤ 12 detections, an
 behaviour is exhaustively evaluated over 15,840 discretised states plus a 10,000-scene
 Monte Carlo campaign against an independent theorem oracle.
 
-<img src="diagrams/fig-dilemma.png" alt="The dilemma zone: feasible stop and clear regions versus blocked states" width="520"/>
+<img src="diagrams/fig-dilemma.png" alt="The dilemma zone: feasible stop and clear regions versus blocked states" width="100%"/>
 
-*Figure 4 — The dilemma zone: the region where neither stopping nor clearing is safe.*
+*Figure 4. The dilemma zone: the region where neither stopping nor clearing is safe.*
 
-> The mathematical development — five theorems with complete, hand-checked proofs — is
+> The mathematical development, five theorems with complete, hand-checked proofs, is
 > in the [companion paper](https://arpanpathak.github.io/driving-civicsense-vision-model/).
 
 ---
@@ -138,13 +138,13 @@ The camera layer ships in two flavours depending on the topology: **direct CSI c
 on the Jetson (zero-latency, one board) or an **MJPEG streaming server** on a Pi Zero 2 W
 (distributed fallback). Both are 100% Rust.
 
-<img src="diagrams/camera-pipeline.png" alt="Camera pipeline: capture → encode → stream (CSI / libcamera / rpicam-vid)" width="760"/>
+<img src="diagrams/camera-pipeline.png" alt="Camera pipeline: capture, encode, stream (CSI / libcamera / rpicam-vid)" width="100%"/>
 
-*Figure 5 — Camera pipeline: capture, encode, and stream.*
+*Figure 5. Camera pipeline: capture, encode, and stream.*
 
-<img src="diagrams/stream-pipeline.png" alt="Streaming server: MJPEG over HTTP, UDP, stdout — tiny memory footprint on Pi Zero 2 W" width="760"/>
+<img src="diagrams/stream-pipeline.png" alt="Streaming server: MJPEG over HTTP, UDP, stdout; tiny memory footprint on Pi Zero 2 W" width="100%"/>
 
-*Figure 6 — The Pi Zero streaming server: MJPEG over HTTP / UDP / stdout, ~50 MB RAM, ~15 FPS at 640×480.*
+*Figure 6. The Pi Zero streaming server: MJPEG over HTTP / UDP / stdout, ~50 MB RAM, ~15 FPS at 640×480.*
 
 ---
 
@@ -154,17 +154,17 @@ The model behind the perception layer is trained, validated, and ground-truthed 
 separate data-pack pipeline (`driving-civic-sense-data-crowd`). This is where the
 training data, label format, and field ground truth are defined and verified.
 
-<img src="diagrams/training-pipeline.png" alt="Training pipeline: curated data → YOLO training → model export" width="800"/>
+<img src="diagrams/training-pipeline.png" alt="Training pipeline: curated data, YOLO training, model export" width="100%"/>
 
-*Figure 7 — Model training pipeline: data curation → YOLO training → export.*
+*Figure 7. Model training pipeline: data curation → YOLO training → export.*
 
-<img src="diagrams/ground-truth-pipeline.png" alt="Ground-truth pipeline: field logs → labels → verified ground truth" width="800"/>
+<img src="diagrams/ground-truth-pipeline.png" alt="Ground-truth pipeline: field logs, labels, verified ground truth" width="100%"/>
 
-*Figure 8 — Field ground-truth pipeline: synchronized logs are turned into verified labels.*
+*Figure 8. Field ground-truth pipeline: synchronized logs are turned into verified labels.*
 
-<img src="diagrams/validation-pipeline.png" alt="Validation pipeline: validator rejects malformed labels before they enter training" width="800"/>
+<img src="diagrams/validation-pipeline.png" alt="Validation pipeline: validator rejects malformed labels before they enter training" width="100%"/>
 
-*Figure 9 — Validation pipeline: a hard validator rejects malformed labels so no bad example ever enters training.*
+*Figure 9. Validation pipeline: a hard validator rejects malformed labels so no bad example ever enters training.*
 
 The data pipeline enforces a strict rule: **no malformed label enters the training
 pipeline**. Every field log is validated before it contributes to a dataset.
@@ -175,22 +175,22 @@ pipeline**. Every field log is validated before it contributes to a dataset.
 
 Two supported paths, from the project README:
 
-- **Recommended — single board:** plug a CSI camera into a **Jetson Orin Nano Super**
-  (67 INT8 TOPS, 8 GB unified memory, 7–15 W). The full stack — YOLO, Deep SORT,
-  kinematic engine, alert dispatch — runs on one board, no network hops.
-- **Budget / DIY — distributed:** a **Pi Zero 2 W** with an Arducam IMX335 captures and
+- **Recommended, single board.** Plug a CSI camera into a **Jetson Orin Nano Super**
+  (67 INT8 TOPS, 8 GB unified memory, 7–15 W). The full stack, YOLO, Deep SORT,
+  kinematic engine, alert dispatch, runs on one board, no network hops.
+- **Budget / DIY, distributed.** A **Pi Zero 2 W** with an Arducam IMX335 captures and
   streams; a **Pi 5 + Hailo-8L** (or a desktop GPU) runs inference; the KMP companion
   app alerts the driver.
 
-<img src="diagrams/pipeline.png" alt="Distributed edge pipeline: Pico triggers, Pi Zero streams, brain infers, companion app alerts" width="880"/>
+<img src="diagrams/pipeline.png" alt="Distributed edge pipeline: Pico triggers, Pi Zero streams, brain infers, companion app alerts" width="100%"/>
 
-*Figure 10 — The distributed topology: each node does the job it is best at.*
+*Figure 10. The distributed topology: each node does the job it is best at.*
 
 ---
 
 ## 8. Required hardware & accessories
 
-All links are plain **Amazon search links** (no affiliation) — pick the listing, bundle,
+All links are plain **Amazon search links** (no affiliation). Pick the listing, bundle,
 and storefront for your region.
 
 | Component | Role | Amazon |
@@ -207,14 +207,13 @@ and storefront for your region.
 
 ---
 
-## 9. Credits — Amazon MLU
+## 9. Credits: Amazon MLU
 
 I learned computer vision at **Amazon** from the Applied Scientists of
 **Amazon Machine Learning University (MLU)**, and this project stands on that foundation.
-The CNN and object-detection fundamentals behind the YOLO-based perception layer — plus
-the habit of reasoning about models as engineering artifacts — came straight from MLU's
-free, world-class curriculum. Deep gratitude to the MLU team for opening this education
-to everyone.
+The CNN and object-detection fundamentals behind the YOLO-based perception layer came
+straight from MLU's free, world-class curriculum. Deep gratitude to the MLU team for
+opening this education to everyone.
 
 - **MLU homepage:** https://aws.amazon.com/machine-learning/mlu/
 - **MLU Accelerated Computer Vision (course repo):** https://github.com/aws-samples/aws-machine-learning-university-accelerated-cv
@@ -225,7 +224,7 @@ to everyone.
 
 ---
 
-## Appendix A — Diagram index
+## Appendix A: Diagram index
 
 Every figure in this document, with its source repository and editable SVG.
 
@@ -244,6 +243,24 @@ Every figure in this document, with its source repository and editable SVG.
 
 Additional reference figures from the paper (scene geometry, trajectories, velocity–time,
 event timeline, architecture) are available in [`diagrams/`](diagrams/).
+
+---
+
+## Rebuilding the PDF
+
+```bash
+python3 trim-diagrams.py                       # 1. trim whitespace from PNGs (full-width figures)
+pandoc README.md -t latex --standalone \
+  --lua-filter=print-badges.lua --toc --toc-depth=2 \
+  -V geometry:margin=2.2cm -V fontsize=11pt \
+  -V mainfont="Arial Unicode MS" -V monofont="Menlo" \
+  -V colorlinks=true -V linkcolor=blue \
+  -M title="System Design: Driving CivicSense Vision Model" \
+  -M author="Arpan Pathak (Driving CivicSense Research)" \
+  -M date="August 2026" -o System-Design.tex
+sed -i '' 's/,height=\textheight//g' System-Design.tex   # width-only scaling, no aspect distortion
+xelatex -interaction=nonstopmode System-Design.tex       # run twice for TOC
+```
 
 ---
 

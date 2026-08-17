@@ -47,4 +47,13 @@ research_paper/*.toc
 research_paper/*.bbl
 research_paper/*.blg
 research_paper/*.fls
+
+# ── System design PDF build artifacts ───────────────
+# Keep System-Design.pdf and the markdown source; ignore the intermediate
+# LaTeX, aux, and log files produced by the pandoc -> xelatex pipeline.
+system_design/System-Design.aux
+system_design/System-Design.log
+system_design/System-Design.out
+system_design/System-Design.toc
+system_design/System-Design.tex
 research_paper/*.fdb_latexmk
