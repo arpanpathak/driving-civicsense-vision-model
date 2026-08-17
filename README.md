@@ -69,12 +69,12 @@ This turns every unit from a personal assistant into a **distributed sensor node
 
 > **[\"Deterministic Intersection Blockage Prediction: A Kinematic Framework with Formal Proofs and a Modular Rust Implementation\"](https://arpanpathak.github.io/driving-civicsense-vision-model/)** is a peer-review-ready paper on the deterministic decision engine behind CivicSense's blocked-box alerts.
 
-The paper formalises the intersection "dilemma zone" with five theorems (each proved in the [complete proofs appendix](https://arpanpathak.github.io/driving-civicsense-vision-model/appendix.html)), derives the stopping and clearance conditions from first principles, and presents the severity-ordered Rust rule pipeline (`rule_light → rule_dilemma → rule_lead → rule_cutin → rule_stale`). Zero training data. Zero external dependencies. Fully interpretable and ISO 26262-friendly.
+The paper formalises the intersection "dilemma zone" with five theorems (each proved in the [complete proofs appendix](https://arpanpathak.github.io/driving-civicsense-vision-model/appendix.html)), derives the stopping and clearance conditions from first principles, and presents the severity-ordered Rust rule pipeline (`rule_light -> rule_dilemma -> rule_lead -> rule_cutin -> rule_stale`). Zero training data. Zero external dependencies. Fully interpretable and ISO 26262-friendly.
 
-- **Read the paper** → [arpanpathak.github.io/driving-civicsense-vision-model/](https://arpanpathak.github.io/driving-civicsense-vision-model/)
-- **Proofs appendix** → [arpanpathak.github.io/driving-civicsense-vision-model/appendix.html](https://arpanpathak.github.io/driving-civicsense-vision-model/appendix.html)
-- **PDF** → [research_paper/paper.pdf](research_paper/paper.pdf)
-- **LaTeX source** → [research_paper/paper.tex](research_paper/paper.tex)
+- **Read the paper** -> [arpanpathak.github.io/driving-civicsense-vision-model/](https://arpanpathak.github.io/driving-civicsense-vision-model/)
+- **Proofs appendix** -> [arpanpathak.github.io/driving-civicsense-vision-model/appendix.html](https://arpanpathak.github.io/driving-civicsense-vision-model/appendix.html)
+- **PDF** -> [research_paper/paper.pdf](research_paper/paper.pdf)
+- **LaTeX source** -> [research_paper/paper.tex](research_paper/paper.tex)
 
 ---
 
@@ -86,7 +86,7 @@ This repo is the capstone project behind the book, and the book is the engineer'
 
 Together they tell one story, **how to take computer vision from cloud to bare metal**: from Python prototypes to an ultra-fast, privacy-first, low-power Rust pipeline, plus a [Kotlin Multiplatform companion app](https://github.com/arpanpathak/civicsense-companion) on Android and iOS.
 
-**Read the foreword → [arpanpathak.github.io/seeing-machines-book/foreword.html](https://arpanpathak.github.io/seeing-machines-book/foreword.html)**
+**Read the foreword -> [arpanpathak.github.io/seeing-machines-book/foreword.html](https://arpanpathak.github.io/seeing-machines-book/foreword.html)**
 
 ---
 
@@ -101,7 +101,7 @@ Together they tell one story, **how to take computer vision from cloud to bare m
 
 All variants process **100% on-device**. No cloud upload. No subscription.
 
-> The **primary deployment target** for the inference pipeline is the **NVIDIA Jetson Orin Nano Super** — 67 INT8 TOPS of AI compute, 8 GB of unified memory, and 7–15 W of power envelope. It runs the full YOLO + Deep SORT + kinematic decision engine pipeline at real-time speeds entirely on-device. Huge respect to NVIDIA for democratizing edge AI at this price point.
+> The **primary deployment target** for the inference pipeline is the **NVIDIA Jetson Orin Nano Super**  -  67 INT8 TOPS of AI compute, 8 GB of unified memory, and 7 - 15 W of power envelope. It runs the full YOLO + Deep SORT + kinematic decision engine pipeline at real-time speeds entirely on-device. Huge respect to NVIDIA for democratizing edge AI at this price point.
 
 
 ---
@@ -134,34 +134,52 @@ All variants process **100% on-device**. No cloud upload. No subscription.
 =====================================================================
 ```
 
+### Model architecture (YOLOv8n)
+
+The perception model is a **YOLOv8n** detector (`yolov8n.pt`, `imgsz=640`, see
+[Cloud Training](CLOUD_TRAINING.md)): a C2f backbone (repeats 3/6/6/3,
+channels 16/32/32/64/64/128/128/256/256/256) with SPPF pooling, a PAN
+multi-scale neck, and three **anchor-free** detection heads. Each anchor
+predicts `4 box coords + 7 class scores` (11 channels, no objectness) at
+80x80, 40x40 and 20x20 scales: 8400 predictions in total, decoded by
+`AnchorGrid` in `src/detection/yolo.rs`.
+
+The full layer-by-layer diagram (neurons, kernels, tensor shapes) is hosted in
+the [data pack repo](https://github.com/arpanpathak/driving-civic-sense-data-crowd)
+(`assets/cnn-architecture.svg`, checked out here via the `datasets` submodule):
+
+<p align="center">
+  <img src="datasets/assets/cnn-architecture.svg" alt="CivicSense YOLOv8n architecture: C2f backbone, SPPF, PAN neck, 3 anchor-free detection heads" width="900"/>
+</p>
+
 ---
 
-## The Simple Way: Camera → Jetson (Recommended)
+## The Simple Way: Camera -> Jetson (Recommended)
 
 If you have an **NVIDIA Jetson Orin Nano Super** (or any Jetson with a CSI port), the whole pipeline runs on **one board**. No Pi Zero, no Pico, no network hops. Just plug in a camera and go:
 
 ```
-[ CSI Camera ] ──→ [ Jetson Orin Nano Super ]
+[ CSI Camera ] ──-> [ Jetson Orin Nano Super ]
                        │
                        ├── YOLOv8n ONNX (INT8, ~12 ms)
                        ├── Deep SORT + Kalman
                        ├── Kinematic Decision Engine (Rust)
-                       └── gRPC → KMP Companion App
+                       └── gRPC -> KMP Companion App
 ```
 
 The Jetson has:
-- **CSI camera connector** — direct, zero-latency capture
-- **67 INT8 TOPS** — runs YOLO inference at real-time speeds
-- **8 GB unified memory** — enough for the full stack
-- **7–15 W** — runs off a car USB-C port
+- **CSI camera connector**  -  direct, zero-latency capture
+- **67 INT8 TOPS**  -  runs YOLO inference at real-time speeds
+- **8 GB unified memory**  -  enough for the full stack
+- **7 - 15 W**  -  runs off a car USB-C port
 
 This is the configuration you want for a real deployment. The distributed pipeline below exists for one reason: **if you don't have a Jetson**, you can still run CivicSense by splitting the work across cheap commodity boards.
 
 ---
 
-## The Distributed Way: Pico → Pi Zero → Brain (Budget / DIY)
+## The Distributed Way: Pico -> Pi Zero -> Brain (Budget / DIY)
 
-If you don't have a Jetson and want to build from spare parts, squeeze YOLO out of a Pi Zero is a losing game — you trade accuracy for 2 FPS and watch it thermal-throttle. **Don't embed, distribute.** Each node does the job it's best at:
+If you don't have a Jetson and want to build from spare parts, squeeze YOLO out of a Pi Zero is a losing game  -  you trade accuracy for 2 FPS and watch it thermal-throttle. **Don't embed, distribute.** Each node does the job it's best at:
 
 <p align="center">
   <img src="assets/pipeline.svg" alt="CivicSense distributed edge pipeline: Pico triggers, Pi Zero streams, the brain infers, KMP app alerts" width="860"/>
@@ -186,7 +204,7 @@ Both are dependency-free-of-Python and intentionally kept permissive (MIT), unli
 
 **Dataset & ground-truth pack (included as a submodule, MIT licensed):**
 
-- [**civicsense-data-pack**](https://github.com/arpanpathak/driving-civic-sense-data-crowd) (`datasets/`): the official training + validation data companion. Ships the **7-class YOLO training vocabulary** (`stop_sign, traffic_light, crosswalk, vehicle, truck, bus, intersection_zone`), directory-layout and label validators (`civicsense-data`), a **field-validation ground-truth schema + seed manifest** for the kinematic decision engine, and public-dataset aggregation tooling (COCO / BDD100K). It is intentionally lean in git — no pixels — so it stays MIT-licensed and reusable everywhere. See the [repo README](https://github.com/arpanpathak/driving-civic-sense-data-crowd) for how to fetch and aggregate data into `data/civicsense/` (the input `civicsense train prepare` expects).
+- [**civicsense-data-pack**](https://github.com/arpanpathak/driving-civic-sense-data-crowd) (`datasets/`): the official training + validation data companion. Ships the **7-class YOLO training vocabulary** (`stop_sign, traffic_light, crosswalk, vehicle, truck, bus, intersection_zone`), directory-layout and label validators (`civicsense-data`), a **field-validation ground-truth schema + seed manifest** for the kinematic decision engine, and public-dataset aggregation tooling (COCO / BDD100K). It is intentionally lean in git  -  no pixels  -  so it stays MIT-licensed and reusable everywhere. See the [repo README](https://github.com/arpanpathak/driving-civic-sense-data-crowd) for how to fetch and aggregate data into `data/civicsense/` (the input `civicsense train prepare` expects).
 
 
 **When the distributed approach makes sense (no Jetson available):**
@@ -200,7 +218,7 @@ Both are dependency-free-of-Python and intentionally kept permissive (MIT), unli
 
 ```text
 # Jetson (recommended):
-[ CSI Camera ] ──→ [ Jetson Orin Nano Super ] ──→ [ KMP Companion App ]
+[ CSI Camera ] ──-> [ Jetson Orin Nano Super ] ──-> [ KMP Companion App ]
 
 # Or, if you don't have a Jetson:
 [ Pi Pico ] --GPIO trigger--> [ Pi Zero ] --UDP frames--> [ Brain: Pi 5 / GPU ]
@@ -342,15 +360,15 @@ git submodule update --init --recursive
 
 | Device | Inference Time | Power | Use Case |
 |--------|---------------|-------|----------|
-| **NVIDIA Jetson Orin Nano Super** | ~12 ms (INT8) | 7–15 W | **Primary brain** — full pipeline at real-time |
+| **NVIDIA Jetson Orin Nano Super** | ~12 ms (INT8) | 7 - 15 W | **Primary brain**  -  full pipeline at real-time |
 | Qualcomm Snapdragon AR1 | ~22 ms | < 500 mW | AR Glasses |
 | Google Coral Dev Board | ~15 ms | 2 W | Dashcam |
 | Raspberry Pi 5 + Hailo-8L | ~18 ms | 8 W | DIY brain, budget Kit |
-| Desktop GPU (training) | full-fat YOLO | 200–350 W | Model training & heavy inference |
+| Desktop GPU (training) | full-fat YOLO | 200 - 350 W | Model training & heavy inference |
 | **Raspberry Pi Zero 2 W** | capture + stream (MJPEG/H.264) | ~1 W | Camera node, feeds the brain |
 | **Raspberry Pi Pico** | trigger plane: PIO sensors, power states | < 0.5 W | Always-on trigger co-processor |
 
-> **Squeeze mission:** The NVIDIA Jetson Orin Nano Super is the primary inference brain — 67 INT8 TOPS, 8 GB unified memory, 7–15 W. Coupled with a Pi Zero streaming MJPEG and a Pi Pico handling sensor triggers, the full distributed pipeline runs real-time at under 20 W total. Performance-per-watt-per-dollar is not a toy metric. Thank you NVIDIA for making this possible at $249.
+> **Squeeze mission:** The NVIDIA Jetson Orin Nano Super is the primary inference brain  -  67 INT8 TOPS, 8 GB unified memory, 7 - 15 W. Coupled with a Pi Zero streaming MJPEG and a Pi Pico handling sensor triggers, the full distributed pipeline runs real-time at under 20 W total. Performance-per-watt-per-dollar is not a toy metric. Thank you NVIDIA for making this possible at $249.
 
 ---
 
@@ -369,7 +387,7 @@ Edge AI is a three-way squeeze: **fast enough, cheap enough, low-power enough**.
 
 | Metric | Cloud ADAS | CivicSense (edge) |
 |--------|-----------|-------------------|
-| **Dollar** | $10–30/mo subscription, forever | ~$0, one-time hardware, no subscription |
+| **Dollar** | $10 - 30/mo subscription, forever | ~$0, one-time hardware, no subscription |
 | **Watt** | server rack somewhere + 4G upload | < 8 W on-device, no uplink |
 | **Performance** | network RTT + cloud queue | frame-to-voice in real time, on the device |
 | **Privacy** | your video leaves the car | 100% on-device, nothing leaves |
