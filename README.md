@@ -101,7 +101,7 @@ Together they tell one story, **how to take computer vision from cloud to bare m
 
 All variants process **100% on-device**. No cloud upload. No subscription.
 
-> The **primary deployment target** for the inference pipeline is the **NVIDIA Jetson Orin Nano Super**  -  67 INT8 TOPS of AI compute, 8 GB of unified memory, and 7 - 15 W of power envelope. It runs the full YOLO + Deep SORT + kinematic decision engine pipeline at real-time speeds entirely on-device. Huge respect to NVIDIA for democratizing edge AI at this price point.
+> The **primary deployment target** for the inference pipeline is the **NVIDIA Jetson Orin Nano Super** - 67 INT8 TOPS of AI compute, 8 GB of unified memory, and 7 - 15 W of power envelope. It runs the full YOLO + Deep SORT + kinematic decision engine pipeline at real-time speeds entirely on-device. Huge respect to NVIDIA for democratizing edge AI at this price point.
 
 
 ---
@@ -168,10 +168,10 @@ If you have an **NVIDIA Jetson Orin Nano Super** (or any Jetson with a CSI port)
 ```
 
 The Jetson has:
-- **CSI camera connector**  -  direct, zero-latency capture
-- **67 INT8 TOPS**  -  runs YOLO inference at real-time speeds
-- **8 GB unified memory**  -  enough for the full stack
-- **7 - 15 W**  -  runs off a car USB-C port
+- **CSI camera connector** - direct, zero-latency capture
+- **67 INT8 TOPS** - runs YOLO inference at real-time speeds
+- **8 GB unified memory** - enough for the full stack
+- **7 - 15 W** - runs off a car USB-C port
 
 This is the configuration you want for a real deployment. The distributed pipeline below exists for one reason: **if you don't have a Jetson**, you can still run CivicSense by splitting the work across cheap commodity boards.
 
@@ -179,7 +179,7 @@ This is the configuration you want for a real deployment. The distributed pipeli
 
 ## The Distributed Way: Pico -> Pi Zero -> Brain (Budget / DIY)
 
-If you don't have a Jetson and want to build from spare parts, squeeze YOLO out of a Pi Zero is a losing game  -  you trade accuracy for 2 FPS and watch it thermal-throttle. **Don't embed, distribute.** Each node does the job it's best at:
+If you don't have a Jetson and want to build from spare parts, squeeze YOLO out of a Pi Zero is a losing game - you trade accuracy for 2 FPS and watch it thermal-throttle. **Don't embed, distribute.** Each node does the job it's best at:
 
 <p align="center">
   <img src="assets/pipeline.svg" alt="CivicSense distributed edge pipeline: Pico triggers, Pi Zero streams, the brain infers, KMP app alerts" width="860"/>
@@ -204,7 +204,7 @@ Both are dependency-free-of-Python and intentionally kept permissive (MIT), unli
 
 **Dataset & ground-truth pack (included as a submodule, MIT licensed):**
 
-- [**civicsense-data-pack**](https://github.com/arpanpathak/driving-civic-sense-data-crowd) (`datasets/`): the official training + validation data companion. Ships the **7-class YOLO training vocabulary** (`stop_sign, traffic_light, crosswalk, vehicle, truck, bus, intersection_zone`), directory-layout and label validators (`civicsense-data`), a **field-validation ground-truth schema + seed manifest** for the kinematic decision engine, and public-dataset aggregation tooling (COCO / BDD100K). It is intentionally lean in git  -  no pixels  -  so it stays MIT-licensed and reusable everywhere. See the [repo README](https://github.com/arpanpathak/driving-civic-sense-data-crowd) for how to fetch and aggregate data into `data/civicsense/` (the input `civicsense train prepare` expects).
+- [**civicsense-data-pack**](https://github.com/arpanpathak/driving-civic-sense-data-crowd) (`datasets/`): the official training + validation data companion. Ships the **7-class YOLO training vocabulary** (`stop_sign, traffic_light, crosswalk, vehicle, truck, bus, intersection_zone`), directory-layout and label validators (`civicsense-data`), a **field-validation ground-truth schema + seed manifest** for the kinematic decision engine, and public-dataset aggregation tooling (COCO / BDD100K). It is intentionally lean in git - no pixels - so it stays MIT-licensed and reusable everywhere. See the [repo README](https://github.com/arpanpathak/driving-civic-sense-data-crowd) for how to fetch and aggregate data into `data/civicsense/` (the input `civicsense train prepare` expects).
 
 
 **When the distributed approach makes sense (no Jetson available):**
@@ -360,7 +360,7 @@ git submodule update --init --recursive
 
 | Device | Inference Time | Power | Use Case |
 |--------|---------------|-------|----------|
-| **NVIDIA Jetson Orin Nano Super** | ~12 ms (INT8) | 7 - 15 W | **Primary brain**  -  full pipeline at real-time |
+| **NVIDIA Jetson Orin Nano Super** | ~12 ms (INT8) | 7 - 15 W | **Primary brain** - full pipeline at real-time |
 | Qualcomm Snapdragon AR1 | ~22 ms | < 500 mW | AR Glasses |
 | Google Coral Dev Board | ~15 ms | 2 W | Dashcam |
 | Raspberry Pi 5 + Hailo-8L | ~18 ms | 8 W | DIY brain, budget Kit |
@@ -368,7 +368,7 @@ git submodule update --init --recursive
 | **Raspberry Pi Zero 2 W** | capture + stream (MJPEG/H.264) | ~1 W | Camera node, feeds the brain |
 | **Raspberry Pi Pico** | trigger plane: PIO sensors, power states | < 0.5 W | Always-on trigger co-processor |
 
-> **Squeeze mission:** The NVIDIA Jetson Orin Nano Super is the primary inference brain  -  67 INT8 TOPS, 8 GB unified memory, 7 - 15 W. Coupled with a Pi Zero streaming MJPEG and a Pi Pico handling sensor triggers, the full distributed pipeline runs real-time at under 20 W total. Performance-per-watt-per-dollar is not a toy metric. Thank you NVIDIA for making this possible at $249.
+> **Squeeze mission:** The NVIDIA Jetson Orin Nano Super is the primary inference brain - 67 INT8 TOPS, 8 GB unified memory, 7 - 15 W. Coupled with a Pi Zero streaming MJPEG and a Pi Pico handling sensor triggers, the full distributed pipeline runs real-time at under 20 W total. Performance-per-watt-per-dollar is not a toy metric. Thank you NVIDIA for making this possible at $249.
 
 ---
 
