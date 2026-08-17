@@ -289,12 +289,13 @@ git submodule update --init --recursive
   <br/>
   <em>The Family Guy maneuver, in the wild, <a href="https://www.youtube.com/watch?v=yCdGeElhCK4">watch the scene</a></em>
 </p>
-- **Missing or late turn signals** cause 25% of lane-change crashes (NHTSA).
-- CivicSense detects amber turn-signal lights, tracks lateral vehicle motion, and flags unsignaled lane changes before they become collisions.
-- Three specific violations:
-  - **No signal**, lane change with zero blinker activation.
-  - **Late signal**, blinker comes on after the vehicle is already moving laterally.
-  - **Multi-lane cut**, vehicle crosses two or more lanes in a single continuous path.
+- The blinker is the only cheap, universal way a driver announces a lane change; skipping it turns a two-second heads-up into a guess.
+- CivicSense's cut-in rule (`rule_cutin`) doesn't try to read minds — it acts only on vehicles that *do* announce themselves, then checks the physics. All four conditions must hold:
+  - an **active amber turn signal** on a vehicle in an adjacent lane,
+  - a **stable track** (≥ 3 consecutive frames, so a blinker flicker on a parked car never fires),
+  - a **plausible lateral speed** (≤ 4 m/s; beyond that the reading is treated as a tracking artifact), and
+  - a **kinematic intrusion check** — the predicted lane-intrusion time lands before the light turns red *and* the intruder sits inside the ego's stopping distance → **Warning**.
+- Catching *unsignaled* cuts (blinker never used, or switched on only after the car is already moving over) is deliberately **future work**: the shipped engine only reasons about vehicles that signal, so it never warns about a phantom.
 
 ### 4. Road Hazards Go Unreported
 - Fallen trees, debris, wildlife, crashes, often no one reports them until it's too late.
@@ -311,9 +312,10 @@ git submodule update --init --recursive
 | **Blocked Box on Green** | Green light + intersection still occupied, no room to clear (misjudged the gap) | *"Green light, but the box is still full. Hold back, don't block the box."* |
 | **Merge Right Reminder** | Right lane +5 mph faster for > 3 seconds | *"You're being passed on the right. Move over."* |
 | **Slow Traffic Ahead** | Lead vehicle speed < threshold for > 5 seconds | *"Someone slow ahead. Prepare to merge."* |
-| **Lane Change No Signal** | Vehicle moves laterally, no amber blinker detected | *"Turn signal? Or do you expect everyone to read your mind?"* |
-| **Multi-Lane Cut** | Vehicle crosses 2+ lanes in one path without signal | *"That's three lanes without a signal. Pick a lane and commit."* |
-| **Late Signal** | Blinker activates after lateral movement begins | *"Signal first, then merge. That's the deal."* |
+| **Cut-in Warning** | Adjacent vehicle signals, stable track (≥3 frames), plausible lateral speed, predicted intrusion lands inside ego stopping distance before red | *"Vehicle cutting in ahead. Hold back."* |
+| **Lane Change No Signal** | Vehicle moves laterally, no amber blinker detected *(future)* | *"Turn signal? Or do you expect everyone to read your mind?"* |
+| **Multi-Lane Cut** | Vehicle crosses 2+ lanes in one path without signal *(future)* | *"That's three lanes without a signal. Pick a lane and commit."* |
+| **Late Signal** | Blinker activates after lateral movement begins *(future)* | *"Signal first, then merge. That's the deal."* |
 | **Road Hazard** | Detected debris / animal / obstruction | Voice + broadcast beacon to mesh |
 | **Emergency Vehicle** | Flashing lights detected (future) | *"Emergency vehicle behind. Pull right."* |
 | **Speed Feedback** | Ego significantly below traffic flow | *"Speed up, you're holding up traffic."* |
